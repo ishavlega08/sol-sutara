@@ -1,0 +1,6 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Solana wallet adapter styles */
+@import "@solana/wallet-adapter-react-ui/styles.css";
