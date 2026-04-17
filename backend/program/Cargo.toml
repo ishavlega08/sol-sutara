@@ -1,12 +1,12 @@
 [package]
-name = "traceforge"
+name = "solsutara"
 version = "0.1.0"
-description = "TraceForge — decentralized supply chain traceability on Solana"
+description = "SolSutara — decentralized supply chain traceability on Solana"
 edition = "2021"
 
 [lib]
 crate-type = ["cdylib", "lib"]
-name = "traceforge"
+name = "solsutara"
 
 [features]
 no-entrypoint = []

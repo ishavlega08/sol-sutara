@@ -1,7 +1,7 @@
 {
-  "name": "traceforge-client",
+  "name": "solsutara-client",
   "version": "0.1.0",
-  "description": "TypeScript client for TraceForge Anchor program",
+  "description": "TypeScript client for SolSutara Anchor program",
   "main": "src/index.ts",
   "scripts": {
     "build": "tsc",

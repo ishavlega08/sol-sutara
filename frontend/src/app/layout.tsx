@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import "@/styles/globals.css";
 
 export const metadata: Metadata = {
-  title: "TraceForge",
+  title: "SolSutara",
   description: "Decentralized supply chain traceability on Solana",
 };
 

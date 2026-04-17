@@ -1,7 +1,7 @@
 {
-  "name": "traceforge-indexer",
+  "name": "solsutara-indexer",
   "version": "0.1.0",
-  "description": "Graph indexer and REST API for TraceForge",
+  "description": "Graph indexer and REST API for SolSutara",
   "main": "src/index.ts",
   "scripts": {
     "dev": "ts-node-dev --respawn src/index.ts",
