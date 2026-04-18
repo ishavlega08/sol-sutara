@@ -1,0 +1,42 @@
+# ── Dependencies ──────────────────────────────────────────────────
+node_modules/
+**/node_modules/
+
+# ── Rust / Anchor build artifacts ─────────────────────────────────
+# Ignore compiled binaries and incremental caches.
+# target/idl/ and target/types/ are intentionally kept —
+# other devs need them to run the TypeScript client without a full Rust build.
+backend/target/debug/
+backend/target/release/
+backend/target/sbpf-solana-solana/
+backend/target/deploy/
+backend/target/.rustc_info.json
+
+# ── TypeScript compiled output ─────────────────────────────────────
+dist/
+**/dist/
+
+# ── Environment files ─────────────────────────────────────────────
+.env
+.env.local
+.env.*.local
+**/.env
+**/.env.local
+
+# ── Next.js ───────────────────────────────────────────────────────
+frontend/.next/
+frontend/out/
+
+# ── Prisma ────────────────────────────────────────────────────────
+# Generated client — recreated with `prisma generate`
+**/src/generated/
+
+# ── Logs ──────────────────────────────────────────────────────────
+*.log
+npm-debug.log*
+
+# ── OS / IDE ──────────────────────────────────────────────────────
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
