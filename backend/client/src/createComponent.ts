@@ -35,6 +35,8 @@ function getComponentPDA(
   );
 }
 
+// ─── initialize_counter ───────────────────────────────────────────────────────
+
 export async function initializeCounter(provider: AnchorProvider): Promise<string> {
   const idl = loadIdl();
   const programId = getProgramId();
@@ -49,6 +51,8 @@ export async function initializeCounter(provider: AnchorProvider): Promise<strin
   await provider.connection.confirmTransaction(tx, "confirmed");
   return tx;
 }
+
+// ─── create_component ─────────────────────────────────────────────────────────
 
 export interface CreateComponentResult {
   componentId: string;
@@ -89,4 +93,53 @@ export async function createComponent(
     txSignature: tx,
     componentPDA: componentPDA.toBase58(),
   };
+}
+
+// ─── link_components ─────────────────────────────────────────────────────────
+
+export interface LinkComponentsResult {
+  txSignature: string;
+}
+
+/**
+ * Links a parent component to a child component on-chain.
+ *
+ * @param parentId       - component_id of the parent
+ * @param childId        - component_id of the child
+ * @param parentCreator  - pubkey of the parent's creator (defaults to provider wallet)
+ * @param childCreator   - pubkey of the child's creator (defaults to provider wallet)
+ */
+export async function linkComponents(
+  provider: AnchorProvider,
+  parentId: number,
+  childId: number,
+  parentCreator?: PublicKey,
+  childCreator?: PublicKey
+): Promise<LinkComponentsResult> {
+  if (parentId === childId && (parentCreator ?? provider.wallet.publicKey).equals(childCreator ?? provider.wallet.publicKey)) {
+    throw new Error("A component cannot be linked to itself");
+  }
+
+  const idl = loadIdl();
+  const programId = getProgramId();
+  const program = new Program(idl, provider);
+
+  const pCreator = parentCreator ?? provider.wallet.publicKey;
+  const cCreator = childCreator ?? provider.wallet.publicKey;
+
+  const [parentPDA] = getComponentPDA(pCreator, new BN(parentId), programId);
+  const [childPDA] = getComponentPDA(cCreator, new BN(childId), programId);
+
+  const tx = await (program.methods as any)
+    .linkComponents(new BN(parentId), new BN(childId))
+    .accounts({
+      parentComponent: parentPDA,
+      childComponent: childPDA,
+      authority: provider.wallet.publicKey,
+    })
+    .rpc();
+
+  await provider.connection.confirmTransaction(tx, "confirmed");
+
+  return { txSignature: tx };
 }

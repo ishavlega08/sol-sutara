@@ -7,12 +7,29 @@ datasource db {
 }
 
 model Component {
-  id                String    @id @default(uuid())
-  name              String
-  type              String
-  supplier          String?
-  metadata_uri      String
-  on_chain_address  String?
-  tx_hash           String?
-  created_at        DateTime  @default(now())
+  id               String          @id @default(uuid())
+  name             String
+  type             String
+  supplier         String?
+  metadata_uri     String
+  on_chain_address String?
+  on_chain_id      BigInt?
+  tx_hash          String?
+  created_at       DateTime        @default(now())
+
+  parent_links     ComponentLink[] @relation("ParentLinks")
+  child_links      ComponentLink[] @relation("ChildLinks")
+}
+
+model ComponentLink {
+  id         String    @id @default(uuid())
+  parent_id  String
+  child_id   String
+  tx_hash    String
+  created_at DateTime  @default(now())
+
+  parent     Component @relation("ParentLinks", fields: [parent_id], references: [id])
+  child      Component @relation("ChildLinks",  fields: [child_id],  references: [id])
+
+  @@unique([parent_id, child_id])
 }

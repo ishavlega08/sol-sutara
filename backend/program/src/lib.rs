@@ -25,6 +25,7 @@ pub mod solsutara {
         component.creator = ctx.accounts.creator.key();
         component.timestamp = Clock::get()?.unix_timestamp;
         component.bump = ctx.bumps.component;
+        component.parents = Vec::new();
 
         counter.total_components = counter
             .total_components
@@ -39,7 +40,43 @@ pub mod solsutara {
 
         Ok(())
     }
+
+    pub fn link_components(
+        ctx: Context<LinkComponents>,
+        _parent_component_id: u64,
+        _child_component_id: u64,
+    ) -> Result<()> {
+        // Prevent self-linking by comparing account keys
+        require!(
+            ctx.accounts.parent_component.key() != ctx.accounts.child_component.key(),
+            SolSutaraError::SelfLink
+        );
+
+        let parent_id = ctx.accounts.parent_component.component_id;
+        let child = &mut ctx.accounts.child_component;
+
+        // Prevent duplicate link
+        require!(
+            !child.parents.contains(&parent_id),
+            SolSutaraError::DuplicateLink
+        );
+
+        // Guard against exceeding pre-allocated parent slots
+        require!(child.parents.len() < 10, SolSutaraError::TooManyParents);
+
+        let child_id = child.component_id;
+        child.parents.push(parent_id);
+
+        emit!(ComponentLinked {
+            parent_component_id: parent_id,
+            child_component_id: child_id,
+        });
+
+        Ok(())
+    }
 }
+
+// ─── Account Contexts ────────────────────────────────────────────────────────
 
 #[derive(Accounts)]
 pub struct InitializeCounter<'info> {
@@ -87,6 +124,36 @@ pub struct CreateComponent<'info> {
     pub system_program: Program<'info, System>,
 }
 
+#[derive(Accounts)]
+pub struct LinkComponents<'info> {
+    /// Parent component — validated via PDA seeds stored in account data
+    #[account(
+        seeds = [
+            b"component",
+            parent_component.creator.as_ref(),
+            &parent_component.component_id.to_le_bytes(),
+        ],
+        bump = parent_component.bump,
+    )]
+    pub parent_component: Account<'info, Component>,
+
+    /// Child component — mutable, parents vec will be updated
+    #[account(
+        mut,
+        seeds = [
+            b"component",
+            child_component.creator.as_ref(),
+            &child_component.component_id.to_le_bytes(),
+        ],
+        bump = child_component.bump,
+    )]
+    pub child_component: Account<'info, Component>,
+
+    pub authority: Signer<'info>,
+}
+
+// ─── Account Structs ─────────────────────────────────────────────────────────
+
 #[account]
 #[derive(InitSpace)]
 pub struct GlobalCounter {
@@ -103,7 +170,12 @@ pub struct Component {
     pub creator: Pubkey,
     pub timestamp: i64,
     pub bump: u8,
+    /// IDs of parent components (up to 10 parents per component)
+    #[max_len(10)]
+    pub parents: Vec<u64>,
 }
+
+// ─── Events ───────────────────────────────────────────────────────────────────
 
 #[event]
 pub struct ComponentCreated {
@@ -111,6 +183,14 @@ pub struct ComponentCreated {
     pub creator: Pubkey,
     pub timestamp: i64,
 }
+
+#[event]
+pub struct ComponentLinked {
+    pub parent_component_id: u64,
+    pub child_component_id: u64,
+}
+
+// ─── Errors ───────────────────────────────────────────────────────────────────
 
 #[error_code]
 pub enum SolSutaraError {
@@ -120,4 +200,10 @@ pub enum SolSutaraError {
     MetadataUriTooLong,
     #[msg("Global component counter overflow")]
     CounterOverflow,
+    #[msg("A component cannot be linked to itself")]
+    SelfLink,
+    #[msg("This parent-child relationship already exists")]
+    DuplicateLink,
+    #[msg("Component already has the maximum number of parents (10)")]
+    TooManyParents,
 }

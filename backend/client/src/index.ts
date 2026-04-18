@@ -1,2 +1,2 @@
-export { createComponent, initializeCounter } from "./createComponent";
-export type { CreateComponentResult } from "./createComponent";
+export { createComponent, initializeCounter, linkComponents } from "./createComponent";
+export type { CreateComponentResult, LinkComponentsResult } from "./createComponent";
