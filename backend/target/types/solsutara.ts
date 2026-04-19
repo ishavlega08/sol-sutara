@@ -138,6 +138,104 @@ export type Solsutara = {
         }
       ],
       "args": []
+    },
+    {
+      "name": "linkComponents",
+      "discriminator": [
+        77,
+        241,
+        129,
+        168,
+        119,
+        68,
+        196,
+        20
+      ],
+      "accounts": [
+        {
+          "name": "parentComponent",
+          "docs": [
+            "Parent component — validated via PDA seeds stored in account data"
+          ],
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  99,
+                  111,
+                  109,
+                  112,
+                  111,
+                  110,
+                  101,
+                  110,
+                  116
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "parent_component.creator",
+                "account": "component"
+              },
+              {
+                "kind": "account",
+                "path": "parent_component.component_id",
+                "account": "component"
+              }
+            ]
+          }
+        },
+        {
+          "name": "childComponent",
+          "docs": [
+            "Child component — mutable, parents vec will be updated"
+          ],
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  99,
+                  111,
+                  109,
+                  112,
+                  111,
+                  110,
+                  101,
+                  110,
+                  116
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "child_component.creator",
+                "account": "component"
+              },
+              {
+                "kind": "account",
+                "path": "child_component.component_id",
+                "account": "component"
+              }
+            ]
+          }
+        },
+        {
+          "name": "authority",
+          "signer": true
+        }
+      ],
+      "args": [
+        {
+          "name": "parentComponentId",
+          "type": "u64"
+        },
+        {
+          "name": "childComponentId",
+          "type": "u64"
+        }
+      ]
     }
   ],
   "accounts": [
@@ -181,6 +279,19 @@ export type Solsutara = {
         0,
         245
       ]
+    },
+    {
+      "name": "componentLinked",
+      "discriminator": [
+        78,
+        161,
+        97,
+        127,
+        99,
+        249,
+        101,
+        116
+      ]
     }
   ],
   "errors": [
@@ -198,6 +309,21 @@ export type Solsutara = {
       "code": 6002,
       "name": "counterOverflow",
       "msg": "Global component counter overflow"
+    },
+    {
+      "code": 6003,
+      "name": "selfLink",
+      "msg": "A component cannot be linked to itself"
+    },
+    {
+      "code": 6004,
+      "name": "duplicateLink",
+      "msg": "This parent-child relationship already exists"
+    },
+    {
+      "code": 6005,
+      "name": "tooManyParents",
+      "msg": "Component already has the maximum number of parents (10)"
     }
   ],
   "types": [
@@ -225,6 +351,15 @@ export type Solsutara = {
           {
             "name": "bump",
             "type": "u8"
+          },
+          {
+            "name": "parents",
+            "docs": [
+              "IDs of parent components (up to 10 parents per component)"
+            ],
+            "type": {
+              "vec": "u64"
+            }
           }
         ]
       }
@@ -245,6 +380,22 @@ export type Solsutara = {
           {
             "name": "timestamp",
             "type": "i64"
+          }
+        ]
+      }
+    },
+    {
+      "name": "componentLinked",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "parentComponentId",
+            "type": "u64"
+          },
+          {
+            "name": "childComponentId",
+            "type": "u64"
           }
         ]
       }

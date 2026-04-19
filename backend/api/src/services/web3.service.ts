@@ -1,10 +1,19 @@
 import { Connection, Keypair, PublicKey, clusterApiUrl } from "@solana/web3.js";
 import { AnchorProvider, Program, Wallet, BN, Idl } from "@coral-xyz/anchor";
 
+// ─── Shared types ─────────────────────────────────────────────────────────────
+
 export interface OnChainResult {
     txHash: string;
     componentAddress: string;
+    componentId: bigint;      // on-chain u64 component ID
 }
+
+export interface LinkOnChainResult {
+    txHash: string;
+}
+
+// ─── Helpers ──────────────────────────────────────────────────────────────────
 
 function loadIdl(): Idl {
     try {
@@ -35,6 +44,8 @@ function getComponentPDA(creator: PublicKey, componentId: BN, programId: PublicK
     );
 }
 
+// ─── Counter boot ────────────────────────────────────────────────────────────
+
 let _counterReady = false;
 
 async function ensureCounter(program: Program, provider: AnchorProvider, programId: PublicKey): Promise<void> {
@@ -50,6 +61,8 @@ async function ensureCounter(program: Program, provider: AnchorProvider, program
     }
     _counterReady = true;
 }
+
+// ─── create_component ─────────────────────────────────────────────────────────
 
 export async function createComponentOnChain(
     _componentId: string,
@@ -79,5 +92,38 @@ export async function createComponentOnChain(
     return {
         txHash: tx,
         componentAddress: componentPDA.toBase58(),
+        componentId: BigInt(nextId.toString()),
     };
+}
+
+// ─── link_components ──────────────────────────────────────────────────────────
+
+export async function linkComponentsOnChain(
+    parentAddress: string,
+    childAddress: string,
+    parentOnChainId: bigint,
+    childOnChainId: bigint
+): Promise<LinkOnChainResult> {
+    const idl = loadIdl();
+    const provider = buildProvider();
+    const program = new Program(idl, provider);
+
+    const parentPDA = new PublicKey(parentAddress);
+    const childPDA  = new PublicKey(childAddress);
+
+    const tx = await (program.methods as any)
+        .linkComponents(
+            new BN(parentOnChainId.toString()),
+            new BN(childOnChainId.toString())
+        )
+        .accounts({
+            parentComponent: parentPDA,
+            childComponent:  childPDA,
+            authority:       provider.wallet.publicKey,
+        })
+        .rpc();
+
+    await provider.connection.confirmTransaction(tx, "confirmed");
+
+    return { txHash: tx };
 }
