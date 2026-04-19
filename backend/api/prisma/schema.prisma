@@ -6,6 +6,20 @@ datasource db {
   provider = "postgresql"
 }
 
+// ─── Organization ─────────────────────────────────────────────────────────────
+// Primary entity. A company, consortium, or team.
+
+model Organization {
+  id         String      @id @default(uuid())
+  name       String
+  slug       String      @unique  // URL-safe identifier, e.g. "intel-corp"
+  created_at DateTime    @default(now())
+
+  components Component[]
+}
+
+// ─── Component ────────────────────────────────────────────────────────────────
+
 model Component {
   id               String          @id @default(uuid())
   name             String
@@ -16,10 +30,14 @@ model Component {
   on_chain_id      BigInt?
   tx_hash          String?
   created_at       DateTime        @default(now())
+  org_id           String?                          // Owner organization (optional for migration safety)
 
+  org              Organization?   @relation(fields: [org_id], references: [id])
   parent_links     ComponentLink[] @relation("ParentLinks")
   child_links      ComponentLink[] @relation("ChildLinks")
 }
+
+// ─── ComponentLink ────────────────────────────────────────────────────────────
 
 model ComponentLink {
   id         String    @id @default(uuid())

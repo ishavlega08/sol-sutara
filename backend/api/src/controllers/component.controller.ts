@@ -21,7 +21,7 @@ export async function getComponentsHandler(_req: Request, res: Response) {
 // ─── POST /components ─────────────────────────────────────────────────────────
 
 export async function createComponentHandler(req: Request, res: Response) {
-    const { name, type, supplier, metadata } = req.body;
+    const { name, type, supplier, metadata, org_id } = req.body;
 
     if (!name || !type) {
         return res.status(400).json({ success: false, error: "name and type are required" });
@@ -32,7 +32,7 @@ export async function createComponentHandler(req: Request, res: Response) {
     }
 
     try {
-        const component = await createComponent({ name, type, supplier, metadata });
+        const component = await createComponent({ name, type, supplier, metadata, org_id });
 
         return res.status(201).json({
             success: true,

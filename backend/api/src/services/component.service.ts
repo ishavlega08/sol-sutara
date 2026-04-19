@@ -14,6 +14,7 @@ export interface CreateComponentInput {
     type:      string;
     supplier?: string;
     metadata?: Record<string, unknown>;
+    org_id?:   string;  // Owning organization (optional; ties component to an org)
 }
 
 export async function getComponents() {
@@ -29,6 +30,7 @@ export async function createComponent(input: CreateComponentInput) {
             type:         input.type,
             supplier:     input.supplier,
             metadata_uri: "",
+            org_id:       input.org_id,
         },
     });
 
