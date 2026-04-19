@@ -14,6 +14,12 @@ export interface CreateComponentInput {
     metadata?: Record<string, unknown>;
 }
 
+export async function getComponents() {
+    return prisma.component.findMany({
+        orderBy: { created_at: "desc" },
+    });
+}
+
 export async function createComponent(input: CreateComponentInput) {
     const component = await prisma.component.create({
         data: {

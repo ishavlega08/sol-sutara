@@ -1,8 +1,9 @@
 import { Router } from "express";
-import { createComponentHandler } from "../controllers/component.controller";
+import { createComponentHandler, getComponentsHandler } from "../controllers/component.controller";
 
 const router = Router();
 
+router.get("/", getComponentsHandler);
 router.post("/", createComponentHandler);
 
 export default router;
