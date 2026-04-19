@@ -15,6 +15,7 @@ backend/target/.rustc_info.json
 # ── TypeScript compiled output ─────────────────────────────────────
 dist/
 **/dist/
+tsconfig.tsbuildinfo
 
 # ── Environment files ─────────────────────────────────────────────
 .env
