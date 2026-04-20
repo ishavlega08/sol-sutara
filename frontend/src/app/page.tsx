@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useCallback } from "react";
 import Link from "next/link";
-import { PlusCircle, RefreshCw, ExternalLink, Package, AlertCircle } from "lucide-react";
+import { PlusCircle, RefreshCw, ExternalLink, Package, AlertCircle, GitBranch } from "lucide-react";
 import { getComponents } from "@/lib/api";
 import type { ComponentListItem } from "@/types/component";
 
@@ -39,9 +39,9 @@ function TypeBadge({ type }: { type: string }) {
 function SkeletonRow() {
   return (
     <tr className="border-b border-gray-100">
-      {[1, 2, 3, 4, 5].map((i) => (
+      {[60, 40, 50, 70, 35, 20].map((w, i) => (
         <td key={i} className="px-4 py-3">
-          <div className="h-4 animate-pulse rounded bg-gray-100" style={{ width: `${[60, 40, 50, 70, 35][i - 1]}%` }} />
+          <div className="h-4 animate-pulse rounded bg-gray-100" style={{ width: `${w}%` }} />
         </td>
       ))}
     </tr>
@@ -72,7 +72,7 @@ export default function ComponentsPage() {
   useEffect(() => { load(); }, [load]);
 
   return (
-    <div className="mx-auto max-w-5xl px-6 py-8">
+    <div className="h-full overflow-y-auto mx-auto max-w-5xl px-6 py-8">
       {/* Header */}
       <div className="mb-6 flex items-center justify-between">
         <div>
@@ -125,6 +125,7 @@ export default function ComponentsPage() {
               <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wide text-gray-500">On-Chain Address</th>
               <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wide text-gray-500">Tx Hash</th>
               <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wide text-gray-500">Created</th>
+              <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wide text-gray-500"></th>
             </tr>
           </thead>
           <tbody>
@@ -133,7 +134,7 @@ export default function ComponentsPage() {
 
             {!loading && !error && components.length === 0 && (
               <tr>
-                <td colSpan={5}>
+                <td colSpan={6}>
                   <EmptyState />
                 </td>
               </tr>
@@ -159,6 +160,15 @@ export default function ComponentsPage() {
                     <TxCell value={c.tx_hash} />
                   </td>
                   <td className="px-4 py-3 text-gray-500">{formatDate(c.created_at)}</td>
+                  <td className="px-4 py-3">
+                    <Link
+                      href={`/components/${c.id}/parents?name=${encodeURIComponent(c.name)}`}
+                      className="inline-flex items-center gap-1 rounded-md border border-gray-200 px-2 py-1 text-xs text-gray-500 transition hover:border-gray-300 hover:bg-gray-50 hover:text-gray-800"
+                    >
+                      <GitBranch className="h-3 w-3" />
+                      Parents
+                    </Link>
+                  </td>
                 </tr>
               ))}
           </tbody>
