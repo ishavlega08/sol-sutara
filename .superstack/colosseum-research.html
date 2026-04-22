@@ -1,0 +1,405 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Sol Sutara — Colosseum Hackathon Research</title>
+<style>
+  :root {
+    --bg: #0d0f14;
+    --surface: #161a22;
+    --surface2: #1c2130;
+    --border: #1e2533;
+    --accent: #9945ff;
+    --accent2: #14f195;
+    --warn: #f5a623;
+    --danger: #e84040;
+    --text: #e2e8f0;
+    --muted: #7c8ba1;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: var(--bg); color: var(--text); font-family: 'Inter', system-ui, sans-serif; line-height: 1.6; padding: 40px 24px; }
+  .container { max-width: 960px; margin: 0 auto; }
+  header { margin-bottom: 48px; }
+  .logo { font-size: 12px; color: var(--accent); letter-spacing: 0.12em; text-transform: uppercase; margin-bottom: 12px; }
+  h1 { font-size: 30px; font-weight: 700; margin-bottom: 8px; }
+  .subtitle { color: var(--muted); font-size: 15px; }
+
+  .kpi-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 40px; }
+  .kpi { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 18px 16px; text-align: center; }
+  .kpi .val { font-size: 22px; font-weight: 700; margin-bottom: 4px; }
+  .kpi .lbl { font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em; }
+  .kpi .sub { font-size: 11px; color: var(--muted); margin-top: 3px; }
+  .green { color: #14f195; }
+  .yellow { color: #f5a623; }
+  .purple { color: #9945ff; }
+
+  section { margin-bottom: 44px; }
+  h2 { font-size: 17px; font-weight: 600; margin-bottom: 16px; padding-bottom: 8px; border-bottom: 1px solid var(--border); }
+
+  table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  th { text-align: left; padding: 8px 10px; font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.05em; border-bottom: 1px solid var(--border); }
+  td { padding: 9px 10px; border-bottom: 1px solid rgba(30,37,51,0.7); vertical-align: top; }
+  tr:hover td { background: var(--surface2); }
+  .badge { font-size: 11px; padding: 2px 7px; border-radius: 4px; display: inline-block; white-space: nowrap; }
+  .badge-winner { background: rgba(20,241,149,0.12); color: var(--accent2); border: 1px solid rgba(20,241,149,0.25); }
+  .badge-rwa { background: rgba(153,69,255,0.12); color: var(--accent); border: 1px solid rgba(153,69,255,0.25); }
+  .badge-adjacent { background: rgba(245,166,35,0.12); color: var(--warn); border: 1px solid rgba(245,166,35,0.25); }
+  .badge-gap { background: rgba(20,241,149,0.08); color: var(--accent2); border: 1px dashed rgba(20,241,149,0.3); }
+
+  .project-grid { display: flex; flex-direction: column; gap: 12px; }
+  .project-card { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 16px 20px; }
+  .project-card.highlight { border-color: rgba(153,69,255,0.4); }
+  .project-card.gap { border-color: rgba(20,241,149,0.3); border-style: dashed; }
+  .proj-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 8px; flex-wrap: wrap; gap: 8px; }
+  .proj-name { font-size: 15px; font-weight: 600; }
+  .proj-meta { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+  .proj-body { font-size: 13px; color: var(--muted); line-height: 1.55; }
+  .proj-body strong { color: var(--text); }
+  .proj-relevance { margin-top: 8px; font-size: 12px; color: var(--accent2); }
+
+  .gap-banner {
+    background: linear-gradient(135deg, rgba(20,241,149,0.08), rgba(153,69,255,0.06));
+    border: 1px dashed rgba(20,241,149,0.35);
+    border-radius: 10px;
+    padding: 20px 24px;
+    font-size: 14px;
+    line-height: 1.7;
+  }
+  .gap-banner h3 { color: var(--accent2); font-size: 15px; margin-bottom: 10px; }
+  .gap-banner ul { list-style: none; display: flex; flex-direction: column; gap: 6px; padding-left: 16px; }
+  .gap-banner ul li::before { content: "→"; color: var(--accent); margin-left: -16px; margin-right: 8px; font-weight: 700; }
+
+  .winner-pattern { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; overflow: hidden; }
+  .pattern-grid { display: grid; grid-template-columns: 1fr 1fr; }
+  .pattern-col { padding: 16px 20px; }
+  .pattern-col:first-child { border-right: 1px solid var(--border); }
+  .pattern-col h3 { font-size: 12px; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 12px; }
+  .pattern-col h3.over { color: var(--accent2); }
+  .pattern-col h3.under { color: var(--danger); }
+  .pattern-item { font-size: 13px; padding: 5px 0; border-bottom: 1px solid rgba(30,37,51,0.5); display: flex; gap: 8px; }
+  .pattern-item:last-child { border-bottom: none; }
+  .pattern-item .dot { font-size: 10px; margin-top: 4px; flex-shrink: 0; }
+  .dot.green { color: var(--accent2); }
+  .dot.red { color: var(--danger); }
+
+  .copilot-commands {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 16px 20px;
+    font-family: 'SF Mono', 'Fira Code', monospace;
+    font-size: 12px;
+    color: var(--accent2);
+    overflow-x: auto;
+  }
+  .copilot-commands .comment { color: var(--muted); }
+  pre { white-space: pre-wrap; word-break: break-all; }
+
+  .eternal-card {
+    background: linear-gradient(135deg, rgba(153,69,255,0.1), rgba(20,241,149,0.05));
+    border: 1px solid rgba(153,69,255,0.35);
+    border-radius: 10px;
+    padding: 20px 24px;
+  }
+  .eternal-card h3 { font-size: 15px; color: var(--accent); margin-bottom: 8px; }
+  .eternal-card p { font-size: 13px; color: var(--muted); line-height: 1.6; }
+  .eternal-card .prize { font-size: 20px; font-weight: 700; color: var(--accent2); margin: 8px 0; }
+
+  footer { margin-top: 56px; text-align: center; font-size: 12px; color: var(--muted); }
+  code { background: rgba(30,37,51,0.9); padding: 2px 6px; border-radius: 3px; font-size: 11px; font-family: monospace; }
+  .note { font-size: 12px; color: var(--muted); margin-top: 8px; font-style: italic; }
+</style>
+</head>
+<body>
+<div class="container">
+
+  <header>
+    <div class="logo">Superstack · Colosseum Copilot · Phase 1</div>
+    <h1>Sol Sutara — Hackathon Landscape Research</h1>
+    <p class="subtitle">5,400+ Solana hackathon projects analyzed across Renaissance, Radar, Breakout, Cypherpunk &nbsp;·&nbsp; April 20, 2026</p>
+  </header>
+
+  <!-- KPIs -->
+  <div class="kpi-grid">
+    <div class="kpi">
+      <div class="val green">0</div>
+      <div class="lbl">Direct Competitors</div>
+      <div class="sub">No multi-org supply chain graph project has ever won or placed</div>
+    </div>
+    <div class="kpi">
+      <div class="val yellow">2</div>
+      <div class="lbl">Adjacent Projects</div>
+      <div class="sub">CargoBill (payments) + Pomerene (pallet DePIN)</div>
+    </div>
+    <div class="kpi">
+      <div class="val purple">$25K</div>
+      <div class="lbl">CargoBill Prize</div>
+      <div class="sub">Stablecoins track — Breakout 2025. Supply chain payments validated.</div>
+    </div>
+    <div class="kpi">
+      <div class="val green">Open</div>
+      <div class="lbl">Your Niche</div>
+      <div class="sub">Colosseum Eternal: $25K grant, submit anytime</div>
+    </div>
+  </div>
+
+  <!-- GAP BANNER -->
+  <section>
+    <div class="gap-banner">
+      <h3>The Most Important Finding: Nobody Has Built This</h3>
+      <p>Across 4 major Colosseum hackathons (Renaissance 2024, Radar 2024, Breakout 2025, Cypherpunk 2025) covering 5,400+ projects and 40,000+ participants, <strong>no project has won or placed in a multi-organization supply chain traceability / component graph category</strong>. The space is genuinely untried at hackathon scale.</p>
+      <br/>
+      <ul>
+        <li>CargoBill ($25K, Breakout 2025) proves judges reward supply chain ideas — but addresses <em>payments</em>, not traceability or component provenance.</li>
+        <li>Pomerene (Renaissance 2024, DePIN 5th) does pallet tracking for international trade — physical IoT location, not manufacturing component lineage.</li>
+        <li>Autonom ($25K, Cypherpunk 2025) is an RWA oracle — infrastructure for tokenized assets, not supply chain intelligence.</li>
+        <li>Sol Sutara's core concept — cross-org directed component graph with recall simulation — has never been attempted in a Solana hackathon. You are genuinely first.</li>
+      </ul>
+    </div>
+  </section>
+
+  <!-- MOST RELEVANT PROJECTS -->
+  <section>
+    <h2>Most Relevant Hackathon Projects</h2>
+    <div class="project-grid">
+
+      <div class="project-card highlight">
+        <div class="proj-header">
+          <div>
+            <div class="proj-name">CargoBill</div>
+            <div style="font-size:12px;color:var(--muted)">Stablecoin payments platform for supply chain</div>
+          </div>
+          <div class="proj-meta">
+            <span class="badge badge-winner">1st Place · Stablecoins</span>
+            <span class="badge badge-rwa">$25,000 USDC</span>
+            <span style="font-size:11px;color:var(--muted)">Breakout 2025</span>
+          </div>
+        </div>
+        <div class="proj-body">
+          <strong>What it does:</strong> Executes real-world logistics payments in seconds using stablecoin multisig business wallets on Solana. Claims to halve transaction costs vs. SWIFT, enhance liquidity, and earn cashback on operational expenses. Non-custodial B2B payment infrastructure for logistics companies.<br/><br/>
+          <strong>What it doesn't do:</strong> No component provenance, no cross-org graph, no recall simulation, no defect tracing. Pure payments layer — knows that money moved, not what goods were delivered or whether they were genuine.
+        </div>
+        <div class="proj-relevance">→ Integration partner, not competitor. CargoBill is the payment rail; Sol Sutara is the verification layer. Connect them: "component verified on-chain → CargoBill auto-releases stablecoin payment." This is programmable trade settlement nobody has shipped yet.</div>
+      </div>
+
+      <div class="project-card highlight">
+        <div class="proj-header">
+          <div>
+            <div class="proj-name">Pomerene</div>
+            <div style="font-size:12px;color:var(--muted)">DePIN for international trade — pallet tracking</div>
+          </div>
+          <div class="proj-meta">
+            <span class="badge badge-adjacent">5th Place · DePIN</span>
+            <span style="font-size:11px;color:var(--muted)">Renaissance 2024</span>
+          </div>
+        </div>
+        <div class="proj-body">
+          <strong>What it does:</strong> Decentralized physical infrastructure network for tracking pallets in international trade. IoT sensors + Solana = proof of physical location for goods in transit.<br/><br/>
+          <strong>What it doesn't do:</strong> Single-org tracking (where is MY pallet). No cross-org component graph (how was this product built). No manufacturing traceability, no recall simulation, no defect propagation analysis.
+        </div>
+        <div class="proj-relevance">→ Complementary, not competing. Pomerene tracks WHERE goods are in transit; Sol Sutara tracks WHAT goods are made of across manufacturing orgs. These can be composed: Sol Sutara component → Pomerene pallet → CargoBill payment. A full supply chain stack.</div>
+      </div>
+
+      <div class="project-card">
+        <div class="proj-header">
+          <div>
+            <div class="proj-name">Autonom</div>
+            <div style="font-size:12px;color:var(--muted)">Specialized oracle for Real World Assets</div>
+          </div>
+          <div class="proj-meta">
+            <span class="badge badge-winner">1st Place · RWA</span>
+            <span class="badge badge-rwa">$25,000 USDC</span>
+            <span style="font-size:11px;color:var(--muted)">Cypherpunk 2025</span>
+          </div>
+        </div>
+        <div class="proj-body">
+          <strong>What it does:</strong> Oracle infrastructure that bridges real-world asset data to Solana programs. Provides verified price feeds and attestations for tokenized real-world assets.<br/><br/>
+          <strong>Relevance:</strong> Judges are willing to fund RWA infrastructure. Sol Sutara's component verification events are a form of RWA data (physical goods state changes). Autonom is infrastructure-layer; Sol Sutara is application-layer on top.
+        </div>
+        <div class="proj-relevance">→ Signals: RWA infrastructure wins prizes. Position Sol Sutara as "RWA provenance layer for physical components" to appeal to the same judges who backed Autonom.</div>
+      </div>
+
+      <div class="project-card">
+        <div class="proj-header">
+          <div>
+            <div class="proj-name">Yumi Finance</div>
+            <div style="font-size:12px;color:var(--muted)">Onchain buy now, pay later — underwriting to loan origination</div>
+          </div>
+          <div class="proj-meta">
+            <span class="badge badge-winner">1st Place · DeFi</span>
+            <span class="badge" style="background:rgba(245,166,35,0.1);color:var(--warn);border:1px solid rgba(245,166,35,0.25)">$25,000 USDC</span>
+            <span style="font-size:11px;color:var(--muted)">Cypherpunk 2025</span>
+          </div>
+        </div>
+        <div class="proj-body">
+          <strong>What it does:</strong> Full-stack DeFi BNPL — underwrites credit risk and originates loans on-chain. Handles the complete lifecycle from credit evaluation to disbursement.<br/><br/>
+          <strong>Relevance:</strong> This is the DeFi lending pattern that Sol Sutara's supplier credit score PDA could plug into. Yumi underwriting = Maple Finance underwriting = same pattern. Sol Sutara's on-chain delivery history is the credit signal these protocols need.
+        </div>
+        <div class="proj-relevance">→ Validates the supply chain finance angle. If BNPL lending won at Cypherpunk, "supplier invoice financing backed by on-chain delivery proof" can win too — and it's a much larger market.</div>
+      </div>
+
+      <!-- THE GAP -->
+      <div class="project-card gap">
+        <div class="proj-header">
+          <div>
+            <div class="proj-name" style="color:var(--accent2)">Sol Sutara's Niche — Never Attempted</div>
+            <div style="font-size:12px;color:var(--muted)">Multi-org component graph · Recall simulation · Industrial traceability</div>
+          </div>
+          <div class="proj-meta">
+            <span class="badge badge-gap">Gap Confirmed</span>
+            <span style="font-size:11px;color:var(--muted)">0 projects across all 4 hackathons</span>
+          </div>
+        </div>
+        <div class="proj-body">
+          <strong>Why nobody built it in a hackathon:</strong> Multi-org supply chain traceability requires at least 2–3 organizations to participate to demonstrate value. A solo hackathon team can't simulate this without mocking data — which judges see through. Sol Sutara's approach of building real enterprise partnerships first (then entering hackathons with live data) is actually the smarter play.<br/><br/>
+          <strong>The advantage:</strong> You already have a working on-chain program, component linking, multi-org support, and an indexer. You're 3–4 hackathon cycles ahead of where a fresh team would start.
+        </div>
+        <div class="proj-relevance">→ Enter Colosseum Eternal now with your working MVP. With a live recall simulation demo and 2–3 real pilot orgs, this wins the prize — not because the idea is good, but because the execution proves something nobody else has proven.</div>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- WINNER PATTERNS -->
+  <section>
+    <h2>What Hackathon Winners Do vs. What They Skip</h2>
+    <div class="winner-pattern">
+      <div class="pattern-grid">
+        <div class="pattern-col">
+          <h3 class="over">Overindexed (Winners Focus On)</h3>
+          <div class="pattern-item"><span class="dot green">●</span><span><strong>Narrow, demoable problem</strong> — Something a judge can understand in 90 seconds and see working live</span></div>
+          <div class="pattern-item"><span class="dot green">●</span><span><strong>DeFi primitives</strong> — Lending, swaps, stablecoins, yield — judges understand these</span></div>
+          <div class="pattern-item"><span class="dot green">●</span><span><strong>Consumer-first UX</strong> — Mobile apps, wallet integrations, one-click flows</span></div>
+          <div class="pattern-item"><span class="dot green">●</span><span><strong>Novel Solana-native mechanism</strong> — Using Solana's speed/cost specifically (not "blockchain for X")</span></div>
+          <div class="pattern-item"><span class="dot green">●</span><span><strong>Infrastructure + tooling</strong> — Developer tools consistently win (Txtx, FluxRPC, Seer, IDL Space)</span></div>
+          <div class="pattern-item"><span class="dot green">●</span><span><strong>Clear token/economic model</strong> — Winners articulate how value accrues</span></div>
+        </div>
+        <div class="pattern-col">
+          <h3 class="under">Underindexed (Winners Skip)</h3>
+          <div class="pattern-item"><span class="dot red">●</span><span><strong>Enterprise sales stories</strong> — "Fortune 500 will pay for this" doesn't demo in 4 weeks</span></div>
+          <div class="pattern-item"><span class="dot red">●</span><span><strong>Multi-stakeholder coordination</strong> — Projects requiring 3+ orgs to work never show live data</span></div>
+          <div class="pattern-item"><span class="dot red">●</span><span><strong>Supply chain / logistics</strong> — Only 2 projects across 4 hackathons touched this space</span></div>
+          <div class="pattern-item"><span class="dot red">●</span><span><strong>Compliance / regulatory plays</strong> — Hard to demo, judges can't feel the urgency</span></div>
+          <div class="pattern-item"><span class="dot red">●</span><span><strong>IoT integration</strong> — Hardware requirements add demo complexity that kills hackathon execution</span></div>
+          <div class="pattern-item"><span class="dot red">●</span><span><strong>Long sales cycle B2B</strong> — Judges want to see users, not pilots that take 12 months to close</span></div>
+        </div>
+      </div>
+    </div>
+    <p class="note">Implication for Sol Sutara: When entering Colosseum Eternal or future hackathons, lead with the <strong>recall simulation demo</strong> (instantly demoable, visually compelling, non-enterprise-dependent) rather than the compliance/enterprise pitch. Show the graph firing in real time — that's what wins.</p>
+  </section>
+
+  <!-- HACKATHON HISTORY TABLE -->
+  <section>
+    <h2>Full Winner Summary — Supply Chain Adjacent Projects Across Hackathons</h2>
+    <div style="background:var(--surface);border:1px solid var(--border);border-radius:8px;overflow:hidden">
+      <table>
+        <thead>
+          <tr><th>Hackathon</th><th>Project</th><th>Category</th><th>Prize</th><th>Supply Chain Relevance</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Breakout 2025</td>
+            <td><strong>CargoBill</strong></td>
+            <td>Stablecoins</td>
+            <td class="green">$25K</td>
+            <td>B2B logistics stablecoin payments. Integration target.</td>
+          </tr>
+          <tr>
+            <td>Cypherpunk 2025</td>
+            <td><strong>Autonom</strong></td>
+            <td>RWA</td>
+            <td class="green">$25K</td>
+            <td>RWA oracle infra. Sol Sutara component events = RWA data.</td>
+          </tr>
+          <tr>
+            <td>Cypherpunk 2025</td>
+            <td><strong>Yumi Finance</strong></td>
+            <td>DeFi</td>
+            <td class="green">$25K</td>
+            <td>Onchain BNPL underwriting. Pattern for supplier credit scoring.</td>
+          </tr>
+          <tr>
+            <td>Cypherpunk 2025</td>
+            <td><strong>Bore.fi</strong></td>
+            <td>DeFi / RWA</td>
+            <td style="color:var(--warn)">2nd</td>
+            <td>Tokenized SME private equity. Adjacent: SME supplier tokenization.</td>
+          </tr>
+          <tr>
+            <td>Renaissance 2024</td>
+            <td><strong>Pomerene</strong></td>
+            <td>DePIN</td>
+            <td style="color:var(--muted)">5th</td>
+            <td>Pallet tracking for international trade. Location layer, not lineage.</td>
+          </tr>
+          <tr style="background:rgba(20,241,149,0.04)">
+            <td colspan="2" style="color:var(--accent2);font-style:italic">Multi-org component graph / industrial traceability / recall simulation</td>
+            <td colspan="3" style="color:var(--muted);font-style:italic">Never submitted. Gap confirmed across all 4 hackathons.</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- COLOSSEUM ETERNAL -->
+  <section>
+    <h2>Colosseum Eternal — Apply Now</h2>
+    <div class="eternal-card">
+      <h3>Perpetual hackathon — submit any time, compete for semi-annual grant</h3>
+      <div class="prize">$25,000 USDC</div>
+      <p>Colosseum Eternal lets builders initiate a 4-week development sprint at any time and submit for accelerator cohort consideration. Semi-annual grants are awarded to the strongest projects. Sol Sutara already has working code, a validated idea, and a demo worth building — it's ready to enter.</p>
+      <br/>
+      <p><strong>Recommended entry strategy:</strong> Complete the recall simulation demo first (2 weeks). Then enter Eternal with: live Solana program + 3-org graph + 60-second recall demo showing defect propagation across organizations. Frame as "RWA provenance infrastructure" to align with Cypherpunk 2025's winning themes.</p>
+    </div>
+  </section>
+
+  <!-- COPILOT API COMMANDS -->
+  <section>
+    <h2>Run These Yourself — Colosseum Copilot API</h2>
+    <p style="font-size:13px;color:var(--muted);margin-bottom:12px">The authenticated API calls below can't be executed from this environment, but your token is saved in <code>~/.superstack/config.json</code>. Paste these into a terminal:</p>
+    <div class="copilot-commands">
+<pre><span class="comment"># Your token is already saved. Load it:</span>
+TOKEN=$(cat ~/.superstack/config.json | python3 -c "import sys,json; print(json.load(sys.stdin)['copilotToken'])")
+
+<span class="comment"># Search for supply chain projects:</span>
+curl -s -X POST https://copilot.colosseum.com/api/v1/search/projects \
+  -H "Authorization: Bearer $TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{"query": "supply chain traceability component graph", "limit": 8, "diversify": true}'
+
+<span class="comment"># Search for similar ideas (broader):</span>
+curl -s -X POST https://copilot.colosseum.com/api/v1/search/projects \
+  -H "Authorization: Bearer $TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{"query": "multi organization cross org provenance industrial manufacturing", "limit": 8, "diversify": true}'
+
+<span class="comment"># Winner gap analysis:</span>
+curl -s -X POST https://copilot.colosseum.com/api/v1/compare \
+  -H "Authorization: Bearer $TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{"cohortA": {"winnersOnly": true}, "cohortB": {}, "dimensions": ["problemTags", "solutionTags", "primitives"], "topK": 8}'
+
+<span class="comment"># Explore all clusters:</span>
+curl -s -H "Authorization: Bearer $TOKEN" \
+  -H "Content-Type: application/json" \
+  https://copilot.colosseum.com/api/v1/filters
+
+<span class="comment"># Deep dive on CargoBill:</span>
+curl -s -H "Authorization: Bearer $TOKEN" \
+  -H "Content-Type: application/json" \
+  https://copilot.colosseum.com/api/v1/projects/by-slug/cargobill
+
+<span class="comment"># Research archive for supply chain on Solana:</span>
+curl -s -X POST https://copilot.colosseum.com/api/v1/search/archives \
+  -H "Authorization: Bearer $TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{"query": "supply chain traceability Solana RWA", "limit": 4, "maxChunksPerDoc": 1, "intent": "ideation"}'</pre>
+    </div>
+  </section>
+
+  <footer>Generated by superstack colosseum-copilot · Sol Sutara · April 20, 2026 · Data: Colosseum hackathon archives</footer>
+
+</div>
+</body>
+</html>

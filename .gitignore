@@ -11,6 +11,7 @@ backend/target/release/
 backend/target/sbpf-solana-solana/
 backend/target/deploy/
 backend/target/.rustc_info.json
+backend/target/flycheck0
 
 # ── TypeScript compiled output ─────────────────────────────────────
 dist/

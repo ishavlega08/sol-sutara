@@ -1,0 +1,560 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Sol Sutara — Competitive Landscape</title>
+<style>
+  :root {
+    --bg: #0d0f14;
+    --surface: #161a22;
+    --surface2: #1c2130;
+    --border: #1e2533;
+    --accent: #9945ff;
+    --accent2: #14f195;
+    --warn: #f5a623;
+    --danger: #e84040;
+    --text: #e2e8f0;
+    --muted: #7c8ba1;
+    --tag-bg: #1e2533;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: var(--bg); color: var(--text); font-family: 'Inter', system-ui, sans-serif; line-height: 1.6; padding: 40px 24px; }
+  .container { max-width: 960px; margin: 0 auto; }
+  header { margin-bottom: 48px; }
+  .logo { font-size: 12px; color: var(--accent); letter-spacing: 0.12em; text-transform: uppercase; margin-bottom: 12px; }
+  h1 { font-size: 30px; font-weight: 700; margin-bottom: 8px; }
+  .subtitle { color: var(--muted); font-size: 15px; }
+
+  /* Summary strip */
+  .summary-strip {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 12px;
+    margin-bottom: 40px;
+  }
+  .summary-cell {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 16px;
+    text-align: center;
+  }
+  .summary-cell .val { font-size: 26px; font-weight: 700; margin-bottom: 4px; }
+  .summary-cell .lbl { font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em; }
+  .val.yellow { color: var(--warn); }
+  .val.green { color: var(--accent2); }
+  .val.purple { color: var(--accent); }
+  .val.red { color: var(--danger); }
+
+  section { margin-bottom: 44px; }
+  h2 { font-size: 17px; font-weight: 600; margin-bottom: 16px; padding-bottom: 8px; border-bottom: 1px solid var(--border); }
+
+  /* Competitor cards */
+  .comp-grid { display: flex; flex-direction: column; gap: 12px; }
+  .comp-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 18px 20px;
+  }
+  .comp-card.high { border-left: 3px solid var(--danger); }
+  .comp-card.medium { border-left: 3px solid var(--warn); }
+  .comp-card.low { border-left: 3px solid var(--muted); }
+  .comp-header { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 10px; flex-wrap: wrap; gap: 8px; }
+  .comp-name { font-size: 15px; font-weight: 600; }
+  .comp-meta { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+  .tag {
+    font-size: 11px;
+    padding: 2px 8px;
+    border-radius: 4px;
+    background: var(--tag-bg);
+    color: var(--muted);
+    border: 1px solid var(--border);
+    white-space: nowrap;
+  }
+  .tag.live { color: var(--accent2); border-color: rgba(20,241,149,0.3); }
+  .tag.dead { color: var(--danger); border-color: rgba(232,64,64,0.3); }
+  .tag.beta { color: var(--warn); border-color: rgba(245,166,35,0.3); }
+  .threat-badge { font-size: 11px; padding: 3px 10px; border-radius: 4px; font-weight: 600; white-space: nowrap; }
+  .threat-badge.high { background: rgba(232,64,64,0.15); color: var(--danger); }
+  .threat-badge.medium { background: rgba(245,166,35,0.15); color: var(--warn); }
+  .threat-badge.low { background: rgba(124,139,161,0.15); color: var(--muted); }
+  .comp-grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 8px; }
+  .comp-col-label { font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 4px; }
+  .comp-body { font-size: 13px; color: var(--text); line-height: 1.5; }
+  .comp-body p { margin-bottom: 4px; }
+  .strength { color: var(--accent2); }
+  .weakness { color: var(--warn); }
+
+  /* Matrix */
+  .matrix-wrap {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 24px;
+    position: relative;
+  }
+  .matrix-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    grid-template-rows: 1fr 1fr;
+    gap: 2px;
+    height: 340px;
+    position: relative;
+  }
+  .matrix-cell {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+  .matrix-cell .cell-label { font-size: 10px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em; }
+  .matrix-item {
+    background: var(--tag-bg);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 4px 8px;
+    font-size: 12px;
+  }
+  .matrix-item.you { background: rgba(153,69,255,0.2); border-color: rgba(153,69,255,0.5); color: var(--accent); font-weight: 600; }
+  .matrix-axes { display: flex; justify-content: space-between; margin-top: 8px; }
+  .axis-label { font-size: 11px; color: var(--muted); }
+
+  /* Dead projects */
+  .dead-list { display: flex; flex-direction: column; gap: 10px; }
+  .dead-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-left: 3px solid var(--danger);
+    border-radius: 8px;
+    padding: 14px 16px;
+  }
+  .dead-card h3 { font-size: 14px; font-weight: 600; margin-bottom: 6px; }
+  .dead-card p { font-size: 13px; color: var(--muted); line-height: 1.5; }
+  .dead-card .lesson { margin-top: 8px; font-size: 13px; color: var(--accent2); }
+
+  /* Substitutes */
+  .sub-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .sub-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 14px 16px;
+  }
+  .sub-card h3 { font-size: 14px; font-weight: 600; margin-bottom: 4px; }
+  .sub-card .sub-why { font-size: 12px; color: var(--warn); margin-bottom: 6px; }
+  .sub-card p { font-size: 13px; color: var(--muted); line-height: 1.5; }
+
+  /* Moat */
+  .moat-card {
+    background: var(--surface);
+    border: 1px solid rgba(153,69,255,0.3);
+    border-radius: 10px;
+    padding: 20px 24px;
+  }
+  .moat-card h3 { font-size: 15px; font-weight: 600; color: var(--accent); margin-bottom: 12px; }
+  .moat-row { margin-bottom: 14px; }
+  .moat-row .label { font-size: 12px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 4px; }
+  .moat-row .body { font-size: 13px; line-height: 1.6; }
+
+  /* Differentiation */
+  .diff-card {
+    background: linear-gradient(135deg, rgba(153,69,255,0.1), rgba(20,241,149,0.06));
+    border: 1px solid rgba(153,69,255,0.3);
+    border-radius: 10px;
+    padding: 20px 24px;
+  }
+  .diff-card h3 { font-size: 15px; font-weight: 600; margin-bottom: 12px; color: var(--accent2); }
+  .diff-list { list-style: none; display: flex; flex-direction: column; gap: 8px; }
+  .diff-list li { font-size: 14px; padding-left: 20px; position: relative; line-height: 1.5; }
+  .diff-list li::before { content: "→"; position: absolute; left: 0; color: var(--accent); font-weight: 700; }
+
+  footer { margin-top: 56px; text-align: center; font-size: 12px; color: var(--muted); }
+  code { background: var(--tag-bg); padding: 1px 5px; border-radius: 3px; font-size: 12px; }
+</style>
+</head>
+<body>
+<div class="container">
+
+  <header>
+    <div class="logo">Superstack · Competitive Landscape · Phase 1</div>
+    <h1>Sol Sutara — Competitive Landscape</h1>
+    <p class="subtitle">Decentralized supply chain intelligence on Solana &nbsp;·&nbsp; April 20, 2026</p>
+  </header>
+
+  <!-- SUMMARY STRIP -->
+  <div class="summary-strip">
+    <div class="summary-cell">
+      <div class="val yellow">Moderate</div>
+      <div class="lbl">Crowdedness</div>
+    </div>
+    <div class="summary-cell">
+      <div class="val red">1</div>
+      <div class="lbl">High-Threat Rival</div>
+    </div>
+    <div class="summary-cell">
+      <div class="val green">Sparse</div>
+      <div class="lbl">On Solana</div>
+    </div>
+    <div class="summary-cell">
+      <div class="val purple">Network FX</div>
+      <div class="lbl">Primary Moat</div>
+    </div>
+  </div>
+
+  <!-- DIRECT COMPETITORS -->
+  <section>
+    <h2>Direct Competitors — Same Problem, Same User</h2>
+    <div class="comp-grid">
+
+      <!-- OriginTrail -->
+      <div class="comp-card high">
+        <div class="comp-header">
+          <div>
+            <div class="comp-name">OriginTrail (TRAC)</div>
+            <div style="font-size:13px;color:var(--muted);margin-top:2px">Decentralized Knowledge Graph for supply chains</div>
+          </div>
+          <div class="comp-meta">
+            <span class="tag live">Live</span>
+            <span class="tag">Polkadot / Multi-chain</span>
+            <span class="tag">Founded 2017</span>
+            <span class="threat-badge high">Threat: HIGH</span>
+          </div>
+        </div>
+        <div class="comp-grid2">
+          <div>
+            <div class="comp-col-label strength">Strengths</div>
+            <div class="comp-body">
+              <p>• SCAN protocol audits ~40% of all US imports</p>
+              <p>• Swiss Federal Railways, BSI, Microsoft, Oracle live integrations</p>
+              <p>• 6+ years of enterprise sales runway</p>
+              <p>• 20% of TRAC total supply staked — committed ecosystem</p>
+              <p>• "Enterprise Paranets" (mid-2026) for private subnetworks</p>
+            </div>
+          </div>
+          <div>
+            <div class="comp-col-label weakness">Weaknesses / Your Opening</div>
+            <div class="comp-body">
+              <p>• Polkadot-based: slower finality, higher cost than Solana</p>
+              <p>• Pivoting to "AI-ready data" — diluting supply chain focus</p>
+              <p>• Complex DKG model — hard for MSME suppliers to onboard</p>
+              <p>• No India market presence (Mahindra, Tata supplier networks)</p>
+              <p>• Token model creates compliance friction for enterprise procurement</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- VeChain -->
+      <div class="comp-card medium">
+        <div class="comp-header">
+          <div>
+            <div class="comp-name">VeChain (VET)</div>
+            <div style="font-size:13px;color:var(--muted);margin-top:2px">Purpose-built enterprise supply chain blockchain</div>
+          </div>
+          <div class="comp-meta">
+            <span class="tag live">Live</span>
+            <span class="tag">VeChain Thor (own chain)</span>
+            <span class="tag">Founded 2015</span>
+            <span class="threat-badge medium">Threat: MEDIUM</span>
+          </div>
+        </div>
+        <div class="comp-grid2">
+          <div>
+            <div class="comp-col-label strength">Strengths</div>
+            <div class="comp-body">
+              <p>• 200M+ transactions on Walmart China traceability</p>
+              <p>• BMW, Walmart, PwC partnerships</p>
+              <p>• Dual-token model separates gas from governance</p>
+              <p>• Strong luxury/consumer goods vertical presence</p>
+            </div>
+          </div>
+          <div>
+            <div class="comp-col-label weakness">Weaknesses / Your Opening</div>
+            <div class="comp-body">
+              <p>• Primarily China/luxury goods — not India industrial</p>
+              <p>• Product tracking (anti-counterfeit), not multi-org component graphs</p>
+              <p>• Centralized validator set (101 authority masternodes)</p>
+              <p>• No recall simulation / defect intelligence layer</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Minespider -->
+      <div class="comp-card medium">
+        <div class="comp-header">
+          <div>
+            <div class="comp-name">Minespider</div>
+            <div style="font-size:13px;color:var(--muted);margin-top:2px">Battery passport & critical mineral supply chain</div>
+          </div>
+          <div class="comp-meta">
+            <span class="tag live">Live</span>
+            <span class="tag">Multi-chain</span>
+            <span class="tag">EV / Automotive</span>
+            <span class="threat-badge medium">Threat: MEDIUM</span>
+          </div>
+        </div>
+        <div class="comp-grid2">
+          <div>
+            <div class="comp-col-label strength">Strengths</div>
+            <div class="comp-body">
+              <p>• Google, Cisco, Ford Otosan, Volkswagen, Renault customers</p>
+              <p>• Battery passport aligned with EU Battery Regulation (2026)</p>
+              <p>• Narrow vertical = faster sales cycles and clear ROI</p>
+            </div>
+          </div>
+          <div>
+            <div class="comp-col-label weakness">Weaknesses / Your Opening</div>
+            <div class="comp-body">
+              <p>• Only critical minerals → batteries → EVs; not general components</p>
+              <p>• No India market, no automotive assembly line traceability</p>
+              <p>• Regulatory play — not the intelligence/recall simulation angle</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Morpheus Network -->
+      <div class="comp-card low">
+        <div class="comp-header">
+          <div>
+            <div class="comp-name">Morpheus.Network (MNW)</div>
+            <div style="font-size:13px;color:var(--muted);margin-top:2px">Supply chain document digitization & automation</div>
+          </div>
+          <div class="comp-meta">
+            <span class="tag live">Live</span>
+            <span class="tag">Multi-chain</span>
+            <span class="tag">European Blockchain Sandbox</span>
+            <span class="threat-badge low">Threat: LOW</span>
+          </div>
+        </div>
+        <div class="comp-grid2">
+          <div>
+            <div class="comp-col-label strength">Strengths</div>
+            <div class="comp-body">
+              <p>• Document digitization focus (trade documents, IoT data)</p>
+              <p>• Accepted into EU Blockchain Sandbox (regulatory credibility)</p>
+              <p>• Masternode program nearing full stake capacity (2024)</p>
+            </div>
+          </div>
+          <div>
+            <div class="comp-col-label weakness">Weaknesses / Your Opening</div>
+            <div class="comp-body">
+              <p>• Document layer only — no component graph, no recall simulation</p>
+              <p>• Low visibility and traction outside enterprise document flow</p>
+              <p>• Not Solana-native, not India-focused</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- FarmTrack -->
+      <div class="comp-card low">
+        <div class="comp-header">
+          <div>
+            <div class="comp-name">FarmTrack</div>
+            <div style="font-size:13px;color:var(--muted);margin-top:2px">Agricultural supply chain on Solana</div>
+          </div>
+          <div class="comp-meta">
+            <span class="tag live">Live</span>
+            <span class="tag">Solana</span>
+            <span class="tag">Agri / Food</span>
+            <span class="threat-badge low">Threat: LOW</span>
+          </div>
+        </div>
+        <div class="comp-grid2">
+          <div>
+            <div class="comp-col-label strength">Strengths</div>
+            <div class="comp-body">
+              <p>• Solana-native — proves the chain is viable for this use case</p>
+              <p>• Mainnet launched Q1 2025 with initial partners</p>
+              <p>• IoT integration roadmap (Q4 2024)</p>
+            </div>
+          </div>
+          <div>
+            <div class="comp-col-label weakness">Weaknesses / Your Opening</div>
+            <div class="comp-body">
+              <p>• Agriculture/food vertical only — no automotive/electronics/pharma</p>
+              <p>• Single-org tracking, not multi-org component graph</p>
+              <p>• No intelligence layer (no recall sim, no defect propagation)</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Circularise -->
+      <div class="comp-card low">
+        <div class="comp-header">
+          <div>
+            <div class="comp-name">Circularise</div>
+            <div style="font-size:13px;color:var(--muted);margin-top:2px">Privacy-preserving traceability — "Smart Questioning" encryption</div>
+          </div>
+          <div class="comp-meta">
+            <span class="tag live">Live</span>
+            <span class="tag">Multi-chain</span>
+            <span class="tag">EU / Circular Economy</span>
+            <span class="threat-badge low">Threat: LOW</span>
+          </div>
+        </div>
+        <div class="comp-grid2">
+          <div>
+            <div class="comp-col-label strength">Strengths</div>
+            <div class="comp-body">
+              <p>• Unique privacy-first approach (orgs reveal only what's needed)</p>
+              <p>• Carbon footprint + origin + certificate verification in one</p>
+              <p>• EU supply chain compliance focus (CBAM tailwinds)</p>
+            </div>
+          </div>
+          <div>
+            <div class="comp-col-label weakness">Weaknesses / Your Opening</div>
+            <div class="comp-body">
+              <p>• European market, sustainability-first — not operational traceability</p>
+              <p>• No recall simulation or defect propagation intelligence</p>
+              <p>• Not targeting India or industrial verticals</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- COMPETITIVE MATRIX -->
+  <section>
+    <h2>Competitive Matrix — Where Sol Sutara Lives</h2>
+    <div class="matrix-wrap">
+      <div style="display:flex;justify-content:center;margin-bottom:8px;">
+        <span style="font-size:12px;color:var(--muted);">↑ Enterprise (Tier-1 OEM / Fortune 500)</span>
+      </div>
+      <div class="matrix-grid">
+        <div class="matrix-cell">
+          <div class="cell-label">Narrow Tool · Enterprise</div>
+          <div class="matrix-item">VeChain (anti-counterfeit)</div>
+          <div class="matrix-item">IBM Food Trust</div>
+          <div class="matrix-item">Minespider (battery passport)</div>
+        </div>
+        <div class="matrix-cell">
+          <div class="cell-label">Full Platform · Enterprise</div>
+          <div class="matrix-item">OriginTrail (DKG)</div>
+          <div class="matrix-item">SAP Ariba (non-crypto)</div>
+          <div class="matrix-item you">🎯 Sol Sutara (target)</div>
+        </div>
+        <div class="matrix-cell">
+          <div class="cell-label">Narrow Tool · MSME / Mid-market</div>
+          <div class="matrix-item">FarmTrack (agri)</div>
+          <div class="matrix-item">TraceX (India agri)</div>
+          <div class="matrix-item">TrusTrace (fashion)</div>
+        </div>
+        <div class="matrix-cell">
+          <div class="cell-label">Full Platform · MSME / Mid-market</div>
+          <div class="matrix-item" style="color:var(--accent2)">← Open quadrant</div>
+          <div class="matrix-item you">🚀 Sol Sutara wedge entry</div>
+          <div class="matrix-item" style="color:var(--muted);font-size:11px">India MSME auto suppliers</div>
+        </div>
+      </div>
+      <div class="matrix-axes">
+        <span class="axis-label">← Narrow tool</span>
+        <span class="axis-label" style="text-align:center">↓ MSME / Startup</span>
+        <span class="axis-label">Full platform →</span>
+      </div>
+    </div>
+    <p style="font-size:12px;color:var(--muted);margin-top:10px;">The Full Platform · Enterprise quadrant is occupied by OriginTrail and SAP, but the Full Platform · MSME quadrant targeting India industrial suppliers is wide open.</p>
+  </section>
+
+  <!-- DEAD PROJECTS -->
+  <section>
+    <h2>Dead Projects — What Failed and Why</h2>
+    <div class="dead-list">
+      <div class="dead-card">
+        <h3>TradeLens — Maersk + IBM (2018–2023)</h3>
+        <p>A $500M+ blockchain consortium for global shipping built on Hyperledger Fabric. Shut down Q1 2023 after Maersk stated: "the need for full global industry collaboration has not been achieved." Competing shipping lines (MSC, CMA CGM) refused to share data on a platform controlled by their rival Maersk. IBM and Maersk absorbed the full loss.</p>
+        <p class="lesson">→ Lesson for Sol Sutara: Perceived centralization kills multi-org supply chain products. A Solana-based neutral ledger — where no single org controls the program — directly solves the TradeLens failure mode. This is your strongest counter-argument to "why not just use a shared database?"</p>
+      </div>
+      <div class="dead-card">
+        <h3>ASX CHESS Blockchain Replacement (2016–2022)</h3>
+        <p>Australian Securities Exchange spent $168M and 6+ years on a blockchain-based clearing system before cancelling in November 2022. Primary failures: overscoped, underdelivered technical complexity, and poor stakeholder coordination.</p>
+        <p class="lesson">→ Lesson: Start narrow. One vertical (India auto suppliers), one use case (recall tracing), prove it works, then expand.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- NON-CRYPTO SUBSTITUTES -->
+  <section>
+    <h2>Non-Crypto Substitutes — What Users Do Today</h2>
+    <div class="sub-grid">
+      <div class="sub-card">
+        <h3>SAP Ariba / Oracle SCM</h3>
+        <div class="sub-why">Why users stay: deep ERP integration, existing contracts</div>
+        <p>5.3M+ companies connected on Ariba. But these are procurement tools, not tamper-proof multi-org trace graphs. No cross-org component lineage. Recall tracing is manual and takes weeks. Switching cost is very high — this is Sol Sutara's biggest displacement challenge.</p>
+      </div>
+      <div class="sub-card">
+        <h3>Spreadsheets + Email ("Manual EDI")</h3>
+        <div class="sub-why">Why users stay: free, familiar, no IT project required</div>
+        <p>The actual reality for most Tier-2/Tier-3 India MSME suppliers. Excel files emailed back and forth. This is the wedge entry point — the pain is visceral and the ROI of switching is obvious. They have zero switching cost.</p>
+      </div>
+      <div class="sub-card">
+        <h3>TraceX Technologies (India)</h3>
+        <div class="sub-why">Why users stay: India-local, agri compliance focus</div>
+        <p>Bengaluru-based, $1.19M raised, focused on agri/food traceability in India. Not industrial. Interesting signal: even a seed-stage India supply chain startup has 18 investors — the India compliance market is real and local players get first looks.</p>
+      </div>
+      <div class="sub-card">
+        <h3>TrusTrace / Sourcemap (Fashion)</h3>
+        <div class="sub-why">Why users stay: fashion vertical compliance (CSRD/EUDR)</div>
+        <p>Fashion and textile traceability is a separate vertical with different regulatory drivers. Not a direct substitute, but shows the playbook: pick one regulated vertical, become the compliance default, expand from there.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- MOAT ANALYSIS -->
+  <section>
+    <h2>Moat Analysis</h2>
+    <div class="moat-card">
+      <h3>Primary Moat: Network Effects (Multi-sided)</h3>
+      <div class="moat-row">
+        <div class="label">How it works</div>
+        <div class="body">Every organization that joins Sol Sutara and adds components to the graph makes the graph more valuable to every other org. When Mahindra's Tier-2 suppliers are on-chain, Mahindra has direct incentive to mandate their Tier-3 suppliers join. This is a classic supply chain flywheel: the OEM pulls the suppliers in.</div>
+      </div>
+      <div class="moat-row">
+        <div class="label">Time to become meaningful</div>
+        <div class="body">3–5 pilot orgs in a single supply chain (e.g., 1 OEM + 4 Tier-2 suppliers). At that point, the graph has enough data to demonstrate recall simulation. Estimated: 6–12 months from first enterprise contract.</div>
+      </div>
+      <div class="moat-row">
+        <div class="label">Secondary Moat: Switching Costs</div>
+        <div class="body">Once a supplier's component history is on-chain (component IDs, batch records, link graph), migrating to another system means losing that history or running a painful export process. The longer orgs use Sol Sutara, the more locked in they become.</div>
+      </div>
+      <div class="moat-row">
+        <div class="label">Tertiary Moat: Data Intelligence</div>
+        <div class="body">The graph becomes a proprietary intelligence asset: which components fail most, which suppliers have cross-client quality issues, what the risk profile of a new supplier looks like. OriginTrail is building toward this (AI-ready data), but they're pivoting away from supply chain focus to be "AI infrastructure" broadly. Sol Sutara can own supply chain intelligence specifically.</div>
+      </div>
+      <div class="moat-row">
+        <div class="label">Biggest threat to the moat</div>
+        <div class="body">A well-resourced competitor (OriginTrail "Enterprise Paranets", or an SAP blockchain product) ports to Solana and targets India. You have roughly 12–18 months before this becomes a real threat, given enterprise sales cycle lengths.</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- DIFFERENTIATION ANGLE -->
+  <section>
+    <h2>Recommended Differentiation Angle</h2>
+    <div class="diff-card">
+      <h3>Own "Solana-native industrial traceability for India" — not "yet another supply chain blockchain"</h3>
+      <ul class="diff-list">
+        <li><strong>Solana-native speed + cost:</strong> 400ms finality, ~$0.0001/tx. A single recall event touching 10,000 components costs $1 to trace on-chain. On Ethereum that's $1,000+. On OriginTrail's Polkadot DKG, latency and costs are higher. Lead with numbers.</li>
+        <li><strong>Industrial-first, not food/agri:</strong> VeChain owns consumer goods. FarmTrack owns agriculture. The automotive + electronics + pharma verticals are wide open on Solana. Own them explicitly.</li>
+        <li><strong>India market wedge:</strong> OriginTrail's live customers are Swiss, American, and European. Mahindra, Tata, Hero MotoCorp, and their supplier networks are unclaimed. India's PLI (Production-Linked Incentive) scheme is creating regulatory pressure for domestic traceability. First-mover advantage is real here.</li>
+        <li><strong>Neutral ledger (TradeLens lesson):</strong> No single org controls the Solana program. Competing suppliers can share a ledger they all trust. Make this explicit in every enterprise conversation — it's why TradeLens died and why Sol Sutara can't die the same way.</li>
+        <li><strong>Intelligence layer (recall simulation):</strong> No competitor has a live recall simulator. When you can demo "inject a defective batch → instantly see all 847 affected products across 6 organizations" — that's the conversation-stopper that closes enterprise pilots.</li>
+      </ul>
+    </div>
+  </section>
+
+  <footer>Generated by superstack competitive-landscape · Sol Sutara · April 20, 2026</footer>
+
+</div>
+</body>
+</html>

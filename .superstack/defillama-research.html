@@ -1,0 +1,402 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Sol Sutara — DefiLlama Research</title>
+<style>
+  :root {
+    --bg: #0d0f14;
+    --surface: #161a22;
+    --surface2: #1c2130;
+    --border: #1e2533;
+    --accent: #9945ff;
+    --accent2: #14f195;
+    --warn: #f5a623;
+    --danger: #e84040;
+    --text: #e2e8f0;
+    --muted: #7c8ba1;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: var(--bg); color: var(--text); font-family: 'Inter', system-ui, sans-serif; line-height: 1.6; padding: 40px 24px; }
+  .container { max-width: 960px; margin: 0 auto; }
+  header { margin-bottom: 48px; }
+  .logo { font-size: 12px; color: var(--accent); letter-spacing: 0.12em; text-transform: uppercase; margin-bottom: 12px; }
+  h1 { font-size: 30px; font-weight: 700; margin-bottom: 8px; }
+  .subtitle { color: var(--muted); font-size: 15px; }
+
+  .kpi-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 40px; }
+  .kpi { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 18px 16px; text-align: center; }
+  .kpi .val { font-size: 24px; font-weight: 700; margin-bottom: 4px; }
+  .kpi .lbl { font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em; }
+  .kpi .sub { font-size: 11px; color: var(--muted); margin-top: 3px; }
+  .green { color: #14f195; }
+  .yellow { color: #f5a623; }
+  .purple { color: #9945ff; }
+  .red { color: #e84040; }
+
+  section { margin-bottom: 44px; }
+  h2 { font-size: 17px; font-weight: 600; margin-bottom: 16px; padding-bottom: 8px; border-bottom: 1px solid var(--border); }
+  h3 { font-size: 14px; font-weight: 600; margin-bottom: 10px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.05em; }
+
+  table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  th { text-align: left; padding: 8px 10px; font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.05em; border-bottom: 1px solid var(--border); }
+  td { padding: 9px 10px; border-bottom: 1px solid rgba(30,37,51,0.7); }
+  tr:hover td { background: var(--surface2); }
+  .rank { color: var(--muted); }
+  .change-up { color: var(--accent2); }
+  .change-down { color: var(--danger); }
+  .change-neutral { color: var(--muted); }
+  .badge { font-size: 11px; padding: 2px 7px; border-radius: 4px; display: inline-block; }
+  .badge-rwa { background: rgba(153,69,255,0.15); color: var(--accent); border: 1px solid rgba(153,69,255,0.3); }
+  .badge-lending { background: rgba(245,166,35,0.12); color: var(--warn); border: 1px solid rgba(245,166,35,0.25); }
+  .badge-dex { background: rgba(20,241,149,0.1); color: var(--accent2); border: 1px solid rgba(20,241,149,0.25); }
+  .badge-staking { background: rgba(124,139,161,0.15); color: var(--muted); border: 1px solid var(--border); }
+
+  .opportunity-grid { display: flex; flex-direction: column; gap: 14px; }
+  .opp-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 18px 20px;
+  }
+  .opp-card.primary { border-color: rgba(153,69,255,0.4); }
+  .opp-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 10px; }
+  .opp-title { font-size: 15px; font-weight: 600; }
+  .opp-tier { font-size: 11px; padding: 3px 10px; border-radius: 4px; font-weight: 600; }
+  .tier-high { background: rgba(20,241,149,0.15); color: var(--accent2); }
+  .tier-med { background: rgba(245,166,35,0.12); color: var(--warn); }
+  .opp-body { font-size: 13px; color: var(--muted); line-height: 1.6; }
+  .opp-body strong { color: var(--text); }
+  .data-point { margin-top: 8px; font-size: 12px; color: var(--accent); font-style: italic; }
+
+  .integration-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .int-card { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 14px 16px; }
+  .int-card h3 { font-size: 14px; color: var(--text); text-transform: none; letter-spacing: 0; margin-bottom: 4px; }
+  .int-meta { font-size: 12px; color: var(--muted); margin-bottom: 8px; }
+  .int-card p { font-size: 13px; color: var(--muted); line-height: 1.5; }
+  .int-card .why { margin-top: 8px; font-size: 12px; color: var(--accent2); }
+
+  .insight-box {
+    background: linear-gradient(135deg, rgba(153,69,255,0.1), rgba(20,241,149,0.05));
+    border: 1px solid rgba(153,69,255,0.3);
+    border-radius: 10px;
+    padding: 20px 24px;
+    font-size: 14px;
+    line-height: 1.7;
+  }
+  .insight-box h3 { color: var(--accent2); text-transform: none; letter-spacing: 0; font-size: 15px; margin-bottom: 10px; }
+  .insight-box ul { list-style: none; display: flex; flex-direction: column; gap: 6px; padding-left: 16px; }
+  .insight-box ul li::before { content: "→"; color: var(--accent); margin-left: -16px; margin-right: 8px; font-weight: 700; }
+
+  .chain-table-wrap { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; overflow: hidden; }
+  .chain-bar { height: 6px; border-radius: 3px; background: var(--accent); display: inline-block; vertical-align: middle; margin-right: 8px; }
+
+  footer { margin-top: 56px; text-align: center; font-size: 12px; color: var(--muted); }
+  code { background: rgba(30,37,51,0.8); padding: 1px 5px; border-radius: 3px; font-size: 11px; }
+  .note { font-size: 12px; color: var(--muted); margin-top: 8px; font-style: italic; }
+</style>
+</head>
+<body>
+<div class="container">
+
+  <header>
+    <div class="logo">Superstack · DefiLlama Research · Phase 1</div>
+    <h1>Sol Sutara — DeFi Ecosystem Research</h1>
+    <p class="subtitle">Solana DeFi landscape, RWA trends, and supply chain finance opportunity &nbsp;·&nbsp; April 20, 2026</p>
+  </header>
+
+  <!-- KPI STRIP -->
+  <div class="kpi-grid">
+    <div class="kpi">
+      <div class="val green">$5.56B</div>
+      <div class="lbl">Solana TVL</div>
+      <div class="sub">#2 globally (vs $46.2B ETH)</div>
+    </div>
+    <div class="kpi">
+      <div class="val green">$1.42B</div>
+      <div class="lbl">Solana DEX 24h Vol</div>
+      <div class="sub">Orca, Raydium, Manifest leading</div>
+    </div>
+    <div class="kpi">
+      <div class="val yellow">$6.3M</div>
+      <div class="lbl">Solana Daily Fees</div>
+      <div class="sub">Real revenue, healthy ecosystem</div>
+    </div>
+    <div class="kpi">
+      <div class="val purple">$0</div>
+      <div class="lbl">Trade Finance TVL</div>
+      <div class="sub">Zero protocols. Gap confirmed.</div>
+    </div>
+  </div>
+
+  <!-- CHAIN CONTEXT -->
+  <section>
+    <h2>Chain Context — Where Solana Stands</h2>
+    <div class="chain-table-wrap">
+      <table>
+        <thead>
+          <tr><th>Rank</th><th>Chain</th><th>TVL</th><th>Share vs ETH</th><th>Relevance to Sol Sutara</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="rank">1</td>
+            <td><strong>Ethereum</strong></td>
+            <td>$46.21B</td>
+            <td>100%</td>
+            <td>Home of OriginTrail (indirect competitor), Centrifuge (RWA lending)</td>
+          </tr>
+          <tr style="background:rgba(153,69,255,0.06)">
+            <td class="rank">2</td>
+            <td><strong style="color:var(--accent2)">Solana ← you're here</strong></td>
+            <td class="green">$5.56B</td>
+            <td>12%</td>
+            <td>Real ecosystem, #2 globally. RWA (BlackRock BUIDL, Ondo) already here.</td>
+          </tr>
+          <tr>
+            <td class="rank">3</td>
+            <td>BSC</td>
+            <td>$5.41B</td>
+            <td>11.7%</td>
+            <td>No relevant supply chain or RWA activity</td>
+          </tr>
+          <tr>
+            <td class="rank">4</td>
+            <td>Tron</td>
+            <td>$5.04B</td>
+            <td>10.9%</td>
+            <td>Stablecoin-dominant, not relevant</td>
+          </tr>
+          <tr>
+            <td class="rank">5</td>
+            <td>Base</td>
+            <td>$4.20B</td>
+            <td>9.1%</td>
+            <td>Growing but no enterprise traction in supply chain</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <p class="note">Solana's $5.56B TVL and $1.42B/day DEX volume confirms it as a production-grade chain with real capital and real users. This is the correct chain to build on.</p>
+  </section>
+
+  <!-- TOP SOLANA PROTOCOLS -->
+  <section>
+    <h2>Top Solana Protocols by TVL &amp; Fees</h2>
+    <h3>TVL Leaders</h3>
+    <div class="chain-table-wrap" style="margin-bottom:16px">
+      <table>
+        <thead>
+          <tr><th>#</th><th>Protocol</th><th>TVL</th><th>7d Change</th><th>Category</th><th>Signal for Sol Sutara</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="rank">1</td>
+            <td><strong>Kamino Lend</strong></td>
+            <td>$1.53B</td>
+            <td class="change-down">-6.18%</td>
+            <td><span class="badge badge-lending">Lending</span></td>
+            <td>Solana's top lender. Integration target for supplier credit scoring.</td>
+          </tr>
+          <tr>
+            <td class="rank">2</td>
+            <td><strong>Maple Finance</strong></td>
+            <td>$1.51B</td>
+            <td class="change-down">-15.48%</td>
+            <td><span class="badge badge-lending">Lending</span></td>
+            <td>Institutional lender, expanded to Solana Jun 2025. <strong>Key integration partner.</strong></td>
+          </tr>
+          <tr>
+            <td class="rank">3</td>
+            <td><strong>BlackRock BUIDL</strong></td>
+            <td>$3.04B (all chains)</td>
+            <td class="change-up">+1.74%</td>
+            <td><span class="badge badge-rwa">RWA</span></td>
+            <td>On Solana. RWA infrastructure is live. Supply chain data = natural complement.</td>
+          </tr>
+          <tr>
+            <td class="rank">4</td>
+            <td><strong>Ondo Yield Assets</strong></td>
+            <td>$2.73B (all chains)</td>
+            <td class="change-down">-2.79%</td>
+            <td><span class="badge badge-rwa">RWA</span></td>
+            <td>On Solana. Tokenized US Treasuries — same user base as supply chain compliance buyers.</td>
+          </tr>
+          <tr>
+            <td class="rank">5</td>
+            <td><strong>Circle USYC</strong></td>
+            <td>$2.90B (all chains)</td>
+            <td class="change-up">+8.88%</td>
+            <td><span class="badge badge-rwa">RWA</span></td>
+            <td>On Solana. Institutional stablecoin yield — signals institutional $ flowing to Solana.</td>
+          </tr>
+          <tr>
+            <td class="rank">6</td>
+            <td><strong>Jito Liquid Staking</strong></td>
+            <td>Top fees ($284k/day)</td>
+            <td class="change-neutral">—</td>
+            <td><span class="badge badge-staking">Staking</span></td>
+            <td>Solana validator infrastructure — confirms chain security and decentralization.</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h3>Fee Leaders (Daily Revenue)</h3>
+    <div class="chain-table-wrap">
+      <table>
+        <thead>
+          <tr><th>#</th><th>Protocol</th><th>24h Fees</th><th>7d Change</th><th>Category</th></tr>
+        </thead>
+        <tbody>
+          <tr><td class="rank">1</td><td>pump.fun</td><td>$724,798</td><td class="change-up">+1.04%</td><td><span class="badge badge-dex">Token Launch</span></td></tr>
+          <tr><td class="rank">2</td><td>Jito Liquid Staking</td><td>$401,783</td><td class="change-neutral">—</td><td><span class="badge badge-staking">Staking</span></td></tr>
+          <tr><td class="rank">3</td><td>Sanctum Validator LSTs</td><td>$284,526</td><td class="change-neutral">—</td><td><span class="badge badge-staking">Staking</span></td></tr>
+          <tr><td class="rank">4</td><td>Jupiter Perpetual Exchange</td><td>$234,688</td><td class="change-down">-43.37%</td><td><span class="badge badge-dex">Perps</span></td></tr>
+          <tr><td class="rank">5</td><td>Meteora DLMM</td><td>$231,198</td><td class="change-up">+23.26%</td><td><span class="badge badge-dex">DEX</span></td></tr>
+          <tr><td class="rank">6</td><td>Raydium AMM</td><td>$178,448</td><td class="change-up">+52.31%</td><td><span class="badge badge-dex">DEX</span></td></tr>
+          <tr><td class="rank">7</td><td>Kamino Lend</td><td>$160,278</td><td class="change-up">+4.66%</td><td><span class="badge badge-lending">Lending</span></td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p class="note">Total Solana daily fees: $6.3M. The ecosystem is generating real, sustainable revenue — not just TVL from liquidity mining incentives.</p>
+  </section>
+
+  <!-- KEY INSIGHT: RWA -->
+  <section>
+    <h2>The Critical Finding: RWA is Exploding on Solana — and Supply Chain is the Missing Piece</h2>
+    <div class="insight-box">
+      <h3>The $20B+ RWA sector needs verified real-world data. Sol Sutara provides exactly that.</h3>
+      <p>BlackRock BUIDL ($3.04B), Ondo Yield Assets ($2.73B), Circle USYC ($2.9B), and Maple Finance ($1.51B) are all live on Solana. These protocols tokenize real-world assets — US Treasuries, institutional credit, yield instruments. They are hungry for more real-world data primitives to underwrite risk.</p>
+      <br/>
+      <p><strong>The gap:</strong> DefiLlama lists zero protocols in a "Trade Finance" category across all chains. The global supply chain finance market is $10T+. DeFi has <em>zero meaningful penetration</em>. This is the largest unaddressed market in DeFi, and Sol Sutara's on-chain component verification graph is the missing trust primitive to unlock it.</p>
+      <br/>
+      <ul>
+        <li><strong>Maple Finance</strong> expanded to Solana in June 2025 with Chainlink CCIP. Target: $100M ARR by end 2026. Expanding into "new verticals." Supply chain credit is a natural next vertical.</li>
+        <li><strong>Centrifuge</strong> ($1.99B TVL on Ethereum) does invoice tokenization and real-world credit. Not on Solana. Sol Sutara + a Solana lending protocol = a better version of Centrifuge, Solana-native.</li>
+        <li><strong>Kamino Lend</strong> ($1.53B) could accept Sol Sutara's on-chain delivery history as a credit signal for undercollateralized supplier loans.</li>
+      </ul>
+    </div>
+  </section>
+
+  <!-- DEX VOLUME -->
+  <section>
+    <h2>Solana DEX Ecosystem — Liquidity Context</h2>
+    <div class="chain-table-wrap">
+      <table>
+        <thead>
+          <tr><th>#</th><th>Protocol</th><th>24h Volume</th><th>7d Change</th><th>All-Time Volume</th></tr>
+        </thead>
+        <tbody>
+          <tr><td class="rank">1</td><td><strong>Orca DEX</strong></td><td>$245.2M</td><td class="change-up">+67.5%</td><td>$465B</td></tr>
+          <tr><td class="rank">2</td><td>Raydium AMM</td><td>$159.0M</td><td class="change-up">+34.1%</td><td>$700B</td></tr>
+          <tr><td class="rank">3</td><td>BisonFi</td><td>$141.9M</td><td class="change-down">-21.6%</td><td>$44.5B</td></tr>
+          <tr><td class="rank">4</td><td>Manifest Trade</td><td>$140.5M</td><td class="change-up">+39.3%</td><td>$15.9B</td></tr>
+          <tr><td class="rank">5</td><td>HumidiFi</td><td>$134.4M</td><td class="change-up">+63.6%</td><td>$194.1B</td></tr>
+          <tr><td class="rank">6</td><td>Meteora DLMM</td><td>$101.9M</td><td class="change-up">+13.9%</td><td>$200.4B</td></tr>
+          <tr><td class="rank">7</td><td>GoonFi</td><td>$74.6M</td><td class="change-up">+95.5%</td><td>$25.2B</td></tr>
+          <tr><td class="rank">8</td><td>PumpSwap</td><td>$71.4M</td><td class="change-up">+32.3%</td><td>$70.0B</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p class="note">$1.42B daily DEX volume with most protocols growing week-over-week. This is healthy, growing liquidity — exactly the environment where institutional DeFi products (like supply chain finance) can bootstrap. Supply chain payment settlement via Solana DEXs becomes viable at this scale.</p>
+  </section>
+
+  <!-- OPPORTUNITIES -->
+  <section>
+    <h2>DeFi Opportunities for Sol Sutara</h2>
+    <div class="opportunity-grid">
+
+      <div class="opp-card primary">
+        <div class="opp-header">
+          <div class="opp-title">Opportunity 1: Supply Chain Finance — The Largest DeFi Gap</div>
+          <span class="opp-tier tier-high">Priority: HIGH</span>
+        </div>
+        <div class="opp-body">
+          <strong>What the data shows:</strong> DefiLlama lists $0 TVL in any "Trade Finance" category across all chains. The global market is $10T+. Centrifuge ($1.99B on Ethereum) does RWA invoice lending but isn't on Solana.<br/><br/>
+          <strong>The Sol Sutara angle:</strong> A supplier with 24 months of verified on-chain delivery records (components delivered on-time, quality verified, no defect incidents) has a provable credit history. Today, banks charge 15–25% APR for MSME supplier financing because they can't verify this history. An on-chain verified supplier could access Maple Finance credit at 6–8% APR.<br/><br/>
+          <strong>What to build (Phase 2+):</strong> A "Supplier Credit Score" PDA that aggregates on-chain delivery history and issues a non-transferable credential — consumable by Maple Finance or Kamino Lend as a credit signal. This turns Sol Sutara's graph into DeFi collateral.
+          <div class="data-point">Data: $0 trade finance TVL on Solana · Maple Finance expanded to Solana Jun 2025 targeting $100M ARR · Centrifuge $1.99B on Ethereum with no Solana equivalent</div>
+        </div>
+      </div>
+
+      <div class="opp-card primary">
+        <div class="opp-header">
+          <div class="opp-title">Opportunity 2: RWA Infrastructure — Component Tokenization</div>
+          <span class="opp-tier tier-high">Priority: HIGH</span>
+        </div>
+        <div class="opp-body">
+          <strong>What the data shows:</strong> BlackRock BUIDL ($3B), Ondo ($2.73B), Circle USYC ($2.9B) are all live on Solana. The RWA sector is the fastest-growing DeFi category. These protocols tokenize financial assets — but no one is tokenizing <em>physical component provenance</em>.<br/><br/>
+          <strong>The Sol Sutara angle:</strong> Every verified component on Sol Sutara is a real-world asset with a tamper-proof provenance chain. A pharmaceutical batch, an automotive ECU, a semiconductor wafer — these have real economic value that could be tokenized, traded, or used as collateral. Sol Sutara's on-chain graph is the provenance layer that RWA protocols need but don't have for physical components.<br/><br/>
+          <strong>What to build:</strong> Align Sol Sutara's component schema with emerging RWA standards (ERC-3643 equivalent on Solana, Digital Product Passport). Position as "provenance infrastructure" for the RWA sector — not just supply chain software.
+          <div class="data-point">Data: $8.67B in RWA TVL on Solana (BUIDL + Ondo + USYC) · RWA growing even during market corrections · EU Digital Product Passport regulation mandates from 2026</div>
+        </div>
+      </div>
+
+      <div class="opp-card">
+        <div class="opp-header">
+          <div class="opp-title">Opportunity 3: B2B Payment Settlement Rail</div>
+          <span class="opp-tier tier-med">Priority: MEDIUM</span>
+        </div>
+        <div class="opp-body">
+          <strong>What the data shows:</strong> $1.42B/day DEX volume with sub-cent fees. USDC and institutional stablecoins (Circle USYC) are live on Solana. Cross-border B2B payments between supply chain partners (e.g., India Tier-2 supplier → German OEM) currently take 3–7 days and cost 2–4% in FX/SWIFT fees.<br/><br/>
+          <strong>The Sol Sutara angle:</strong> When a component delivery is verified on-chain (component + delivery event on Sol Sutara's graph), the payment can auto-trigger via a Solana program. "Component received and verified → USDC payment released." This is programmable trade settlement — no SWIFT, no 30-day payment terms, no factoring companies.<br/><br/>
+          <strong>What to build:</strong> A "delivery-to-payment" hook that links Sol Sutara's component verification events to a payment escrow. Not core v1, but a natural extension once the graph has real orgs.
+          <div class="data-point">Data: Solana 24h USDC volume in hundreds of millions · deBridge +225% 7d fee growth (cross-chain payments growing fast) · $1.42B daily DEX liquidity available for settlement</div>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- INTEGRATION TARGETS -->
+  <section>
+    <h2>Recommended Integration Targets</h2>
+    <div class="integration-grid">
+      <div class="int-card">
+        <h3>Maple Finance</h3>
+        <div class="int-meta">$1.51B TVL · Institutional Lending · Solana live since Jun 2025</div>
+        <p>Institutional credit protocol. Maple is the most natural partner for Sol Sutara's supplier credit scoring use case. They have the lending infrastructure; Sol Sutara has the on-chain delivery history that can underwrite it.</p>
+        <div class="why">Integration: Feed Sol Sutara's supplier credit PDAs as Maple Finance credit signals. Target for a pilot pool: "Verified Indian Auto Supplier Loans."</div>
+      </div>
+      <div class="int-card">
+        <h3>Helius RPC + DAS API</h3>
+        <div class="int-meta">Infrastructure · Free tier available · Solana-native</div>
+        <p>Replace any self-hosted RPC with Helius. DAS API handles compressed account reads at scale (critical for ZK-compressed component links). Webhooks for real-time delivery events. Already identified as a core integration.</p>
+        <div class="why">Integration: Use Helius webhooks to trigger off-chain indexer updates when Sol Sutara programs emit component events. Eliminates polling infrastructure.</div>
+      </div>
+      <div class="int-card">
+        <h3>Kamino Lend</h3>
+        <div class="int-meta">$1.53B TVL · Largest Solana Lender · Solana-native</div>
+        <p>Solana's top lending protocol. Could accept Sol Sutara's supplier reputation PDAs as collateral signals for undercollateralized loans. More accessible than Maple for smaller suppliers.</p>
+        <div class="why">Integration: Propose a "verified supplier" collateral tier. Requires business development outreach — not an SDK integration.</div>
+      </div>
+      <div class="int-card">
+        <h3>Ondo Yield Assets</h3>
+        <div class="int-meta">$2.73B TVL (all chains) · RWA · On Solana</div>
+        <p>Tokenized US Treasuries on Solana. Same institutional buyer base as enterprise supply chain software. Positioning Sol Sutara alongside Ondo in enterprise Solana conversations creates halo credibility with institutional buyers.</p>
+        <div class="why">Integration: No direct technical integration needed. Shared enterprise sales motion — co-sell to CFOs and compliance teams who are already exploring Ondo for treasury management.</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- MARKET SNAPSHOT -->
+  <section>
+    <h2>Market Snapshot Summary</h2>
+    <div class="insight-box">
+      <h3>What the DeFi data tells Sol Sutara</h3>
+      <ul>
+        <li><strong>Solana is the right chain.</strong> $5.56B TVL, #2 globally, $1.42B/day DEX volume, $6.3M/day fees. This is a production ecosystem with institutional capital (BlackRock, Circle, Ondo already live).</li>
+        <li><strong>RWA is the fastest-growing DeFi sector</strong> and $8.67B+ is already on Solana. Supply chain provenance is RWA infrastructure. Frame Sol Sutara as RWA rails, not just "supply chain software."</li>
+        <li><strong>Trade finance is DeFi's biggest gap.</strong> Zero TVL in trade finance across all chains. $10T+ market. Centrifuge ($1.99B) proves enterprises will lock capital in on-chain credit. Sol Sutara's verified graph is the underwriting primitive that makes supplier credit possible on Solana.</li>
+        <li><strong>Maple Finance is the key partnership.</strong> Expanded to Solana Jun 2025, targeting $100M ARR, expanding to "new verticals." Approaching them with a "verified Indian auto supplier credit pool" pilot is a concrete business development play.</li>
+        <li><strong>The short-term play remains supply chain traceability.</strong> But the medium-term moat is positioning as the trust layer between physical supply chains and DeFi capital markets. No competitor is at this intersection.</li>
+      </ul>
+    </div>
+  </section>
+
+  <footer>Generated by superstack defillama-research · Sol Sutara · April 20, 2026 · Data: api.llama.fi</footer>
+
+</div>
+</body>
+</html>
