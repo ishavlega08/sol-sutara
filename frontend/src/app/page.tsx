@@ -1,223 +1,191 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
 import Link from "next/link";
-import { PlusCircle, RefreshCw, ExternalLink, Package, AlertCircle, GitBranch } from "lucide-react";
-import { getComponents } from "@/lib/api";
-import type { ComponentListItem } from "@/types/component";
+import { useState } from "react";
+import { Download } from "lucide-react";
+import StatCard from "@/components/ui/StatCard";
+import BarChart from "@/components/ui/BarChart";
+import SectionCard from "@/components/ui/SectionCard";
 
-function truncate(str: string, start = 6, end = 4) {
-  if (!str || str.length <= start + end + 3) return str;
-  return `${str.slice(0, start)}…${str.slice(-end)}`;
-}
+const STATS = [
+  { label: "COMPONENTS",      value: "4,218", suffix: "total",  delta: "↑ 142 this week",  deltaUp: true,  accent: "#10b981" },
+  { label: "LINKS",           value: "9,844", suffix: "",       delta: "↑ 318 this week",  deltaUp: true,  accent: "#7c3aed" },
+  { label: "GRAPH DEPTH",     value: "7",     suffix: "tiers",  delta: "+1 vs last month", deltaUp: true,  accent: "#f59e0b" },
+  { label: "HIGH-RISK NODES", value: "12",    suffix: "",       delta: "↑ 3 this week",    deltaUp: false, accent: "#06b6d4" },
+];
 
-function formatDate(iso: string) {
-  return new Date(iso).toLocaleDateString("en-US", {
-    month: "short",
-    day: "numeric",
-    year: "numeric",
-  });
-}
-
-const TYPE_COLORS: Record<string, string> = {
-  Component: "bg-blue-50 text-blue-700 border-blue-200",
-  Assembly: "bg-violet-50 text-violet-700 border-violet-200",
-  "Raw Material": "bg-amber-50 text-amber-700 border-amber-200",
-  "Sub-assembly": "bg-cyan-50 text-cyan-700 border-cyan-200",
-  "Finished Good": "bg-emerald-50 text-emerald-700 border-emerald-200",
+const CHART_DATA: Record<string, number[]> = {
+  Writes:  [32, 48, 28, 65, 42, 58, 51, 74, 44, 82, 58, 91, 76, 98],
+  Traces:  [14, 22, 12, 38, 20, 34, 26, 45, 28, 52, 36, 61, 44, 70],
+  Recalls: [2,   5,  3,  8,  4,  7,  5,  9,  6, 11,  8, 14, 10, 16],
 };
 
-function TypeBadge({ type }: { type: string }) {
-  const cls = TYPE_COLORS[type] ?? "bg-gray-100 text-gray-600 border-gray-200";
-  return (
-    <span className={`inline-flex items-center rounded-full border px-2 py-0.5 text-xs font-medium ${cls}`}>
-      {type}
-    </span>
-  );
+const X_LABELS = ["Apr 06", "", "", "", "", "", "Apr 13", "", "", "", "", "", "", "Apr 20"];
+
+const RISK = [
+  { label: "HIGH",   count: "12 nodes",    color: "#ef4444", bg: "#fef2f2", bar: 8  },
+  { label: "MEDIUM", count: "84 nodes",    color: "#f59e0b", bg: "#fffbeb", bar: 33 },
+  { label: "LOW",    count: "4,122 nodes", color: "#10b981", bg: "#ecfdf5", bar: 96 },
+];
+
+const ACTIVITY = [
+  { type: "CREATE", label: "CM-31·NMC-811 created by org:kaldera", time: "2m ago" },
+  { type: "LINK",   label: "SP-02 → CM-18 linked",                 time: "8m"    },
+  { type: "RECALL", label: "Recall simulated on SP-02·b-881",       time: "1h"    },
+  { type: "TRACE",  label: "Trace PR-A · depth=6",                  time: "2h"    },
+];
+
+const ACTIVITY_BADGE: Record<string, { bg: string; color: string }> = {
+  CREATE: { bg: "#ecfdf5", color: "#059669" },
+  LINK:   { bg: "#f5f3ff", color: "#7c3aed" },
+  RECALL: { bg: "#fef2f2", color: "#ef4444" },
+  TRACE:  { bg: "#ecfeff", color: "#0891b2" },
+};
+
+const QUICK = [
+  { title: "+ New component",  desc: "Register on-chain",      href: "/components/create" },
+  { title: "Load sample data", desc: "EV + Pharma + Food",     href: "#" },
+  { title: "Run recall demo",  desc: "Simulate blast radius",  href: "/recall" },
+  { title: "Get API key",      desc: "Integrate your ERP",     href: "#" },
+];
+
+function greeting() {
+  const h = new Date().getHours();
+  if (h < 12) return "Good morning";
+  if (h < 18) return "Good afternoon";
+  return "Good evening";
 }
 
-function SkeletonRow() {
-  return (
-    <tr className="border-b border-gray-100">
-      {[60, 40, 50, 70, 35, 20].map((w, i) => (
-        <td key={i} className="px-4 py-3">
-          <div className="h-4 animate-pulse rounded bg-gray-100" style={{ width: `${w}%` }} />
-        </td>
-      ))}
-    </tr>
-  );
-}
-
-export default function ComponentsPage() {
-  const [components, setComponents] = useState<ComponentListItem[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
-  const [refreshing, setRefreshing] = useState(false);
-
-  const load = useCallback(async (isRefresh = false) => {
-    if (isRefresh) setRefreshing(true);
-    else setLoading(true);
-    setError("");
-    try {
-      const res = await getComponents();
-      setComponents(res.components);
-    } catch (e) {
-      setError(e instanceof Error ? e.message : "Failed to load components");
-    } finally {
-      setLoading(false);
-      setRefreshing(false);
-    }
-  }, []);
-
-  useEffect(() => { load(); }, [load]);
+export default function DashboardPage() {
+  const [activeTab, setActiveTab] = useState("Writes");
+  const bars = CHART_DATA[activeTab];
 
   return (
-    <div className="h-full overflow-y-auto mx-auto max-w-5xl px-6 py-8">
-      {/* Header */}
-      <div className="mb-6 flex items-center justify-between">
-        <div>
-          <h1 className="text-xl font-semibold text-gray-900">Components</h1>
-          <p className="mt-0.5 text-sm text-gray-500">
-            {!loading && !error && `${components.length} component${components.length !== 1 ? "s" : ""} registered`}
-            {loading && "Loading…"}
-          </p>
+    <div className="flex-1 overflow-y-auto bg-white">
+      <div className="px-4 py-6 sm:px-8">
+
+        {/* Header */}
+        <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+          <div>
+            <h1 className="text-2xl font-bold text-gray-900">{greeting()}, Ava.</h1>
+            <p className="mt-1 flex flex-wrap items-center gap-2 text-sm text-gray-500">
+              Here&apos;s your supply-chain graph at a glance.
+              <span className="rounded-md bg-gray-800 px-2 py-0.5 font-mono text-[11px] text-gray-300">devnet</span>
+              <span className="rounded-md bg-gray-100 px-2 py-0.5 font-mono text-[11px] text-gray-500">last sync 14s ago</span>
+            </p>
+          </div>
+          <div className="flex flex-shrink-0 items-center gap-2">
+            <button className="flex items-center gap-1.5 rounded-md border border-gray-200 px-3 py-1.5 text-sm text-gray-600 transition hover:bg-gray-50">
+              <Download className="h-3.5 w-3.5" />
+              Export
+            </button>
+            <Link
+              href="/components/create"
+              className="flex items-center gap-1 rounded-md px-3.5 py-1.5 text-sm font-semibold text-white transition hover:opacity-90"
+              style={{ background: "linear-gradient(135deg, #7c3aed, #6d28d9)" }}
+            >
+              + Create component
+            </Link>
+          </div>
         </div>
-        <div className="flex items-center gap-2">
-          <button
-            onClick={() => load(true)}
-            disabled={loading || refreshing}
-            className="flex items-center gap-1.5 rounded-md border border-gray-200 bg-white px-3 py-1.5 text-sm text-gray-600 transition hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50"
-          >
-            <RefreshCw className={`h-3.5 w-3.5 ${refreshing ? "animate-spin" : ""}`} />
-            Refresh
-          </button>
-          <Link
-            href="/components/create"
-            className="flex items-center gap-1.5 rounded-md bg-gray-900 px-3 py-1.5 text-sm font-medium text-white transition hover:bg-gray-700"
-          >
-            <PlusCircle className="h-3.5 w-3.5" />
-            New Component
-          </Link>
+
+        {/* Stats grid */}
+        <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
+          {STATS.map((s) => (
+            <StatCard key={s.label} {...s} />
+          ))}
         </div>
-      </div>
 
-      {/* Error */}
-      {error && (
-        <div className="mb-4 flex items-center gap-2.5 rounded-md border border-red-200 bg-red-50 px-4 py-3">
-          <AlertCircle className="h-4 w-4 flex-shrink-0 text-red-500" />
-          <p className="text-sm text-red-700">{error}</p>
-          <button
-            onClick={() => load()}
-            className="ml-auto text-sm font-medium text-red-600 underline underline-offset-2 hover:text-red-800"
+        {/* Chart + Risk */}
+        <div className="mt-4 grid grid-cols-1 gap-4 lg:grid-cols-[1fr_320px]">
+          <SectionCard
+            title="Activity · last 14 days"
+            action={
+              <div className="flex items-center gap-1">
+                {Object.keys(CHART_DATA).map((tab) => (
+                  <button
+                    key={tab}
+                    onClick={() => setActiveTab(tab)}
+                    className={`rounded-md px-3 py-1 text-xs font-medium transition ${
+                      activeTab === tab
+                        ? "border border-gray-200 bg-white text-gray-900 shadow-sm"
+                        : "text-gray-400 hover:text-gray-600"
+                    }`}
+                  >
+                    {tab}
+                  </button>
+                ))}
+              </div>
+            }
           >
-            Retry
-          </button>
-        </div>
-      )}
+            <BarChart bars={bars} colorFrom="#7c3aed" colorTo="#10b981" xLabels={X_LABELS} height={160} />
+          </SectionCard>
 
-      {/* Table */}
-      <div className="overflow-hidden rounded-lg border border-gray-200 bg-white">
-        <table className="w-full text-sm">
-          <thead>
-            <tr className="border-b border-gray-100 bg-gray-50 text-left">
-              <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wide text-gray-500">Name</th>
-              <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wide text-gray-500">Supplier</th>
-              <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wide text-gray-500">On-Chain Address</th>
-              <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wide text-gray-500">Tx Hash</th>
-              <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wide text-gray-500">Created</th>
-              <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wide text-gray-500"></th>
-            </tr>
-          </thead>
-          <tbody>
-            {loading &&
-              Array.from({ length: 4 }).map((_, i) => <SkeletonRow key={i} />)}
-
-            {!loading && !error && components.length === 0 && (
-              <tr>
-                <td colSpan={6}>
-                  <EmptyState />
-                </td>
-              </tr>
-            )}
-
-            {!loading &&
-              components.map((c) => (
-                <tr
-                  key={c.id}
-                  className="border-b border-gray-100 transition-colors last:border-0 hover:bg-gray-50"
-                >
-                  <td className="px-4 py-3">
-                    <div className="flex flex-col gap-1">
-                      <span className="font-medium text-gray-900">{c.name}</span>
-                      <TypeBadge type={c.type} />
-                    </div>
-                  </td>
-                  <td className="px-4 py-3 text-gray-600">{c.supplier}</td>
-                  <td className="px-4 py-3">
-                    <AddressCell value={c.on_chain_address} />
-                  </td>
-                  <td className="px-4 py-3">
-                    <TxCell value={c.tx_hash} />
-                  </td>
-                  <td className="px-4 py-3 text-gray-500">{formatDate(c.created_at)}</td>
-                  <td className="px-4 py-3">
-                    <Link
-                      href={`/components/${c.id}/parents?name=${encodeURIComponent(c.name)}`}
-                      className="inline-flex items-center gap-1 rounded-md border border-gray-200 px-2 py-1 text-xs text-gray-500 transition hover:border-gray-300 hover:bg-gray-50 hover:text-gray-800"
-                    >
-                      <GitBranch className="h-3 w-3" />
-                      Parents
-                    </Link>
-                  </td>
-                </tr>
+          <SectionCard
+            title="Risk overview"
+            action={
+              <button className="text-xs font-medium text-violet-600 hover:text-violet-700 transition">
+                View all →
+              </button>
+            }
+          >
+            <div className="flex flex-col gap-5">
+              {RISK.map((r) => (
+                <div key={r.label}>
+                  <div className="mb-1.5 flex items-center gap-2">
+                    <span className="rounded px-1.5 py-0.5 text-[10px] font-bold" style={{ backgroundColor: r.bg, color: r.color }}>
+                      ● {r.label}
+                    </span>
+                    <span className="text-xs text-gray-500">{r.count}</span>
+                  </div>
+                  <div className="h-1.5 w-full overflow-hidden rounded-full bg-gray-100">
+                    <div className="h-full rounded-full" style={{ width: `${r.bar}%`, backgroundColor: r.color }} />
+                  </div>
+                </div>
               ))}
-          </tbody>
-        </table>
+            </div>
+          </SectionCard>
+        </div>
+
+        {/* Activity + Quick actions */}
+        <div className="mt-4 grid grid-cols-1 gap-4 md:grid-cols-2">
+          <SectionCard title="Recent activity">
+            <div className="flex flex-col divide-y divide-gray-50">
+              {ACTIVITY.map((item, i) => {
+                const b = ACTIVITY_BADGE[item.type];
+                return (
+                  <div key={i} className="flex items-center gap-3 py-2.5">
+                    <span
+                      className="flex-shrink-0 rounded px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide"
+                      style={{ backgroundColor: b.bg, color: b.color }}
+                    >
+                      {item.type}
+                    </span>
+                    <span className="flex-1 text-sm text-gray-700">{item.label}</span>
+                    <span className="flex-shrink-0 text-xs text-gray-400">{item.time}</span>
+                  </div>
+                );
+              })}
+            </div>
+          </SectionCard>
+
+          <SectionCard title="Quick actions">
+            <div className="grid grid-cols-2 gap-3">
+              {QUICK.map((q) => (
+                <Link
+                  key={q.title}
+                  href={q.href}
+                  className="flex flex-col gap-0.5 rounded-lg border border-gray-200 px-4 py-3 transition hover:border-gray-300 hover:bg-gray-50"
+                >
+                  <span className="text-sm font-semibold text-gray-900">{q.title}</span>
+                  <span className="text-xs text-gray-400">{q.desc}</span>
+                </Link>
+              ))}
+            </div>
+          </SectionCard>
+        </div>
+
       </div>
-    </div>
-  );
-}
-
-function AddressCell({ value }: { value: string }) {
-  return (
-    <span className="font-mono text-xs text-gray-500" title={value}>
-      {truncate(value)}
-    </span>
-  );
-}
-
-function TxCell({ value }: { value: string }) {
-  return (
-    <a
-      href={`https://explorer.solana.com/tx/${value}?cluster=devnet`}
-      target="_blank"
-      rel="noopener noreferrer"
-      className="inline-flex items-center gap-1 font-mono text-xs text-gray-500 transition hover:text-gray-900"
-      title={value}
-    >
-      {truncate(value)}
-      <ExternalLink className="h-3 w-3 flex-shrink-0" />
-    </a>
-  );
-}
-
-function EmptyState() {
-  return (
-    <div className="flex flex-col items-center justify-center py-16 text-center">
-      <div className="mb-3 flex h-10 w-10 items-center justify-center rounded-full border border-gray-200 bg-gray-50">
-        <Package className="h-5 w-5 text-gray-400" />
-      </div>
-      <p className="text-sm font-medium text-gray-700">No components yet</p>
-      <p className="mt-1 text-xs text-gray-400">
-        Register your first supply chain component to get started.
-      </p>
-      <Link
-        href="/components/create"
-        className="mt-4 inline-flex items-center gap-1.5 rounded-md bg-gray-900 px-3 py-1.5 text-sm font-medium text-white transition hover:bg-gray-700"
-      >
-        <PlusCircle className="h-3.5 w-3.5" />
-        Create Component
-      </Link>
     </div>
   );
 }

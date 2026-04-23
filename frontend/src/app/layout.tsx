@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import Sidebar from "@/components/Sidebar";
+import ClientShell from "@/components/ClientShell";
 import "@/styles/globals.css";
 
 export const metadata: Metadata = {
@@ -7,16 +7,11 @@ export const metadata: Metadata = {
   description: "Decentralized supply chain traceability on Solana",
 };
 
-export default function RootLayout({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
+export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en">
-      <body className="flex h-screen overflow-hidden bg-gray-50 antialiased">
-        <Sidebar />
-        <main className="flex-1 overflow-hidden flex flex-col">{children}</main>
+      <body className="flex h-screen flex-col overflow-hidden bg-white antialiased">
+        <ClientShell>{children}</ClientShell>
       </body>
     </html>
   );

@@ -1,257 +1,200 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { CheckCircle, AlertCircle, ArrowDown, ExternalLink, Link2 } from "lucide-react";
-import Button from "@/components/ui/Button";
-import Card from "@/components/ui/Card";
-import { getComponents, linkComponents } from "@/lib/api";
-import type { ComponentListItem } from "@/types/component";
+import { useState } from "react";
+import { ArrowDown, AlertCircle, CheckCircle, ExternalLink } from "lucide-react";
+import { linkComponents } from "@/lib/api";
 import type { ComponentLink } from "@/types/link";
+import PageHeader from "@/components/ui/PageHeader";
+import SectionCard from "@/components/ui/SectionCard";
+import ActionButton from "@/components/ui/ActionButton";
 
 type Status = "idle" | "loading" | "success" | "error";
 
-function formatDate(iso: string) {
-  return new Date(iso).toLocaleDateString("en-US", {
-    month: "short",
-    day: "numeric",
-    year: "numeric",
-    hour: "2-digit",
-    minute: "2-digit",
-  });
+const RECENT_LINKS = [
+  { parent: "SP-01", child: "CM-24", qty: "840 kg",   org: "org:aster",    when: "2h ago" },
+  { parent: "CM-18", child: "AS-07", qty: "48 units", org: "org:meridian", when: "4h" },
+  { parent: "CM-31", child: "AS-09", qty: "32 units", org: "org:meridian", when: "6h" },
+];
+
+function NodeInput({ label, value, onChange, hint, color, disabled }: {
+  label: string; value: string; onChange: (v: string) => void;
+  hint: string; color: string; disabled?: boolean;
+}) {
+  return (
+    <div className="rounded-lg border border-gray-200 bg-white p-4">
+      <p className="mb-2 text-[11px] font-semibold uppercase tracking-widest text-gray-400">{label}</p>
+      <div className="flex items-center gap-3">
+        <div className="flex h-5 w-5 flex-shrink-0 items-center justify-center rounded-full border-2" style={{ borderColor: color }}>
+          <div className="h-2 w-2 rounded-full" style={{ backgroundColor: color }} />
+        </div>
+        <input type="text" value={value} onChange={(e) => onChange(e.target.value)} disabled={disabled}
+          className="flex-1 bg-transparent text-sm font-medium text-gray-900 outline-none placeholder:text-gray-400"
+          placeholder={hint} />
+      </div>
+      <p className="mt-2 pl-8 text-xs text-gray-400">{hint}</p>
+    </div>
+  );
 }
 
 export default function LinkComponentsPage() {
-  const [components, setComponents] = useState<ComponentListItem[]>([]);
-  const [loadingComponents, setLoadingComponents] = useState(true);
-  const [parentId, setParentId] = useState("");
-  const [childId, setChildId] = useState("");
-  const [status, setStatus] = useState<Status>("idle");
-  const [result, setResult] = useState<ComponentLink | null>(null);
-  const [errorMessage, setErrorMessage] = useState("");
-  const [errors, setErrors] = useState<{ parent?: string; child?: string }>({});
+  const [parentVal, setParentVal] = useState("SP-02 · Cobalt DRC batch 881");
+  const [childVal, setChildVal]   = useState("CM-18 · Cathode B-18");
+  const [qty, setQty]             = useState("");
+  const [status, setStatus]       = useState<Status>("idle");
+  const [result, setResult]       = useState<ComponentLink | null>(null);
+  const [errorMsg, setErrorMsg]   = useState("");
 
-  useEffect(() => {
-    getComponents()
-      .then((res) => setComponents(res.components))
-      .catch(() => {})
-      .finally(() => setLoadingComponents(false));
-  }, []);
-
-  function validate(): boolean {
-    const next: { parent?: string; child?: string } = {};
-    if (!parentId) next.parent = "Select a parent component";
-    if (!childId) next.child = "Select a child component";
-    if (parentId && childId && parentId === childId)
-      next.child = "Parent and child must be different";
-    setErrors(next);
-    return Object.keys(next).length === 0;
-  }
+  const parentId = parentVal.split("·")[0].trim() || "SP-02";
+  const childId  = childVal.split("·")[0].trim() || "CM-18";
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    if (!validate()) return;
-
+    if (!parentVal.trim() || !childVal.trim()) return;
     setStatus("loading");
-    setErrorMessage("");
-
+    setErrorMsg("");
     try {
-      const res = await linkComponents({ parentId, childId });
+      const pId = parentId.replace(/[^a-zA-Z0-9-]/g, "");
+      const cId = childId.replace(/[^a-zA-Z0-9-]/g, "");
+      const res = await linkComponents({ parentId: pId, childId: cId });
       setResult(res.link);
       setStatus("success");
-    } catch (err: unknown) {
-      const msg =
-        err instanceof Error ? err.message : "Something went wrong. Please try again.";
-      setErrorMessage(msg);
+    } catch (err) {
+      setErrorMsg(err instanceof Error ? err.message : "Something went wrong.");
       setStatus("error");
     }
   }
 
-  function handleReset() {
-    setParentId("");
-    setChildId("");
-    setErrors({});
-    setResult(null);
-    setStatus("idle");
-    setErrorMessage("");
+  function reset() {
+    setParentVal("SP-02 · Cobalt DRC batch 881");
+    setChildVal("CM-18 · Cathode B-18");
+    setQty(""); setStatus("idle"); setResult(null); setErrorMsg("");
   }
 
-  const selectCls = (err?: string) =>
-    `w-full rounded-md border bg-white px-3 py-2 text-sm text-gray-900 outline-none transition focus:border-gray-400 focus:ring-1 focus:ring-gray-400 disabled:cursor-not-allowed disabled:bg-gray-50 disabled:text-gray-400 ${
-      err ? "border-red-400" : "border-gray-200"
-    }`;
-
   return (
-    <div className="h-full overflow-y-auto mx-auto max-w-xl px-6 py-8">
-      <div className="mb-6">
-        <h1 className="text-xl font-semibold text-gray-900">Link Components</h1>
-        <p className="mt-0.5 text-sm text-gray-500">
-          Establish a supply chain relationship between two components on-chain.
-        </p>
-      </div>
+    <div className="h-full overflow-y-auto bg-white">
+      <div className="mx-auto max-w-5xl px-4 py-6 sm:px-6">
 
-      {status === "success" && result ? (
-        <SuccessCard link={result} onLinkAnother={handleReset} />
-      ) : (
-        <Card>
-          <form onSubmit={handleSubmit} noValidate className="flex flex-col gap-5">
-            {/* Parent */}
-            <div className="flex flex-col gap-1">
-              <label className="text-sm font-medium text-gray-700">
-                Parent Component
-              </label>
-              <p className="text-xs text-gray-400">
-                The upstream component that supplies or contains the child.
-              </p>
-              <select
-                value={parentId}
-                onChange={(e) => {
-                  setParentId(e.target.value);
-                  if (errors.parent) setErrors((p) => ({ ...p, parent: undefined }));
-                }}
-                disabled={loadingComponents || status === "loading"}
-                className={selectCls(errors.parent)}
-              >
-                <option value="" disabled>
-                  {loadingComponents ? "Loading components…" : "Select parent…"}
-                </option>
-                {components.map((c) => (
-                  <option key={c.id} value={c.id}>
-                    {c.name} — {c.type}
-                  </option>
-                ))}
-              </select>
-              {errors.parent && (
-                <p className="text-xs text-red-500">{errors.parent}</p>
-              )}
+        <PageHeader title="Link Components" subtitle="Establish a supply chain relationship between two components on-chain." />
+
+        {status === "success" && result && (
+          <div className="mb-5 flex flex-col gap-3">
+            <div className="flex flex-wrap items-center gap-2.5 rounded-md border border-emerald-200 bg-emerald-50 px-4 py-3">
+              <CheckCircle className="h-4 w-4 flex-shrink-0 text-emerald-500" />
+              <p className="text-sm font-medium text-emerald-800">Link established on-chain</p>
+              <a href={`https://explorer.solana.com/tx/${result.txHash}?cluster=devnet`} target="_blank" rel="noopener noreferrer"
+                className="ml-auto flex items-center gap-1 text-xs text-emerald-600 underline hover:text-emerald-800">
+                View tx <ExternalLink className="h-3 w-3" />
+              </a>
             </div>
+            <ActionButton variant="ghost" onClick={reset} className="w-fit">Link another</ActionButton>
+          </div>
+        )}
 
-            {/* Connector */}
-            <div className="flex items-center justify-center">
-              <div className="flex flex-col items-center gap-1">
-                <div className="h-5 w-px bg-gray-200" />
-                <div className="flex h-7 w-7 items-center justify-center rounded-full border border-gray-200 bg-gray-50">
-                  <ArrowDown className="h-3.5 w-3.5 text-gray-400" />
-                </div>
-                <p className="text-[10px] font-medium uppercase tracking-widest text-gray-400">
-                  supplies
-                </p>
-                <div className="h-5 w-px bg-gray-200" />
+        {/* Two-column layout on md+ */}
+        <div className="grid grid-cols-1 gap-5 md:grid-cols-[1fr_300px]">
+
+          {/* Left: form */}
+          <form onSubmit={handleSubmit} noValidate className="flex flex-col gap-4">
+            <NodeInput label="Parent component" value={parentVal} onChange={setParentVal}
+              hint="Search by component ID or name · org:kaldera" color="#7c3aed" disabled={status === "loading"} />
+
+            <div className="flex justify-center py-1">
+              <div className="flex h-8 w-8 items-center justify-center rounded-full border-2 border-emerald-400 bg-emerald-50">
+                <ArrowDown className="h-4 w-4 text-emerald-500" />
               </div>
             </div>
 
-            {/* Child */}
-            <div className="flex flex-col gap-1">
-              <label className="text-sm font-medium text-gray-700">
-                Child Component
+            <NodeInput label="Child component" value={childVal} onChange={setChildVal}
+              hint="Search by component ID or name · org:meridian" color="#3b82f6" disabled={status === "loading"} />
+
+            <div>
+              <label className="mb-1 block text-xs font-medium text-gray-600">
+                Quantity / batch note <span className="text-gray-400">(optional)</span>
               </label>
-              <p className="text-xs text-gray-400">
-                The downstream component that depends on or is built from the parent.
-              </p>
-              <select
-                value={childId}
-                onChange={(e) => {
-                  setChildId(e.target.value);
-                  if (errors.child) setErrors((p) => ({ ...p, child: undefined }));
-                }}
-                disabled={loadingComponents || status === "loading"}
-                className={selectCls(errors.child)}
-              >
-                <option value="" disabled>
-                  {loadingComponents ? "Loading components…" : "Select child…"}
-                </option>
-                {components.map((c) => (
-                  <option key={c.id} value={c.id} disabled={c.id === parentId}>
-                    {c.name} — {c.type}
-                  </option>
-                ))}
-              </select>
-              {errors.child && (
-                <p className="text-xs text-red-500">{errors.child}</p>
-              )}
+              <input type="text" value={qty} onChange={(e) => setQty(e.target.value)}
+                placeholder="1,200 kg · batch 881" disabled={status === "loading"}
+                className="w-full rounded-md border border-gray-200 bg-white px-3 py-2 text-sm text-gray-900 outline-none transition focus:border-gray-400 focus:ring-1 focus:ring-gray-400 placeholder:text-gray-400" />
+            </div>
+
+            {/* Transaction preview */}
+            <div className="rounded-md border border-dashed border-gray-300 bg-gray-50 px-4 py-3">
+              <p className="mb-1 text-[10px] font-semibold uppercase tracking-widest text-gray-400">Transaction preview</p>
+              <pre className="whitespace-pre-wrap font-mono text-xs leading-relaxed text-gray-600">
+{`› LINK ${parentId} → ${childId}${qty ? ` / ${qty}` : ""}
+› fee: ~$0.00025 · confirm: 400ms`}
+              </pre>
             </div>
 
             {status === "error" && (
               <div className="flex items-start gap-2.5 rounded-md border border-red-200 bg-red-50 px-4 py-3">
                 <AlertCircle className="mt-0.5 h-4 w-4 flex-shrink-0 text-red-500" />
-                <p className="text-sm text-red-700">{errorMessage}</p>
+                <p className="text-sm text-red-700">{errorMsg}</p>
               </div>
             )}
 
-            <div className="flex items-center justify-end gap-3 border-t border-gray-100 pt-4">
-              <Button
-                type="button"
-                variant="ghost"
-                onClick={handleReset}
-                disabled={status === "loading"}
-              >
-                Clear
-              </Button>
-              <Button
-                type="submit"
-                loading={status === "loading"}
-                disabled={status === "loading" || loadingComponents}
-              >
-                <Link2 className="h-3.5 w-3.5" />
-                {status === "loading" ? "Linking…" : "Link on-chain"}
-              </Button>
+            <div className="flex items-center gap-3">
+              <ActionButton type="button" variant="ghost" onClick={reset} disabled={status === "loading"}>Cancel</ActionButton>
+              <ActionButton type="submit" variant="gradient" loading={status === "loading"}
+                disabled={status === "loading" || !parentVal.trim() || !childVal.trim()}
+                className="flex-1">
+                {status === "loading" ? "Signing…" : "Confirm & sign on-chain →"}
+              </ActionButton>
             </div>
           </form>
-        </Card>
-      )}
-    </div>
-  );
-}
 
-function SuccessCard({
-  link,
-  onLinkAnother,
-}: {
-  link: ComponentLink;
-  onLinkAnother: () => void;
-}) {
-  return (
-    <div className="flex flex-col gap-4">
-      <div className="flex items-center gap-2.5 rounded-md border border-emerald-200 bg-emerald-50 px-4 py-3">
-        <CheckCircle className="h-5 w-5 flex-shrink-0 text-emerald-500" />
-        <p className="text-sm font-medium text-emerald-800">
-          Link established on-chain
-        </p>
+          {/* Right: preview panel */}
+          <div className="flex flex-col gap-4">
+            <SectionCard title="Preview">
+              <div className="flex flex-col items-center gap-0 py-3">
+                <div className="flex w-full max-w-[180px] items-center gap-2 rounded-lg border border-gray-200 bg-white px-3 py-2.5 shadow-sm">
+                  <div className="h-2.5 w-2.5 rounded-full bg-violet-400" />
+                  <span className="truncate text-xs font-semibold text-gray-800">{parentId}</span>
+                </div>
+                <div className="flex flex-col items-center">
+                  <div className="my-1 h-5 border-l-2 border-dashed border-gray-300" />
+                  <div className="flex h-5 w-5 items-center justify-center rounded-full border border-gray-200 bg-gray-50">
+                    <ArrowDown className="h-3 w-3 text-gray-400" />
+                  </div>
+                  <div className="my-1 h-5 border-l-2 border-dashed border-gray-300" />
+                </div>
+                <div className="flex w-full max-w-[180px] items-center gap-2 rounded-lg border border-gray-200 bg-white px-3 py-2.5 shadow-sm">
+                  <div className="h-2.5 w-2.5 rounded-full bg-blue-400" />
+                  <span className="truncate text-xs font-semibold text-gray-800">{childId}</span>
+                </div>
+              </div>
+              <p className="mt-2 text-center text-xs text-gray-400">
+                A new edge will be appended to the graph and signed by both orgs.
+              </p>
+            </SectionCard>
+
+            <SectionCard title="Recent links" noPadding>
+              <table className="w-full text-xs">
+                <thead>
+                  <tr className="border-b border-gray-50 bg-gray-50 text-left">
+                    <th className="px-3 py-2 text-[10px] font-semibold uppercase tracking-wide text-gray-400">Parent → Child</th>
+                    <th className="px-3 py-2 text-[10px] font-semibold uppercase tracking-wide text-gray-400">Qty</th>
+                    <th className="px-3 py-2 text-[10px] font-semibold uppercase tracking-wide text-gray-400">When</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {RECENT_LINKS.map((l, i) => (
+                    <tr key={i} className="border-b border-gray-50 last:border-0 hover:bg-gray-50">
+                      <td className="px-3 py-2">
+                        <span className="font-mono text-violet-600">{l.parent}</span>
+                        <span className="text-gray-400"> → </span>
+                        <span className="font-mono text-blue-600">{l.child}</span>
+                      </td>
+                      <td className="px-3 py-2 text-gray-500">{l.qty}</td>
+                      <td className="px-3 py-2 text-gray-400">{l.when}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </SectionCard>
+          </div>
+
+        </div>
       </div>
-
-      <Card>
-        <div className="flex flex-col gap-3">
-          <Field label="Parent ID" value={link.parentId} mono />
-          <Field label="Child ID" value={link.childId} mono />
-          <Field label="Transaction Hash" value={link.txHash} mono />
-          <Field label="Created At" value={formatDate(link.createdAt)} />
-        </div>
-
-        <div className="mt-6 flex items-center gap-3 border-t border-gray-100 pt-4">
-          <Button onClick={onLinkAnother}>Link another</Button>
-          <a
-            href={`https://explorer.solana.com/tx/${link.txHash}?cluster=devnet`}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="inline-flex items-center gap-1.5 text-sm text-gray-500 transition hover:text-gray-800"
-          >
-            View on explorer
-            <ExternalLink className="h-3.5 w-3.5" />
-          </a>
-        </div>
-      </Card>
-    </div>
-  );
-}
-
-function Field({ label, value, mono }: { label: string; value: string; mono?: boolean }) {
-  return (
-    <div className="flex flex-col gap-0.5">
-      <span className="text-xs font-semibold uppercase tracking-wide text-gray-400">
-        {label}
-      </span>
-      <span className={`break-all text-sm text-gray-800 ${mono ? "font-mono" : ""}`}>
-        {value}
-      </span>
     </div>
   );
 }
