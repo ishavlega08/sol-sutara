@@ -1,0 +1,85 @@
+"use client";
+
+import Link from "next/link";
+import { usePathname } from "next/navigation";
+import { Search, Bell, Menu } from "lucide-react";
+
+const PAGE_LABELS: Record<string, string> = {
+  "/":                        "Dashboard",
+  "/components":              "Components",
+  "/components/create":      "Create Component",
+  "/components/link":        "Link Components",
+  "/graph":                  "Supply Chain Graph",
+  "/trace":                  "Trace",
+  "/recall":                 "Recall",
+  "/analytics":              "Analytics",
+  "/billing/plans":          "Plans & usage",
+  "/billing/invoices":       "Invoices",
+  "/settings/organization":  "Organization",
+  "/settings/members":       "Members",
+  "/settings/api-keys":      "API Keys",
+};
+
+function getPageLabel(pathname: string): string {
+  if (PAGE_LABELS[pathname]) return PAGE_LABELS[pathname];
+  const match = pathname.match(/^\/components\/([^/]+)$/);
+  if (match) return `Components / ${match[1]}`;
+  return "Dashboard";
+}
+
+export default function TopNavbar({ onMenuClick }: { onMenuClick?: () => void }) {
+  const pathname  = usePathname();
+  const pageLabel = getPageLabel(pathname);
+
+  return (
+    <header className="flex h-11 flex-shrink-0 items-center border-b border-gray-200 bg-white">
+      {/* Brand — same width as desktop sidebar */}
+      <div className="flex h-full w-56 flex-shrink-0 items-center gap-2 border-r border-gray-200 px-4">
+        {/* Hamburger — mobile only */}
+        <button
+          onClick={onMenuClick}
+          className="mr-1 rounded-md p-1 text-gray-500 hover:bg-gray-100 md:hidden"
+        >
+          <Menu className="h-4 w-4" />
+        </button>
+        <svg viewBox="0 0 14 14" className="h-4 w-4 flex-shrink-0" fill="none">
+          <path d="M7 1L13 12H1L7 1Z" fill="#111827" />
+        </svg>
+        <span className="text-sm font-semibold text-gray-900">Sol Sutara</span>
+        <span className="ml-0.5 hidden rounded-full bg-emerald-100 px-2 py-0.5 text-[9px] font-bold uppercase tracking-wide text-emerald-700 sm:inline">
+          Devnet
+        </span>
+      </div>
+
+      {/* Breadcrumb */}
+      <div className="flex flex-1 items-center px-4">
+        <nav className="flex items-center gap-1.5 text-sm">
+          <span className="hidden text-gray-400 sm:inline">Meridian EV</span>
+          <span className="hidden text-gray-300 sm:inline">/</span>
+          <span className="font-medium text-gray-800">{pageLabel}</span>
+        </nav>
+      </div>
+
+      {/* Right */}
+      <div className="flex items-center gap-2 px-4">
+        <div className="hidden w-52 items-center gap-2 rounded-md border border-gray-200 bg-gray-50 px-3 py-1.5 lg:flex">
+          <Search className="h-3.5 w-3.5 flex-shrink-0 text-gray-400" />
+          <span className="flex-1 text-xs text-gray-400">Search components…</span>
+          <kbd className="rounded border border-gray-200 bg-white px-1.5 py-0.5 text-[9px] font-medium text-gray-400">⌘K</kbd>
+        </div>
+
+        <button className="rounded-md p-1.5 text-gray-500 transition hover:bg-gray-100">
+          <Bell className="h-4 w-4" />
+        </button>
+
+        <Link
+          href="/components/create"
+          className="flex items-center gap-1 rounded-md px-3 py-1.5 text-xs font-semibold text-white transition hover:opacity-90"
+          style={{ background: "linear-gradient(135deg, #7c3aed, #6d28d9)" }}
+        >
+          <span className="hidden sm:inline">+</span> Component
+        </Link>
+      </div>
+    </header>
+  );
+}
