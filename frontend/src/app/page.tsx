@@ -61,21 +61,21 @@ export default function DashboardPage() {
   const bars = CHART_DATA[activeTab];
 
   return (
-    <div className="flex-1 overflow-y-auto bg-white">
+    <div className="flex-1 overflow-y-auto bg-white dark:bg-gray-950">
       <div className="px-4 py-6 sm:px-8">
 
         {/* Header */}
         <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
           <div>
-            <h1 className="text-2xl font-bold text-gray-900">{greeting()}, Ava.</h1>
-            <p className="mt-1 flex flex-wrap items-center gap-2 text-sm text-gray-500">
+            <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">{greeting()}, Ava.</h1>
+            <p className="mt-1 flex flex-wrap items-center gap-2 text-sm text-gray-500 dark:text-gray-400">
               Here&apos;s your supply-chain graph at a glance.
               <span className="rounded-md bg-gray-800 px-2 py-0.5 font-mono text-[11px] text-gray-300">devnet</span>
-              <span className="rounded-md bg-gray-100 px-2 py-0.5 font-mono text-[11px] text-gray-500">last sync 14s ago</span>
+              <span className="rounded-md bg-gray-100 dark:bg-gray-800 px-2 py-0.5 font-mono text-[11px] text-gray-500 dark:text-gray-400">last sync 14s ago</span>
             </p>
           </div>
           <div className="flex flex-shrink-0 items-center gap-2">
-            <button className="flex items-center gap-1.5 rounded-md border border-gray-200 px-3 py-1.5 text-sm text-gray-600 transition hover:bg-gray-50">
+            <button className="flex items-center gap-1.5 rounded-md border border-gray-200 dark:border-gray-700 px-3 py-1.5 text-sm text-gray-600 dark:text-gray-400 transition hover:bg-gray-50 dark:hover:bg-gray-800">
               <Download className="h-3.5 w-3.5" />
               Export
             </button>
@@ -108,8 +108,8 @@ export default function DashboardPage() {
                     onClick={() => setActiveTab(tab)}
                     className={`rounded-md px-3 py-1 text-xs font-medium transition ${
                       activeTab === tab
-                        ? "border border-gray-200 bg-white text-gray-900 shadow-sm"
-                        : "text-gray-400 hover:text-gray-600"
+                        ? "border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-200 shadow-sm"
+                        : "text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-400"
                     }`}
                   >
                     {tab}
@@ -150,7 +150,7 @@ export default function DashboardPage() {
         {/* Activity + Quick actions */}
         <div className="mt-4 grid grid-cols-1 gap-4 md:grid-cols-2">
           <SectionCard title="Recent activity">
-            <div className="flex flex-col divide-y divide-gray-50">
+            <div className="flex flex-col divide-y divide-gray-50 dark:divide-gray-800">
               {ACTIVITY.map((item, i) => {
                 const b = ACTIVITY_BADGE[item.type];
                 return (
@@ -161,7 +161,7 @@ export default function DashboardPage() {
                     >
                       {item.type}
                     </span>
-                    <span className="flex-1 text-sm text-gray-700">{item.label}</span>
+                    <span className="flex-1 text-sm text-gray-700 dark:text-gray-300">{item.label}</span>
                     <span className="flex-shrink-0 text-xs text-gray-400">{item.time}</span>
                   </div>
                 );
@@ -175,10 +175,10 @@ export default function DashboardPage() {
                 <Link
                   key={q.title}
                   href={q.href}
-                  className="flex flex-col gap-0.5 rounded-lg border border-gray-200 px-4 py-3 transition hover:border-gray-300 hover:bg-gray-50"
+                  className="flex flex-col gap-0.5 rounded-lg border border-gray-200 dark:border-gray-700 px-4 py-3 transition hover:border-gray-300 dark:hover:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-800"
                 >
-                  <span className="text-sm font-semibold text-gray-900">{q.title}</span>
-                  <span className="text-xs text-gray-400">{q.desc}</span>
+                  <span className="text-sm font-semibold text-gray-900 dark:text-gray-200">{q.title}</span>
+                  <span className="text-xs text-gray-400 dark:text-gray-500">{q.desc}</span>
                 </Link>
               ))}
             </div>
