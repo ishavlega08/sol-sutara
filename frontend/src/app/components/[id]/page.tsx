@@ -91,9 +91,9 @@ function RiskGauge({ score, level }: { score: number; level: RiskLevel }) {
 
 function MetaRow({ label, children, highlight }: { label: string; children: React.ReactNode; highlight?: boolean }) {
   return (
-    <div className={`grid grid-cols-[120px_1fr] gap-4 px-5 py-3 text-sm sm:grid-cols-[160px_1fr] ${highlight ? "bg-gray-50" : ""}`}>
-      <span className="text-gray-400">{label}</span>
-      <span className="min-w-0 break-words text-gray-900">{children}</span>
+    <div className={`grid grid-cols-[120px_1fr] gap-4 px-5 py-3 text-sm sm:grid-cols-[160px_1fr] ${highlight ? "bg-gray-50 dark:bg-gray-800/50" : ""}`}>
+      <span className="text-gray-400 dark:text-gray-500">{label}</span>
+      <span className="min-w-0 break-words text-gray-900 dark:text-gray-300">{children}</span>
     </div>
   );
 }
@@ -104,12 +104,12 @@ export default function ComponentDetailPage({ params }: { params: { id: string }
   const riskKey = comp.risk.toUpperCase() as "LOW" | "MEDIUM" | "HIGH";
 
   return (
-    <div className="h-full overflow-y-auto bg-white">
+    <div className="h-full overflow-y-auto bg-white dark:bg-gray-950">
       <div className="mx-auto max-w-6xl px-4 py-6 sm:px-6 lg:px-8">
 
         {/* Back + actions */}
         <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-          <Link href="/components" className="flex items-center gap-1.5 text-sm text-gray-400 hover:text-gray-700">
+          <Link href="/components" className="flex items-center gap-1.5 text-sm text-gray-400 hover:text-gray-700 dark:hover:text-gray-300">
             <ArrowLeft className="h-3.5 w-3.5" /> Components
           </Link>
           <div className="flex flex-wrap items-center gap-2">
@@ -127,11 +127,11 @@ export default function ComponentDetailPage({ params }: { params: { id: string }
 
         {/* Component heading */}
         <div className="mb-6">
-          <h1 className="flex flex-wrap items-baseline gap-2 text-2xl font-bold text-gray-900">
+          <h1 className="flex flex-wrap items-baseline gap-2 text-2xl font-bold text-gray-900 dark:text-gray-100">
             <span className="text-violet-600">{comp.id}</span>
             <span>· {comp.name}</span>
           </h1>
-          <div className="mt-1.5 flex flex-wrap items-center gap-2 text-sm text-gray-500">
+          <div className="mt-1.5 flex flex-wrap items-center gap-2 text-sm text-gray-500 dark:text-gray-400">
             <span>{comp.subtitle}</span>
             <span className="text-gray-300">·</span>
             <StatusBadge label={`${riskKey} RISK`} variant={riskKey === "HIGH" ? "error" : riskKey === "MEDIUM" ? "warning" : "success"} />
@@ -153,11 +153,11 @@ export default function ComponentDetailPage({ params }: { params: { id: string }
                 {comp.lineage.parents.length > 0 && (
                   <div className="flex flex-col gap-2">
                     {comp.lineage.parents.map((p) => (
-                      <div key={p.id} className="flex items-center gap-2 rounded-lg border border-gray-200 bg-white px-3 py-2 shadow-sm">
+                      <div key={p.id} className="flex items-center gap-2 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 px-3 py-2 shadow-sm">
                         <div className="h-2 w-2 rounded-full bg-red-400 flex-shrink-0" />
                         <div className="flex flex-col leading-tight">
-                          <span className="text-xs font-semibold text-gray-800">{p.id}</span>
-                          <span className="text-[10px] text-gray-400">{p.label}</span>
+                          <span className="text-xs font-semibold text-gray-800 dark:text-gray-200">{p.id}</span>
+                          <span className="text-[10px] text-gray-400 dark:text-gray-500">{p.label}</span>
                         </div>
                       </div>
                     ))}
@@ -172,11 +172,11 @@ export default function ComponentDetailPage({ params }: { params: { id: string }
                     })}
                   </svg>
                 )}
-                <div className="flex items-center gap-2 rounded-lg border-2 border-violet-400 bg-violet-50 px-3 py-2 shadow-sm">
+                <div className="flex items-center gap-2 rounded-lg border-2 border-violet-400 dark:border-violet-600 bg-violet-50 dark:bg-violet-900/30 px-3 py-2 shadow-sm">
                   <div className="h-2 w-2 rounded-full bg-violet-500 flex-shrink-0" />
                   <div className="flex flex-col leading-tight">
-                    <span className="text-xs font-semibold text-gray-800">{comp.lineage.self.id}</span>
-                    <span className="text-[10px] text-gray-400">{comp.lineage.self.label}</span>
+                    <span className="text-xs font-semibold text-gray-800 dark:text-gray-200">{comp.lineage.self.id}</span>
+                    <span className="text-[10px] text-gray-400 dark:text-gray-500">{comp.lineage.self.label}</span>
                   </div>
                 </div>
                 {comp.lineage.children.length > 0 && (
@@ -191,11 +191,11 @@ export default function ComponentDetailPage({ params }: { params: { id: string }
                 {comp.lineage.children.length > 0 && (
                   <div className="flex flex-col gap-2">
                     {comp.lineage.children.map((c) => (
-                      <div key={c.id} className="flex items-center gap-2 rounded-lg border border-gray-200 bg-white px-3 py-2 shadow-sm">
-                        <div className="h-2 w-2 rounded-full bg-gray-300 flex-shrink-0" />
+                      <div key={c.id} className="flex items-center gap-2 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 px-3 py-2 shadow-sm">
+                        <div className="h-2 w-2 rounded-full bg-gray-300 dark:bg-gray-600 flex-shrink-0" />
                         <div className="flex flex-col leading-tight">
-                          <span className="text-xs font-semibold text-gray-800">{c.id}</span>
-                          <span className="text-[10px] text-gray-400">{c.label}</span>
+                          <span className="text-xs font-semibold text-gray-800 dark:text-gray-200">{c.id}</span>
+                          <span className="text-[10px] text-gray-400 dark:text-gray-500">{c.label}</span>
                         </div>
                       </div>
                     ))}
@@ -217,16 +217,16 @@ export default function ComponentDetailPage({ params }: { params: { id: string }
                   </span>
                 </MetaRow>
                 <MetaRow label="Metadata URI">
-                  <span className="rounded bg-gray-100 px-2 py-0.5 font-mono text-xs text-gray-600">{comp.metadata.metadataUri}</span>
+                  <span className="rounded bg-gray-100 dark:bg-gray-800 px-2 py-0.5 font-mono text-xs text-gray-600 dark:text-gray-400">{comp.metadata.metadataUri}</span>
                 </MetaRow>
-                <MetaRow label="Metadata hash"><span className="font-mono text-sm text-gray-700">{comp.metadata.metadataHash}</span></MetaRow>
+                <MetaRow label="Metadata hash"><span className="font-mono text-sm text-gray-700 dark:text-gray-400">{comp.metadata.metadataHash}</span></MetaRow>
                 <MetaRow label="Compressed NFT">
                   <span className="flex flex-wrap items-center gap-2">
-                    <span className="font-mono text-sm text-gray-700">{comp.metadata.compressedNft}</span>
+                    <span className="font-mono text-sm text-gray-700 dark:text-gray-400">{comp.metadata.compressedNft}</span>
                     <StatusBadge label="MINTED" variant="success" />
                   </span>
                 </MetaRow>
-                <MetaRow label="Created"><span className="text-sm text-gray-700">{comp.metadata.created}</span></MetaRow>
+                <MetaRow label="Created"><span className="text-sm text-gray-700 dark:text-gray-400">{comp.metadata.created}</span></MetaRow>
                 <MetaRow label="Tx signature">
                   <a href={`https://explorer.solana.com/tx/${comp.metadata.txSignature}?cluster=devnet`}
                     target="_blank" rel="noopener noreferrer"
@@ -254,8 +254,8 @@ export default function ComponentDetailPage({ params }: { params: { id: string }
                       )}
                       {items.map((item) => (
                         <Link key={item.id} href={`/components/${item.id}`}
-                          className="flex items-center justify-between rounded-md border border-gray-200 px-3 py-2 hover:border-gray-300 hover:bg-gray-50">
-                          <span className="text-sm text-gray-800">{item.label}</span>
+                          className="flex items-center justify-between rounded-md border border-gray-200 dark:border-gray-700 px-3 py-2 hover:border-gray-300 dark:hover:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-800">
+                          <span className="text-sm text-gray-800 dark:text-gray-300">{item.label}</span>
                           <RiskBadge level={item.risk} short />
                         </Link>
                       ))}
@@ -271,7 +271,7 @@ export default function ComponentDetailPage({ params }: { params: { id: string }
           <div className="flex flex-col gap-5">
             <SectionCard title="Risk score">
               <RiskGauge score={comp.riskScore} level={comp.risk} />
-              <div className="mt-5 flex flex-col gap-3 border-t border-gray-100 pt-4 text-sm">
+              <div className="mt-5 flex flex-col gap-3 border-t border-gray-100 dark:border-gray-700 pt-4 text-sm">
                 {[
                   { label: "Dependencies",  value: comp.riskDetails.dependencies },
                   { label: "Graph depth",   value: comp.riskDetails.graphDepth },
@@ -280,8 +280,8 @@ export default function ComponentDetailPage({ params }: { params: { id: string }
                   { label: "Geo risk",      value: comp.riskDetails.geoRisk,      accent: comp.riskDetails.geoRisk.startsWith("High") },
                 ].map(({ label, value, accent }) => (
                   <div key={label} className="flex items-center justify-between">
-                    <span className="text-gray-500">{label}</span>
-                    <span className={`font-medium ${accent ? "text-amber-500" : "text-gray-900"}`}>{value}</span>
+                    <span className="text-gray-500 dark:text-gray-400">{label}</span>
+                    <span className={`font-medium ${accent ? "text-amber-500" : "text-gray-900 dark:text-gray-300"}`}>{value}</span>
                   </div>
                 ))}
               </div>
@@ -290,7 +290,7 @@ export default function ComponentDetailPage({ params }: { params: { id: string }
             <SectionCard title="Suggested actions">
               <div className="flex flex-col gap-2">
                 {comp.suggestedActions.map((action, i) => (
-                  <button key={i} className="w-full rounded-md border border-gray-200 px-3 py-2.5 text-left text-sm text-gray-700 hover:border-gray-300 hover:bg-gray-50">
+                  <button key={i} className="w-full rounded-md border border-gray-200 dark:border-gray-700 px-3 py-2.5 text-left text-sm text-gray-700 dark:text-gray-300 hover:border-gray-300 dark:hover:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-800">
                     → {action}
                   </button>
                 ))}

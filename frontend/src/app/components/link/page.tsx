@@ -21,17 +21,17 @@ function NodeInput({ label, value, onChange, hint, color, disabled }: {
   hint: string; color: string; disabled?: boolean;
 }) {
   return (
-    <div className="rounded-lg border border-gray-200 bg-white p-4">
-      <p className="mb-2 text-[11px] font-semibold uppercase tracking-widest text-gray-400">{label}</p>
+    <div className="rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 p-4">
+      <p className="mb-2 text-[11px] font-semibold uppercase tracking-widest text-gray-400 dark:text-gray-500">{label}</p>
       <div className="flex items-center gap-3">
         <div className="flex h-5 w-5 flex-shrink-0 items-center justify-center rounded-full border-2" style={{ borderColor: color }}>
           <div className="h-2 w-2 rounded-full" style={{ backgroundColor: color }} />
         </div>
         <input type="text" value={value} onChange={(e) => onChange(e.target.value)} disabled={disabled}
-          className="flex-1 bg-transparent text-sm font-medium text-gray-900 outline-none placeholder:text-gray-400"
+          className="flex-1 bg-transparent text-sm font-medium text-gray-900 dark:text-gray-100 outline-none placeholder:text-gray-400 dark:placeholder:text-gray-500"
           placeholder={hint} />
       </div>
-      <p className="mt-2 pl-8 text-xs text-gray-400">{hint}</p>
+      <p className="mt-2 pl-8 text-xs text-gray-400 dark:text-gray-500">{hint}</p>
     </div>
   );
 }
@@ -71,7 +71,7 @@ export default function LinkComponentsPage() {
   }
 
   return (
-    <div className="h-full overflow-y-auto bg-white">
+    <div className="h-full overflow-y-auto bg-white dark:bg-gray-950 dark:text-gray-100">
       <div className="mx-auto max-w-5xl px-4 py-6 sm:px-6">
 
         <PageHeader title="Link Components" subtitle="Establish a supply chain relationship between two components on-chain." />
@@ -113,13 +113,13 @@ export default function LinkComponentsPage() {
               </label>
               <input type="text" value={qty} onChange={(e) => setQty(e.target.value)}
                 placeholder="1,200 kg · batch 881" disabled={status === "loading"}
-                className="w-full rounded-md border border-gray-200 bg-white px-3 py-2 text-sm text-gray-900 outline-none transition focus:border-gray-400 focus:ring-1 focus:ring-gray-400 placeholder:text-gray-400" />
+                className="w-full rounded-md border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 px-3 py-2 text-sm text-gray-900 dark:text-gray-100 outline-none transition focus:border-gray-400 focus:ring-1 focus:ring-gray-400 placeholder:text-gray-400 dark:placeholder:text-gray-500" />
             </div>
 
             {/* Transaction preview */}
-            <div className="rounded-md border border-dashed border-gray-300 bg-gray-50 px-4 py-3">
-              <p className="mb-1 text-[10px] font-semibold uppercase tracking-widest text-gray-400">Transaction preview</p>
-              <pre className="whitespace-pre-wrap font-mono text-xs leading-relaxed text-gray-600">
+            <div className="rounded-md border border-dashed border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-800/50 px-4 py-3">
+              <p className="mb-1 text-[10px] font-semibold uppercase tracking-widest text-gray-400 dark:text-gray-500">Transaction preview</p>
+              <pre className="whitespace-pre-wrap font-mono text-xs leading-relaxed text-gray-600 dark:text-gray-400">
 {`› LINK ${parentId} → ${childId}${qty ? ` / ${qty}` : ""}
 › fee: ~$0.00025 · confirm: 400ms`}
               </pre>
@@ -170,7 +170,7 @@ export default function LinkComponentsPage() {
             <SectionCard title="Recent links" noPadding>
               <table className="w-full text-xs">
                 <thead>
-                  <tr className="border-b border-gray-50 bg-gray-50 text-left">
+                  <tr className="border-b border-gray-50 dark:border-gray-800 bg-gray-50 dark:bg-gray-800/50 text-left">
                     <th className="px-3 py-2 text-[10px] font-semibold uppercase tracking-wide text-gray-400">Parent → Child</th>
                     <th className="px-3 py-2 text-[10px] font-semibold uppercase tracking-wide text-gray-400">Qty</th>
                     <th className="px-3 py-2 text-[10px] font-semibold uppercase tracking-wide text-gray-400">When</th>
@@ -178,14 +178,14 @@ export default function LinkComponentsPage() {
                 </thead>
                 <tbody>
                   {RECENT_LINKS.map((l, i) => (
-                    <tr key={i} className="border-b border-gray-50 last:border-0 hover:bg-gray-50">
+                    <tr key={i} className="border-b border-gray-50 dark:border-gray-800 last:border-0 hover:bg-gray-50 dark:hover:bg-gray-800">
                       <td className="px-3 py-2">
                         <span className="font-mono text-violet-600">{l.parent}</span>
                         <span className="text-gray-400"> → </span>
                         <span className="font-mono text-blue-600">{l.child}</span>
                       </td>
-                      <td className="px-3 py-2 text-gray-500">{l.qty}</td>
-                      <td className="px-3 py-2 text-gray-400">{l.when}</td>
+                      <td className="px-3 py-2 text-gray-500 dark:text-gray-400">{l.qty}</td>
+                      <td className="px-3 py-2 text-gray-400 dark:text-gray-500">{l.when}</td>
                     </tr>
                   ))}
                 </tbody>

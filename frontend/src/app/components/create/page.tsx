@@ -16,7 +16,7 @@ interface MetaPair { key: string; value: string }
 type Status = "idle" | "loading" | "success" | "error";
 
 function inputCls(err?: string) {
-  return `w-full rounded-md border bg-white px-3 py-2 text-sm text-gray-900 outline-none transition focus:border-violet-400 focus:ring-1 focus:ring-violet-300 placeholder:text-gray-400 disabled:cursor-not-allowed disabled:bg-gray-50 disabled:text-gray-400 ${err ? "border-red-400" : "border-gray-200"}`;
+  return `w-full rounded-md border bg-white dark:bg-gray-800 px-3 py-2 text-sm text-gray-900 dark:text-gray-100 outline-none transition focus:border-violet-400 focus:ring-1 focus:ring-violet-300 placeholder:text-gray-400 dark:placeholder:text-gray-500 disabled:cursor-not-allowed disabled:bg-gray-50 dark:disabled:bg-gray-900 disabled:text-gray-400 ${err ? "border-red-400" : "border-gray-200 dark:border-gray-700"}`;
 }
 
 export default function CreateComponentPage() {
@@ -63,14 +63,14 @@ export default function CreateComponentPage() {
   }
 
   const backLink = (
-    <Link href="/components" className="flex items-center gap-1.5 text-sm text-gray-400 transition hover:text-gray-700">
+    <Link href="/components" className="flex items-center gap-1.5 text-sm text-gray-400 transition hover:text-gray-700 dark:hover:text-gray-300">
       <ArrowLeft className="h-3.5 w-3.5" /> Components
     </Link>
   );
 
   if (status === "success" && result) {
     return (
-      <div className="h-full overflow-y-auto bg-white">
+      <div className="h-full overflow-y-auto bg-white dark:bg-gray-950">
         <div className="mx-auto max-w-xl px-4 py-6 sm:px-6">
           {backLink}
           <div className="mt-4 mb-4 flex items-center gap-2.5 rounded-md border border-emerald-200 bg-emerald-50 px-4 py-3">
@@ -112,7 +112,7 @@ export default function CreateComponentPage() {
   }
 
   return (
-    <div className="h-full overflow-y-auto bg-white">
+    <div className="h-full overflow-y-auto bg-white dark:bg-gray-950">
       <div className="mx-auto max-w-xl px-4 py-6 sm:px-6">
         {backLink}
         <div className="mt-4">
@@ -126,8 +126,8 @@ export default function CreateComponentPage() {
           <SectionCard noPadding>
 
             {/* Name */}
-            <div className="border-b border-gray-100 px-5 py-4">
-              <label className="mb-1.5 block text-xs font-semibold uppercase tracking-widest text-gray-400">Component name</label>
+            <div className="border-b border-gray-100 dark:border-gray-800 px-5 py-4">
+              <label className="mb-1.5 block text-xs font-semibold uppercase tracking-widest text-gray-400 dark:text-gray-500">Component name</label>
               <input type="text" value={name}
                 onChange={(e) => { setName(e.target.value); if (errors.name) setErrors((p) => ({ ...p, name: "" })); }}
                 placeholder="e.g. Cathode B-18" disabled={status === "loading"} className={inputCls(errors.name)} />
@@ -135,16 +135,16 @@ export default function CreateComponentPage() {
             </div>
 
             {/* Type */}
-            <div className="border-b border-gray-100 px-5 py-4">
-              <label className="mb-2 block text-xs font-semibold uppercase tracking-widest text-gray-400">Type</label>
+            <div className="border-b border-gray-100 dark:border-gray-800 px-5 py-4">
+              <label className="mb-2 block text-xs font-semibold uppercase tracking-widest text-gray-400 dark:text-gray-500">Type</label>
               <div className="flex flex-wrap gap-2">
                 {COMPONENT_TYPES.map((t) => (
                   <button key={t} type="button" onClick={() => { setType(t); if (errors.type) setErrors((p) => ({ ...p, type: "" })); }}
                     disabled={status === "loading"}
                     className={`rounded-full border px-3 py-1 text-xs font-medium transition ${
                       type === t
-                        ? "border-violet-300 bg-violet-50 text-violet-700"
-                        : "border-gray-200 bg-white text-gray-500 hover:bg-gray-50"
+                        ? "border-violet-300 bg-violet-50 text-violet-700 dark:border-violet-700 dark:bg-violet-950 dark:text-violet-300"
+                        : "border-gray-200 bg-white text-gray-500 hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-400 dark:hover:bg-gray-700"
                     }`}>
                     {t}
                   </button>
@@ -154,8 +154,8 @@ export default function CreateComponentPage() {
             </div>
 
             {/* Supplier */}
-            <div className="border-b border-gray-100 px-5 py-4">
-              <label className="mb-1.5 block text-xs font-semibold uppercase tracking-widest text-gray-400">Supplier / org</label>
+            <div className="border-b border-gray-100 dark:border-gray-800 px-5 py-4">
+              <label className="mb-1.5 block text-xs font-semibold uppercase tracking-widest text-gray-400 dark:text-gray-500">Supplier / org</label>
               <input type="text" value={supplier}
                 onChange={(e) => { setSupplier(e.target.value); if (errors.supplier) setErrors((p) => ({ ...p, supplier: "" })); }}
                 placeholder="e.g. org:kaldera" disabled={status === "loading"} className={inputCls(errors.supplier)} />
@@ -179,10 +179,10 @@ export default function CreateComponentPage() {
                   <div key={i} className="flex items-center gap-2">
                     <input type="text" value={pair.key}
                       onChange={(e) => setMeta((p) => p.map((x, j) => j === i ? { ...x, key: e.target.value } : x))}
-                      placeholder="key" className="w-24 flex-shrink-0 rounded-md border border-gray-200 px-2.5 py-1.5 text-xs outline-none focus:border-violet-400" />
+                      placeholder="key" className="w-24 flex-shrink-0 rounded-md border border-gray-200 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100 px-2.5 py-1.5 text-xs outline-none focus:border-violet-400" />
                     <input type="text" value={pair.value}
                       onChange={(e) => setMeta((p) => p.map((x, j) => j === i ? { ...x, value: e.target.value } : x))}
-                      placeholder="value" className="flex-1 rounded-md border border-gray-200 px-2.5 py-1.5 text-xs outline-none focus:border-violet-400" />
+                      placeholder="value" className="flex-1 rounded-md border border-gray-200 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100 px-2.5 py-1.5 text-xs outline-none focus:border-violet-400" />
                     <button type="button" onClick={() => setMeta((p) => p.filter((_, j) => j !== i))}
                       className="text-gray-300 hover:text-red-400"><Trash2 className="h-3.5 w-3.5" /></button>
                   </div>
@@ -197,7 +197,7 @@ export default function CreateComponentPage() {
               </div>
             )}
 
-            <div className="flex items-center justify-end gap-3 border-t border-gray-100 px-5 py-4">
+            <div className="flex items-center justify-end gap-3 border-t border-gray-100 dark:border-gray-800 px-5 py-4">
               <ActionButton type="button" variant="ghost" onClick={reset} disabled={status === "loading"}>Clear</ActionButton>
               <ActionButton type="submit" variant="gradient" loading={status === "loading"}>
                 {status === "loading" ? "Registering…" : "Register on-chain →"}

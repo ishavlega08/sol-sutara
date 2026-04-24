@@ -61,7 +61,7 @@ function DonutChart() {
         {RISK_DONUT.map(({ label, pct, color }) => (
           <div key={label} className="flex items-center gap-1.5">
             <div className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: color }} />
-            <span className="text-xs text-gray-500">{label} · {pct}%</span>
+            <span className="text-xs text-gray-500 dark:text-gray-400">{label} · {pct}%</span>
           </div>
         ))}
       </div>
@@ -75,30 +75,30 @@ export default function AnalyticsPage() {
   const [period, setPeriod] = useState<Period>("30d");
 
   return (
-    <div className="h-full overflow-y-auto bg-white">
+    <div className="h-full overflow-y-auto bg-white dark:bg-gray-950">
       <div className="mx-auto max-w-6xl px-4 py-6 sm:px-6 lg:px-8">
 
         {/* Header */}
         <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
           <div>
-            <h1 className="text-2xl font-bold text-gray-900">Analytics</h1>
-            <p className="mt-0.5 text-sm text-gray-400">Graph-wide intelligence. Powered by the indexer.</p>
+            <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">Analytics</h1>
+            <p className="mt-0.5 text-sm text-gray-400 dark:text-gray-500">Graph-wide intelligence. Powered by the indexer.</p>
           </div>
           <div className="flex flex-shrink-0 items-center gap-2">
-            <div className="flex items-center rounded-md border border-gray-200 bg-white p-0.5">
+            <div className="flex items-center rounded-md border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 p-0.5">
               {PERIODS.map((p) => (
                 <button
                   key={p}
                   onClick={() => setPeriod(p)}
                   className={`rounded px-3 py-1 text-xs font-medium transition ${
-                    period === p ? "bg-gray-100 text-gray-900 shadow-sm" : "text-gray-400 hover:text-gray-600"
+                    period === p ? "bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-gray-200 shadow-sm" : "text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-400"
                   }`}
                 >
                   {p}
                 </button>
               ))}
             </div>
-            <button className="flex items-center gap-1.5 rounded-md border border-gray-200 px-3 py-1.5 text-sm text-gray-600 transition hover:bg-gray-50">
+            <button className="flex items-center gap-1.5 rounded-md border border-gray-200 dark:border-gray-700 px-3 py-1.5 text-sm text-gray-600 dark:text-gray-400 transition hover:bg-gray-50 dark:hover:bg-gray-800">
               <Download className="h-3.5 w-3.5" />
               Export
             </button>
@@ -117,15 +117,15 @@ export default function AnalyticsPage() {
           </SectionCard>
 
           <SectionCard title="Most reused components" noPadding>
-            <div className="divide-y divide-gray-50">
+            <div className="divide-y divide-gray-50 dark:divide-gray-800">
               {REUSED.map((r) => (
                 <div key={r.id} className="flex items-center gap-4 px-5 py-3 text-sm">
                   <span className="w-10 font-mono text-xs font-semibold text-violet-600">{r.id}</span>
-                  <span className="flex-1 text-gray-700">{r.name}</span>
+                  <span className="flex-1 text-gray-700 dark:text-gray-300">{r.name}</span>
                   <span className="text-xs text-gray-500">
                     {r.first
-                      ? <><span className="text-gray-400">reused in </span><span className="font-semibold text-gray-700">{r.count.toLocaleString()}</span></>
-                      : <span className="font-semibold text-gray-700">{r.count.toLocaleString()}</span>
+                      ? <><span className="text-gray-400 dark:text-gray-500">reused in </span><span className="font-semibold text-gray-700 dark:text-gray-300">{r.count.toLocaleString()}</span></>
+                      : <span className="font-semibold text-gray-700 dark:text-gray-300">{r.count.toLocaleString()}</span>
                     }
                   </span>
                 </div>
@@ -138,16 +138,16 @@ export default function AnalyticsPage() {
           </SectionCard>
 
           <SectionCard title="Components by industry" noPadding>
-            <div className="divide-y divide-gray-50 px-5">
+            <div className="divide-y divide-gray-50 dark:divide-gray-800 px-5">
               {INDUSTRIES.map((ind) => (
                 <div key={ind.name} className="py-4">
                   <div className="mb-2 flex items-center justify-between text-sm">
-                    <span className="font-medium text-gray-800">{ind.name}</span>
-                    <span className="text-gray-400">
-                      {ind.count.toLocaleString()} · <span className="font-semibold text-gray-700">{ind.pct}%</span>
+                    <span className="font-medium text-gray-800 dark:text-gray-200">{ind.name}</span>
+                    <span className="text-gray-400 dark:text-gray-500">
+                      {ind.count.toLocaleString()} · <span className="font-semibold text-gray-700 dark:text-gray-300">{ind.pct}%</span>
                     </span>
                   </div>
-                  <div className="h-1.5 w-full overflow-hidden rounded-full bg-gray-100">
+                  <div className="h-1.5 w-full overflow-hidden rounded-full bg-gray-100 dark:bg-gray-700">
                     <div className="h-full rounded-full transition-all" style={{ width: `${ind.pct}%`, backgroundColor: ind.color }} />
                   </div>
                 </div>

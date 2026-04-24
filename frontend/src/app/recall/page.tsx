@@ -61,11 +61,11 @@ export default function RecallPage() {
       <div className="flex flex-1 flex-col overflow-hidden">
 
         {/* Header */}
-        <div className="flex-shrink-0 border-b border-gray-100 px-4 py-4 sm:px-6">
+        <div className="flex-shrink-0 border-b border-gray-100 dark:border-gray-800 px-4 py-4 sm:px-6">
           <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
             <div>
-              <h1 className="text-2xl font-bold text-gray-900">Recall simulation</h1>
-              <p className="mt-1 text-sm text-gray-400">Flag a defective component. See the blast radius before you lift the phone.</p>
+              <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">Recall simulation</h1>
+              <p className="mt-1 text-sm text-gray-400 dark:text-gray-500">Flag a defective component. See the blast radius before you lift the phone.</p>
             </div>
             <div className="flex flex-shrink-0 flex-wrap items-center gap-2">
               <ActionButton variant="ghost" onClick={() => setActive(false)}>
@@ -85,17 +85,17 @@ export default function RecallPage() {
 
           {/* Search bar */}
           <div className="mt-3 flex flex-col gap-2 sm:flex-row sm:items-center">
-            <div className="flex flex-1 items-center gap-2.5 rounded-md border border-gray-200 bg-white px-3 py-2">
-              <div className="flex h-4 w-4 flex-shrink-0 items-center justify-center rounded-full border-2 border-gray-300">
-                <div className="h-1.5 w-1.5 rounded-full bg-gray-300" />
+            <div className="flex flex-1 items-center gap-2.5 rounded-md border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 px-3 py-2">
+              <div className="flex h-4 w-4 flex-shrink-0 items-center justify-center rounded-full border-2 border-gray-300 dark:border-gray-600">
+                <div className="h-1.5 w-1.5 rounded-full bg-gray-300 dark:bg-gray-600" />
               </div>
               <input type="text" value={query} onChange={(e) => setQuery(e.target.value)}
                 placeholder="Component ID or name…"
-                className="flex-1 bg-transparent text-sm text-gray-800 outline-none placeholder:text-gray-400" />
+                className="flex-1 bg-transparent text-sm text-gray-800 dark:text-gray-200 outline-none placeholder:text-gray-400" />
             </div>
             <div className="relative">
               <select value={scope} onChange={(e) => setScope(e.target.value)}
-                className="appearance-none rounded-md border border-gray-200 bg-white py-2 pl-3 pr-7 text-sm text-gray-700 outline-none hover:bg-gray-50">
+                className="appearance-none rounded-md border border-gray-200 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-300 bg-white py-2 pl-3 pr-7 text-sm text-gray-700 outline-none hover:bg-gray-50 dark:hover:bg-gray-700">
                 <option>Entire batch</option>
                 <option>Single unit</option>
                 <option>Date range</option>
@@ -112,21 +112,21 @@ export default function RecallPage() {
       </div>
 
       {/* Right panel */}
-      <div className="flex w-full flex-shrink-0 flex-col border-t border-gray-200 bg-white overflow-y-auto lg:w-80 lg:border-l lg:border-t-0">
+      <div className="flex w-full flex-shrink-0 flex-col border-t border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 overflow-y-auto lg:w-80 lg:border-l lg:border-t-0">
 
         {/* Blast radius */}
         <div className="px-5 py-5">
           <div className="mb-1 flex items-center justify-between">
-            <h2 className="text-sm font-semibold text-gray-900">Blast radius</h2>
+            <h2 className="text-sm font-semibold text-gray-900 dark:text-gray-100">Blast radius</h2>
             {active && <StatusBadge label="ACTIVE" variant="error" />}
           </div>
-          <div className="my-4 h-1 w-full overflow-hidden rounded-full bg-gray-100">
+          <div className="my-4 h-1 w-full overflow-hidden rounded-full bg-gray-100 dark:bg-gray-700">
             <div className="h-full rounded-full bg-emerald-400 transition-all" style={{ width: active ? "100%" : "0%" }} />
           </div>
-          <p className="text-[10px] font-semibold uppercase tracking-widest text-gray-400">Affected units</p>
-          <p className="mt-1 text-4xl font-bold text-gray-900">3,412</p>
+          <p className="text-[10px] font-semibold uppercase tracking-widest text-gray-400 dark:text-gray-500">Affected units</p>
+          <p className="mt-1 text-4xl font-bold text-gray-900 dark:text-gray-100">3,412</p>
           <p className="mt-0.5 text-xs font-semibold text-teal-600">across 4 DCs</p>
-          <div className="mt-5 flex flex-col gap-3 border-t border-gray-100 pt-4 text-sm">
+          <div className="mt-5 flex flex-col gap-3 border-t border-gray-100 dark:border-gray-700 pt-4 text-sm">
             {[
               { label: "Downstream components", value: "18" },
               { label: "Finished products",      value: "1 SKU" },
@@ -135,28 +135,28 @@ export default function RecallPage() {
               { label: "Est. financial impact",  value: "$2.8M",         color: "text-red-500" },
             ].map(({ label, value, color }) => (
               <div key={label} className="flex items-center justify-between">
-                <span className="text-gray-500">{label}</span>
-                <span className={`font-semibold ${color ?? "text-gray-900"}`}>{value}</span>
+                <span className="text-gray-500 dark:text-gray-400">{label}</span>
+                <span className={`font-semibold ${color ?? "text-gray-900 dark:text-gray-200"}`}>{value}</span>
               </div>
             ))}
           </div>
         </div>
 
         {/* Distribution centers */}
-        <div className="border-t border-gray-100 px-5 py-4">
-          <h3 className="mb-3 text-sm font-semibold text-gray-900">Affected distribution centers</h3>
-          <div className="flex flex-col divide-y divide-gray-50">
+        <div className="border-t border-gray-100 dark:border-gray-800 px-5 py-4">
+          <h3 className="mb-3 text-sm font-semibold text-gray-900 dark:text-gray-100">Affected distribution centers</h3>
+          <div className="flex flex-col divide-y divide-gray-50 dark:divide-gray-800">
             {DCS.map((dc) => (
               <div key={dc.id} className="flex items-center justify-between py-2.5 text-sm">
-                <span className="text-gray-700">{dc.id}</span>
-                <span className="font-medium text-gray-500">{dc.units.toLocaleString()} units</span>
+                <span className="text-gray-700 dark:text-gray-300">{dc.id}</span>
+                <span className="font-medium text-gray-500 dark:text-gray-400">{dc.units.toLocaleString()} units</span>
               </div>
             ))}
           </div>
         </div>
 
         {/* CTA */}
-        <div className="mt-auto border-t border-gray-100 p-4">
+        <div className="mt-auto border-t border-gray-100 dark:border-gray-800 p-4">
           <button
             className="w-full rounded-md py-3 text-sm font-semibold text-white transition hover:opacity-90"
             style={{ background: "linear-gradient(135deg, #7c3aed, #10b981)" }}
