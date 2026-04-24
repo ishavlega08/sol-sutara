@@ -10,10 +10,10 @@ interface SectionCardProps {
 
 export default function SectionCard({ title, action, children, className = "", noPadding }: SectionCardProps) {
   return (
-    <div className={`rounded-lg border border-gray-200 bg-white ${className}`}>
+    <div className={`rounded-lg border border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-900 ${className}`}>
       {(title || action) && (
-        <div className="flex items-center justify-between border-b border-gray-100 px-5 py-3">
-          {title && <h2 className="text-sm font-semibold text-gray-900">{title}</h2>}
+        <div className="flex items-center justify-between border-b border-gray-100 px-5 py-3 dark:border-gray-800">
+          {title && <h2 className="text-sm font-semibold text-gray-900 dark:text-gray-100">{title}</h2>}
           {action && <div className="flex items-center gap-2">{action}</div>}
         </div>
       )}

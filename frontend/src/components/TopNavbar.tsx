@@ -5,10 +5,10 @@ import { usePathname } from "next/navigation";
 import { Search, Bell, Menu } from "lucide-react";
 
 const PAGE_LABELS: Record<string, string> = {
-  "/":                        "Dashboard",
-  "/components":              "Components",
-  "/components/create":      "Create Component",
-  "/components/link":        "Link Components",
+  "/":                       "Dashboard",
+  "/components":             "Components",
+  "/components/create":     "Create Component",
+  "/components/link":       "Link Components",
   "/graph":                  "Supply Chain Graph",
   "/trace":                  "Trace",
   "/recall":                 "Recall",
@@ -32,21 +32,17 @@ export default function TopNavbar({ onMenuClick }: { onMenuClick?: () => void })
   const pageLabel = getPageLabel(pathname);
 
   return (
-    <header className="flex h-11 flex-shrink-0 items-center border-b border-gray-200 bg-white">
+    <header className="flex h-11 flex-shrink-0 items-center border-b border-gray-200 bg-white dark:border-gray-800 dark:bg-gray-900">
       {/* Brand — same width as desktop sidebar */}
-      <div className="flex h-full w-56 flex-shrink-0 items-center gap-2 border-r border-gray-200 px-4">
-        {/* Hamburger — mobile only */}
-        <button
-          onClick={onMenuClick}
-          className="mr-1 rounded-md p-1 text-gray-500 hover:bg-gray-100 md:hidden"
-        >
+      <div className="flex h-full w-56 flex-shrink-0 items-center gap-2 border-r border-gray-200 px-4 dark:border-gray-800">
+        <button onClick={onMenuClick} className="mr-1 rounded-md p-1 text-gray-500 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-800 md:hidden">
           <Menu className="h-4 w-4" />
         </button>
         <svg viewBox="0 0 14 14" className="h-4 w-4 flex-shrink-0" fill="none">
-          <path d="M7 1L13 12H1L7 1Z" fill="#111827" />
+          <path d="M7 1L13 12H1L7 1Z" fill="currentColor" className="text-gray-900 dark:text-gray-100" />
         </svg>
-        <span className="text-sm font-semibold text-gray-900">Sol Sutara</span>
-        <span className="ml-0.5 hidden rounded-full bg-emerald-100 px-2 py-0.5 text-[9px] font-bold uppercase tracking-wide text-emerald-700 sm:inline">
+        <span className="text-sm font-semibold text-gray-900 dark:text-gray-100">Sol Sutara</span>
+        <span className="ml-0.5 hidden rounded-full bg-emerald-100 px-2 py-0.5 text-[9px] font-bold uppercase tracking-wide text-emerald-700 dark:bg-emerald-950 dark:text-emerald-400 sm:inline">
           Devnet
         </span>
       </div>
@@ -54,21 +50,21 @@ export default function TopNavbar({ onMenuClick }: { onMenuClick?: () => void })
       {/* Breadcrumb */}
       <div className="flex flex-1 items-center px-4">
         <nav className="flex items-center gap-1.5 text-sm">
-          <span className="hidden text-gray-400 sm:inline">Meridian EV</span>
-          <span className="hidden text-gray-300 sm:inline">/</span>
-          <span className="font-medium text-gray-800">{pageLabel}</span>
+          <span className="hidden text-gray-400 dark:text-gray-600 sm:inline">Meridian EV</span>
+          <span className="hidden text-gray-300 dark:text-gray-700 sm:inline">/</span>
+          <span className="font-medium text-gray-800 dark:text-gray-200">{pageLabel}</span>
         </nav>
       </div>
 
       {/* Right */}
       <div className="flex items-center gap-2 px-4">
-        <div className="hidden w-52 items-center gap-2 rounded-md border border-gray-200 bg-gray-50 px-3 py-1.5 lg:flex">
-          <Search className="h-3.5 w-3.5 flex-shrink-0 text-gray-400" />
-          <span className="flex-1 text-xs text-gray-400">Search components…</span>
-          <kbd className="rounded border border-gray-200 bg-white px-1.5 py-0.5 text-[9px] font-medium text-gray-400">⌘K</kbd>
+        <div className="hidden w-52 items-center gap-2 rounded-md border border-gray-200 bg-gray-50 px-3 py-1.5 dark:border-gray-700 dark:bg-gray-800 lg:flex">
+          <Search className="h-3.5 w-3.5 flex-shrink-0 text-gray-400 dark:text-gray-500" />
+          <span className="flex-1 text-xs text-gray-400 dark:text-gray-500">Search components…</span>
+          <kbd className="rounded border border-gray-200 bg-white px-1.5 py-0.5 text-[9px] font-medium text-gray-400 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-500">⌘K</kbd>
         </div>
 
-        <button className="rounded-md p-1.5 text-gray-500 transition hover:bg-gray-100">
+        <button className="rounded-md p-1.5 text-gray-500 transition hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-800">
           <Bell className="h-4 w-4" />
         </button>
 

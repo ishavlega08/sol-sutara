@@ -45,7 +45,7 @@ export default function BarChart({
         <div className="mt-2 flex">
           {xLabels.map((label, i) => (
             <div key={i} className="flex-1 text-center">
-              {label && <span className="text-[10px] text-gray-400">{label}</span>}
+              {label && <span className="text-[10px] text-gray-400 dark:text-gray-600">{label}</span>}
             </div>
           ))}
         </div>

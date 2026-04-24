@@ -164,7 +164,7 @@ export default function SupplyChainGraph({
   }, [onNodeClick]);
 
   return (
-    <div className="relative h-full w-full">
+    <div className="relative h-full w-full dark:bg-gray-900">
       {/* Tier column headers */}
       <div className="pointer-events-none absolute top-3 z-10 w-full">
         {TIER_LABELS.map(({ label, x }) => (
