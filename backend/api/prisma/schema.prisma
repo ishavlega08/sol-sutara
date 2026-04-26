@@ -6,22 +6,102 @@ datasource db {
   provider = "postgresql"
 }
 
+// ─── Enums ────────────────────────────────────────────────────────────────────
+
+enum Role {
+  OWNER
+  ADMIN
+  MEMBER
+  VIEWER
+}
+
+enum InviteStatus {
+  PENDING
+  ACCEPTED
+  EXPIRED
+}
+
+// ─── User ─────────────────────────────────────────────────────────────────────
+
+model User {
+  id             String   @id @default(uuid())
+  privy_did      String   @unique
+  email          String?
+  wallet_address String?
+  created_at     DateTime @default(now())
+  updated_at     DateTime @updatedAt
+
+  orgs_created   Organization[]       @relation("OrgCreator")
+  memberships    OrganizationMember[]
+  invites_sent   OrgInvite[]          @relation("InvitesSent")
+  refresh_tokens RefreshToken[]
+}
+
 // ─── Organization ─────────────────────────────────────────────────────────────
-// Primary entity. A company, consortium, or team.
 
 model Organization {
-  id         String      @id @default(uuid())
+  id         String   @id @default(uuid())
   name       String
-  slug       String      @unique  // URL-safe identifier, e.g. "intel-corp"
-  created_at DateTime    @default(now())
+  slug       String   @unique
+  created_by String?
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
 
+  creator    User?                @relation("OrgCreator", fields: [created_by], references: [id])
   components Component[]
+  members    OrganizationMember[]
+  invites    OrgInvite[]
+}
+
+// ─── OrganizationMember ───────────────────────────────────────────────────────
+
+model OrganizationMember {
+  id        String   @id @default(uuid())
+  org_id    String
+  user_id   String
+  role      Role
+  joined_at DateTime @default(now())
+
+  org  Organization @relation(fields: [org_id], references: [id], onDelete: Cascade)
+  user User         @relation(fields: [user_id], references: [id], onDelete: Cascade)
+
+  @@unique([org_id, user_id])
+}
+
+// ─── OrgInvite ────────────────────────────────────────────────────────────────
+
+model OrgInvite {
+  id         String       @id @default(uuid())
+  org_id     String
+  invited_by String
+  email      String
+  role       Role
+  token      String       @unique
+  status     InviteStatus @default(PENDING)
+  expires_at DateTime
+  created_at DateTime     @default(now())
+
+  org     Organization @relation(fields: [org_id], references: [id], onDelete: Cascade)
+  inviter User         @relation("InvitesSent", fields: [invited_by], references: [id])
+}
+
+// ─── RefreshToken ─────────────────────────────────────────────────────────────
+
+model RefreshToken {
+  id         String   @id @default(uuid())
+  user_id    String
+  token_hash String
+  expires_at DateTime
+  revoked    Boolean  @default(false)
+  created_at DateTime @default(now())
+
+  user User @relation(fields: [user_id], references: [id], onDelete: Cascade)
 }
 
 // ─── Component ────────────────────────────────────────────────────────────────
 
 model Component {
-  id               String          @id @default(uuid())
+  id               String   @id @default(uuid())
   name             String
   type             String
   supplier         String?
@@ -29,25 +109,25 @@ model Component {
   on_chain_address String?
   on_chain_id      BigInt?
   tx_hash          String?
-  created_at       DateTime        @default(now())
-  org_id           String?                          // Owner organization (optional for migration safety)
+  created_at       DateTime @default(now())
+  org_id           String?
 
-  org              Organization?   @relation(fields: [org_id], references: [id])
-  parent_links     ComponentLink[] @relation("ParentLinks")
-  child_links      ComponentLink[] @relation("ChildLinks")
+  org          Organization?   @relation(fields: [org_id], references: [id])
+  parent_links ComponentLink[] @relation("ParentLinks")
+  child_links  ComponentLink[] @relation("ChildLinks")
 }
 
 // ─── ComponentLink ────────────────────────────────────────────────────────────
 
 model ComponentLink {
-  id         String    @id @default(uuid())
+  id         String   @id @default(uuid())
   parent_id  String
   child_id   String
   tx_hash    String
-  created_at DateTime  @default(now())
+  created_at DateTime @default(now())
 
-  parent     Component @relation("ParentLinks", fields: [parent_id], references: [id])
-  child      Component @relation("ChildLinks",  fields: [child_id],  references: [id])
+  parent Component @relation("ParentLinks", fields: [parent_id], references: [id])
+  child  Component @relation("ChildLinks", fields: [child_id], references: [id])
 
   @@unique([parent_id, child_id])
 }
