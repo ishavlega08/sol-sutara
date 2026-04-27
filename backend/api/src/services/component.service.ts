@@ -1,11 +1,7 @@
-import { PrismaClient } from "@prisma/client";
-import { PrismaPg } from "@prisma/adapter-pg";
+import { prisma } from "../lib/prisma";
 import { buildMetadata } from "./metadata.service";
 import { uploadMetadata } from "./storage.service";
 import { createComponentOnChain, linkComponentsOnChain } from "./web3.service";
-
-const adapter = new PrismaPg({ connectionString: process.env.DATABASE_URL! });
-const prisma   = new PrismaClient({ adapter });
 
 // ─── create_component ─────────────────────────────────────────────────────────
 
@@ -14,11 +10,12 @@ export interface CreateComponentInput {
     type:      string;
     supplier?: string;
     metadata?: Record<string, unknown>;
-    org_id?:   string;  // Owning organization (optional; ties component to an org)
+    org_id?:   string;
 }
 
-export async function getComponents() {
+export async function getComponents(orgId?: string) {
     return prisma.component.findMany({
+        where:   orgId ? { org_id: orgId } : undefined,
         orderBy: { created_at: "desc" },
     });
 }
@@ -67,7 +64,6 @@ export async function linkComponents(parentDbId: string, childDbId: string) {
         throw new Error("Child component is not yet confirmed on-chain");
     }
 
-    // Fast duplicate check in DB before hitting the chain
     const existing = await prisma.componentLink.findUnique({
         where: { parent_id_child_id: { parent_id: parentDbId, child_id: childDbId } },
     });
@@ -92,7 +88,7 @@ export async function getComponentParents(componentDbId: string) {
     if (!component) throw new Error(`Component not found: ${componentDbId}`);
 
     return prisma.componentLink.findMany({
-        where: { child_id: componentDbId },
+        where:   { child_id: componentDbId },
         include: { parent: true },
     });
 }

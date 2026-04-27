@@ -8,9 +8,10 @@ import {
 
 // ─── GET /components ──────────────────────────────────────────────────────────
 
-export async function getComponentsHandler(_req: Request, res: Response) {
+export async function getComponentsHandler(req: Request, res: Response) {
     try {
-        const components = await getComponents();
+        const orgId      = req.user?.orgId;
+        const components = await getComponents(orgId);
         return res.status(200).json({ success: true, components });
     } catch (err) {
         console.error(err);
@@ -21,19 +22,25 @@ export async function getComponentsHandler(_req: Request, res: Response) {
 // ─── POST /components ─────────────────────────────────────────────────────────
 
 export async function createComponentHandler(req: Request, res: Response) {
-    const { name, type, supplier, metadata, org_id } = req.body;
+    const { name, type, supplier, metadata } = req.body as {
+        name?:     string;
+        type?:     string;
+        supplier?: string;
+        metadata?: Record<string, unknown>;
+    };
+
+    // orgId comes from the authenticated JWT; body org_id is ignored
+    const org_id = req.user?.orgId;
 
     if (!name || !type) {
         return res.status(400).json({ success: false, error: "name and type are required" });
     }
-
     if (metadata !== undefined && (typeof metadata !== "object" || Array.isArray(metadata))) {
         return res.status(400).json({ success: false, error: "metadata must be an object" });
     }
 
     try {
         const component = await createComponent({ name, type, supplier, metadata, org_id });
-
         return res.status(201).json({
             success: true,
             component: {
@@ -54,19 +61,17 @@ export async function createComponentHandler(req: Request, res: Response) {
 // ─── POST /components/link ────────────────────────────────────────────────────
 
 export async function linkComponentsHandler(req: Request, res: Response) {
-    const { parentId, childId } = req.body;
+    const { parentId, childId } = req.body as { parentId?: string; childId?: string };
 
     if (!parentId || !childId) {
         return res.status(400).json({ success: false, error: "parentId and childId are required" });
     }
-
     if (parentId === childId) {
         return res.status(400).json({ success: false, error: "A component cannot be linked to itself" });
     }
 
     try {
         const link = await linkComponents(parentId, childId);
-
         return res.status(201).json({
             success: true,
             link: {
@@ -76,17 +81,12 @@ export async function linkComponentsHandler(req: Request, res: Response) {
                 createdAt: link.created_at,
             },
         });
-    } catch (err: any) {
+    } catch (err: unknown) {
         console.error(err);
-        if (err.message?.includes("not found")) {
-            return res.status(404).json({ success: false, error: err.message });
-        }
-        if (err.message?.includes("not yet confirmed")) {
-            return res.status(422).json({ success: false, error: err.message });
-        }
-        if (err.message?.includes("already exists")) {
-            return res.status(409).json({ success: false, error: err.message });
-        }
+        const msg = err instanceof Error ? err.message : "";
+        if (msg.includes("not found"))        return res.status(404).json({ success: false, error: msg });
+        if (msg.includes("not yet confirmed")) return res.status(422).json({ success: false, error: msg });
+        if (msg.includes("already exists"))   return res.status(409).json({ success: false, error: msg });
         return res.status(500).json({ success: false, error: "Internal server error" });
     }
 }
@@ -98,7 +98,6 @@ export async function getParentsHandler(req: Request, res: Response) {
 
     try {
         const links = await getComponentParents(id);
-
         return res.status(200).json({
             success: true,
             parents: links.map((l) => ({
@@ -113,11 +112,10 @@ export async function getParentsHandler(req: Request, res: Response) {
                 },
             })),
         });
-    } catch (err: any) {
+    } catch (err: unknown) {
         console.error(err);
-        if (err.message?.includes("not found")) {
-            return res.status(404).json({ success: false, error: err.message });
-        }
+        const msg = err instanceof Error ? err.message : "";
+        if (msg.includes("not found")) return res.status(404).json({ success: false, error: msg });
         return res.status(500).json({ success: false, error: "Internal server error" });
     }
 }
