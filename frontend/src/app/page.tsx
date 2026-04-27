@@ -6,6 +6,8 @@ import { Download } from "lucide-react";
 import StatCard from "@/components/ui/StatCard";
 import BarChart from "@/components/ui/BarChart";
 import SectionCard from "@/components/ui/SectionCard";
+import { useAuth } from "@/context/AuthContext";
+import { useRole } from "@/hooks/useRole";
 
 const STATS = [
   { label: "COMPONENTS",      value: "4,218", suffix: "total",  delta: "↑ 142 this week",  deltaUp: true,  accent: "#10b981" },
@@ -59,17 +61,31 @@ function greeting() {
 export default function DashboardPage() {
   const [activeTab, setActiveTab] = useState("Writes");
   const bars = CHART_DATA[activeTab];
+  const { user, org, hasOrg } = useAuth();
+  const { canCreate } = useRole();
+
+  const displayName = user?.email?.split("@")[0] ?? "there";
 
   return (
     <div className="flex-1 overflow-y-auto bg-white dark:bg-gray-950">
       <div className="px-4 py-6 sm:px-8">
 
+        {/* No-org banner */}
+        {!hasOrg && (
+          <div className="mb-4 flex items-center justify-between rounded-md border border-amber-200 dark:border-amber-800 bg-amber-50 dark:bg-amber-950 px-4 py-2.5 text-sm">
+            <span className="text-amber-700 dark:text-amber-400">You&apos;re not part of an organization yet.</span>
+            <Link href="/onboarding" className="font-semibold text-amber-700 dark:text-amber-300 hover:underline">
+              Set up workspace →
+            </Link>
+          </div>
+        )}
+
         {/* Header */}
         <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
           <div>
-            <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">{greeting()}, Ava.</h1>
+            <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">{greeting()}, {displayName}.</h1>
             <p className="mt-1 flex flex-wrap items-center gap-2 text-sm text-gray-500 dark:text-gray-400">
-              Here&apos;s your supply-chain graph at a glance.
+              {org ? <span>{org.name} · supply-chain graph</span> : "Here's your supply-chain graph at a glance."}
               <span className="rounded-md bg-gray-800 px-2 py-0.5 font-mono text-[11px] text-gray-300">devnet</span>
               <span className="rounded-md bg-gray-100 dark:bg-gray-800 px-2 py-0.5 font-mono text-[11px] text-gray-500 dark:text-gray-400">last sync 14s ago</span>
             </p>
@@ -79,13 +95,15 @@ export default function DashboardPage() {
               <Download className="h-3.5 w-3.5" />
               Export
             </button>
-            <Link
-              href="/components/create"
-              className="flex items-center gap-1 rounded-md px-3.5 py-1.5 text-sm font-semibold text-white transition hover:opacity-90"
-              style={{ background: "linear-gradient(135deg, #7c3aed, #6d28d9)" }}
-            >
-              + Create component
-            </Link>
+            {canCreate && (
+              <Link
+                href="/components/create"
+                className="flex items-center gap-1 rounded-md px-3.5 py-1.5 text-sm font-semibold text-white transition hover:opacity-90"
+                style={{ background: "linear-gradient(135deg, #7c3aed, #6d28d9)" }}
+              >
+                + Create component
+              </Link>
+            )}
           </div>
         </div>
 

@@ -9,6 +9,7 @@ import { RiskBadge, TypeBadge, OrgChip, type RiskLevel } from "@/components/ui/B
 import PageHeader from "@/components/ui/PageHeader";
 import SearchInput from "@/components/ui/SearchInput";
 import ActionButton from "@/components/ui/ActionButton";
+import { useRole } from "@/hooks/useRole";
 
 interface DisplayRow {
   id: string;
@@ -57,6 +58,7 @@ export default function ComponentsPage() {
   const [riskFilter, setRiskFilter] = useState("All risk levels");
   const [viewMode, setViewMode] = useState<"table" | "graph">("table");
   const [page, setPage]         = useState(1);
+  const { canCreate } = useRole();
 
   const load = useCallback(async (isRefresh = false) => {
     if (isRefresh) setRefreshing(true);
@@ -116,12 +118,14 @@ export default function ComponentsPage() {
                 <Download className="h-3.5 w-3.5" />
                 Export CSV
               </ActionButton>
-              <ActionButton variant="gradient" className="hidden sm:inline-flex">
-                <Link href="/components/create" className="flex items-center gap-1.5">
-                  <PlusCircle className="h-3.5 w-3.5" />
-                  New component
-                </Link>
-              </ActionButton>
+              {canCreate && (
+                <ActionButton variant="gradient" className="hidden sm:inline-flex">
+                  <Link href="/components/create" className="flex items-center gap-1.5">
+                    <PlusCircle className="h-3.5 w-3.5" />
+                    New component
+                  </Link>
+                </ActionButton>
+              )}
             </>
           }
         />
