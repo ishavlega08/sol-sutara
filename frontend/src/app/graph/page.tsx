@@ -425,8 +425,8 @@ function DetailPanel({
         <p className="mt-0.5 text-sm text-gray-500">{component.supplier}</p>
 
         <div className="mt-5 flex flex-col gap-4 border-t border-gray-100 pt-4">
-          <Field label="On-Chain Address" value={truncate(component.on_chain_address)} full={component.on_chain_address} mono />
-          <Field label="Tx Hash" value={truncate(component.tx_hash)} full={component.tx_hash} mono />
+          <Field label="On-Chain Address" value={truncate(component.on_chain_address ?? "")} full={component.on_chain_address ?? ""} mono />
+          <Field label="Tx Hash" value={truncate(component.tx_hash ?? "")} full={component.tx_hash ?? ""} mono />
           <Field label="Metadata URI" value={truncate(component.metadata_uri, 20, 8)} full={component.metadata_uri} mono />
           <Field label="Created" value={formatDate(component.created_at)} />
         </div>

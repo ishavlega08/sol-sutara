@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
-import ClientShell from "@/components/ClientShell";
+import dynamic from "next/dynamic";
 import "@/styles/globals.css";
+
+const ClientShell = dynamic(() => import("@/components/ClientShell"), { ssr: false });
 
 export const metadata: Metadata = {
   title: "SolSutara",
@@ -10,7 +12,7 @@ export const metadata: Metadata = {
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en">
-      <body className="flex h-screen flex-col overflow-hidden bg-white antialiased dark:bg-gray-950">
+      <body className="flex h-screen flex-col overflow-hidden antialiased">
         <ClientShell>{children}</ClientShell>
       </body>
     </html>

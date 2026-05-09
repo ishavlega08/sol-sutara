@@ -11,6 +11,7 @@ import ActionButton from "@/components/ui/ActionButton";
 import { TypeBadge } from "@/components/ui/Badge";
 
 const COMPONENT_TYPES = ["Raw Material", "Component", "Sub-assembly", "Assembly", "Finished Good"];
+const UNITS = ["units", "kg", "g", "L", "mL", "m", "cm", "pcs", "rolls", "sheets"];
 
 interface MetaPair { key: string; value: string }
 type Status = "idle" | "loading" | "success" | "error";
@@ -20,14 +21,19 @@ function inputCls(err?: string) {
 }
 
 export default function CreateComponentPage() {
-  const [name, setName]         = useState("");
-  const [type, setType]         = useState("");
-  const [supplier, setSupplier] = useState("");
-  const [meta, setMeta]         = useState<MetaPair[]>([]);
-  const [errors, setErrors]     = useState<Record<string, string>>({});
-  const [status, setStatus]     = useState<Status>("idle");
-  const [result, setResult]     = useState<CreatedComponent | null>(null);
-  const [errorMsg, setErrorMsg] = useState("");
+  const [name, setName]               = useState("");
+  const [type, setType]               = useState("");
+  const [supplier, setSupplier]       = useState("");
+  const [meta, setMeta]               = useState<MetaPair[]>([]);
+  const [batchNumber, setBatchNumber] = useState("");
+  const [lotNumber, setLotNumber]     = useState("");
+  const [quantity, setQuantity]       = useState("");
+  const [unit, setUnit]               = useState("units");
+  const [expiryDate, setExpiryDate]   = useState("");
+  const [errors, setErrors]           = useState<Record<string, string>>({});
+  const [status, setStatus]           = useState<Status>("idle");
+  const [result, setResult]           = useState<CreatedComponent | null>(null);
+  const [errorMsg, setErrorMsg]       = useState("");
 
   function validate() {
     const e: Record<string, string> = {};
@@ -48,7 +54,14 @@ export default function CreateComponentPage() {
       return acc;
     }, {});
     try {
-      const res = await createComponent({ name: name.trim(), type, supplier: supplier.trim(), metadata: metadataObj });
+      const res = await createComponent({
+        name: name.trim(), type, supplier: supplier.trim(), metadata: metadataObj,
+        batch_number: batchNumber.trim() || undefined,
+        lot_number: lotNumber.trim() || undefined,
+        quantity: quantity ? Number(quantity) : undefined,
+        unit,
+        expiry_date: expiryDate || undefined,
+      });
       setResult(res.component);
       setStatus("success");
     } catch (err) {
@@ -59,6 +72,7 @@ export default function CreateComponentPage() {
 
   function reset() {
     setName(""); setType(""); setSupplier(""); setMeta([]);
+    setBatchNumber(""); setLotNumber(""); setQuantity(""); setUnit("units"); setExpiryDate("");
     setErrors({}); setResult(null); setStatus("idle"); setErrorMsg("");
   }
 
@@ -160,6 +174,48 @@ export default function CreateComponentPage() {
                 onChange={(e) => { setSupplier(e.target.value); if (errors.supplier) setErrors((p) => ({ ...p, supplier: "" })); }}
                 placeholder="e.g. org:kaldera" disabled={status === "loading"} className={inputCls(errors.supplier)} />
               {errors.supplier && <p className="mt-1 text-xs text-red-500">{errors.supplier}</p>}
+            </div>
+
+            {/* Batch & Quantity */}
+            <div className="border-b border-gray-100 dark:border-gray-800 px-5 py-4">
+              <label className="mb-3 block text-xs font-semibold uppercase tracking-widest text-gray-400 dark:text-gray-500">
+                Batch &amp; Quantity <span className="font-normal normal-case tracking-normal">(optional)</span>
+              </label>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="mb-1 block text-[11px] text-gray-400">Batch number</label>
+                  <input type="text" value={batchNumber}
+                    onChange={(e) => setBatchNumber(e.target.value)}
+                    placeholder="e.g. BATCH-2024-01" disabled={status === "loading"} className={inputCls()} />
+                </div>
+                <div>
+                  <label className="mb-1 block text-[11px] text-gray-400">Lot number</label>
+                  <input type="text" value={lotNumber}
+                    onChange={(e) => setLotNumber(e.target.value)}
+                    placeholder="e.g. LOT-A" disabled={status === "loading"} className={inputCls()} />
+                </div>
+              </div>
+              <div className="mt-3 grid grid-cols-[1fr_120px] gap-3">
+                <div>
+                  <label className="mb-1 block text-[11px] text-gray-400">Quantity</label>
+                  <input type="number" min="0" step="any" value={quantity}
+                    onChange={(e) => setQuantity(e.target.value)}
+                    placeholder="e.g. 500" disabled={status === "loading"} className={inputCls()} />
+                </div>
+                <div>
+                  <label className="mb-1 block text-[11px] text-gray-400">Unit</label>
+                  <select value={unit} onChange={(e) => setUnit(e.target.value)} disabled={status === "loading"}
+                    className="w-full rounded-md border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 px-3 py-2 text-sm text-gray-900 dark:text-gray-100 outline-none focus:border-violet-400 focus:ring-1 focus:ring-violet-300 disabled:opacity-50">
+                    {UNITS.map((u) => <option key={u} value={u}>{u}</option>)}
+                  </select>
+                </div>
+              </div>
+              <div className="mt-3">
+                <label className="mb-1 block text-[11px] text-gray-400">Expiry date</label>
+                <input type="date" value={expiryDate}
+                  onChange={(e) => setExpiryDate(e.target.value)}
+                  disabled={status === "loading"} className={inputCls()} />
+              </div>
             </div>
 
             {/* Metadata */}

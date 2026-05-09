@@ -9,7 +9,7 @@ import { ThemeProvider } from "@/context/ThemeContext";
 import { AuthProvider } from "@/context/AuthContext";
 
 // Pages that render without the sidebar/navbar shell
-const AUTH_PATHS = ["/login", "/onboarding"];
+const AUTH_PATHS = ["/login", "/onboarding", "/landing", "/"];
 
 function isAuthPath(pathname: string): boolean {
     return AUTH_PATHS.some((p) => pathname === p || pathname.startsWith(p + "/"))

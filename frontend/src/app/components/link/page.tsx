@@ -1,63 +1,116 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { ArrowDown, AlertCircle, CheckCircle, ExternalLink } from "lucide-react";
-import { linkComponents } from "@/lib/api";
+import { linkComponents, getRecentLinks, getComponents } from "@/lib/api";
 import type { ComponentLink } from "@/types/link";
+import type { RecentLink, ComponentListItem } from "@/types/component";
 import PageHeader from "@/components/ui/PageHeader";
 import SectionCard from "@/components/ui/SectionCard";
 import ActionButton from "@/components/ui/ActionButton";
 
 type Status = "idle" | "loading" | "success" | "error";
 
-const RECENT_LINKS = [
-  { parent: "SP-01", child: "CM-24", qty: "840 kg",   org: "org:aster",    when: "2h ago" },
-  { parent: "CM-18", child: "AS-07", qty: "48 units", org: "org:meridian", when: "4h" },
-  { parent: "CM-31", child: "AS-09", qty: "32 units", org: "org:meridian", when: "6h" },
-];
+// ── searchable component input ────────────────────────────────────────────────
 
-function NodeInput({ label, value, onChange, hint, color, disabled }: {
+function ComponentInput({
+  label, value, onChange, color, disabled, allComponents,
+  onSelect,
+}: {
   label: string; value: string; onChange: (v: string) => void;
-  hint: string; color: string; disabled?: boolean;
+  color: string; disabled?: boolean;
+  allComponents: ComponentListItem[];
+  onSelect: (c: ComponentListItem) => void;
 }) {
+  const [show, setShow] = useState(false);
+  const suggestions = value.length >= 2
+    ? allComponents
+        .filter((c) =>
+          c.name.toLowerCase().includes(value.toLowerCase()) ||
+          c.id.toLowerCase().includes(value.toLowerCase())
+        )
+        .slice(0, 6)
+    : [];
+
   return (
-    <div className="rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 p-4">
+    <div className="relative rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 p-4">
       <p className="mb-2 text-[11px] font-semibold uppercase tracking-widest text-gray-400 dark:text-gray-500">{label}</p>
       <div className="flex items-center gap-3">
         <div className="flex h-5 w-5 flex-shrink-0 items-center justify-center rounded-full border-2" style={{ borderColor: color }}>
           <div className="h-2 w-2 rounded-full" style={{ backgroundColor: color }} />
         </div>
-        <input type="text" value={value} onChange={(e) => onChange(e.target.value)} disabled={disabled}
+        <input
+          type="text" value={value} disabled={disabled}
+          onChange={(e) => { onChange(e.target.value); setShow(true); }}
+          onFocus={() => setShow(true)}
+          onBlur={() => setTimeout(() => setShow(false), 150)}
           className="flex-1 bg-transparent text-sm font-medium text-gray-900 dark:text-gray-100 outline-none placeholder:text-gray-400 dark:placeholder:text-gray-500"
-          placeholder={hint} />
+          placeholder="Search by name or ID…"
+        />
       </div>
-      <p className="mt-2 pl-8 text-xs text-gray-400 dark:text-gray-500">{hint}</p>
+      {show && suggestions.length > 0 && (
+        <div className="absolute left-0 top-full z-20 mt-1 w-full rounded-md border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 shadow-lg">
+          {suggestions.map((c) => (
+            <button key={c.id} onMouseDown={() => { onSelect(c); setShow(false); }}
+              className="flex w-full items-center justify-between px-4 py-2 text-sm hover:bg-gray-50 dark:hover:bg-gray-700 text-left">
+              <span className="text-gray-800 dark:text-gray-200">{c.name}</span>
+              <span className="ml-2 text-xs text-gray-400 dark:text-gray-500">{c.type}</span>
+            </button>
+          ))}
+        </div>
+      )}
     </div>
   );
 }
 
-export default function LinkComponentsPage() {
-  const [parentVal, setParentVal] = useState("SP-02 · Cobalt DRC batch 881");
-  const [childVal, setChildVal]   = useState("CM-18 · Cathode B-18");
-  const [qty, setQty]             = useState("");
-  const [status, setStatus]       = useState<Status>("idle");
-  const [result, setResult]       = useState<ComponentLink | null>(null);
-  const [errorMsg, setErrorMsg]   = useState("");
+// ── page ──────────────────────────────────────────────────────────────────────
 
-  const parentId = parentVal.split("·")[0].trim() || "SP-02";
-  const childId  = childVal.split("·")[0].trim() || "CM-18";
+export default function LinkComponentsPage() {
+  const [allComponents, setAllComponents]   = useState<ComponentListItem[]>([]);
+  const [recentLinks, setRecentLinks]       = useState<RecentLink[]>([]);
+  const [linksLoading, setLinksLoading]     = useState(true);
+
+  const [parentVal, setParentVal]   = useState("");
+  const [childVal, setChildVal]     = useState("");
+  const [parentId, setParentId]     = useState("");
+  const [childId, setChildId]       = useState("");
+  const [qty, setQty]               = useState("");
+  const [status, setStatus]         = useState<Status>("idle");
+  const [result, setResult]         = useState<ComponentLink | null>(null);
+  const [errorMsg, setErrorMsg]     = useState("");
+
+  const loadData = useCallback(async () => {
+    setLinksLoading(true);
+    const [compRes, linksRes] = await Promise.allSettled([getComponents(), getRecentLinks(5)]);
+    if (compRes.status === "fulfilled")  setAllComponents(compRes.value.components);
+    if (linksRes.status === "fulfilled") setRecentLinks(linksRes.value.links);
+    setLinksLoading(false);
+  }, []);
+
+  useEffect(() => { loadData(); }, [loadData]);
+
+  // refresh recent links after a successful link
+  const refreshLinks = useCallback(async () => {
+    try {
+      const res = await getRecentLinks(5);
+      setRecentLinks(res.links);
+    } catch { /* silent */ }
+  }, []);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    if (!parentVal.trim() || !childVal.trim()) return;
+    if (!parentId || !childId) {
+      setErrorMsg("Please select both a parent and child component from the suggestions.");
+      setStatus("error");
+      return;
+    }
     setStatus("loading");
     setErrorMsg("");
     try {
-      const pId = parentId.replace(/[^a-zA-Z0-9-]/g, "");
-      const cId = childId.replace(/[^a-zA-Z0-9-]/g, "");
-      const res = await linkComponents({ parentId: pId, childId: cId });
+      const res = await linkComponents({ parentId, childId });
       setResult(res.link);
       setStatus("success");
+      await refreshLinks();
     } catch (err) {
       setErrorMsg(err instanceof Error ? err.message : "Something went wrong.");
       setStatus("error");
@@ -65,10 +118,13 @@ export default function LinkComponentsPage() {
   }
 
   function reset() {
-    setParentVal("SP-02 · Cobalt DRC batch 881");
-    setChildVal("CM-18 · Cathode B-18");
+    setParentVal(""); setChildVal("");
+    setParentId(""); setChildId("");
     setQty(""); setStatus("idle"); setResult(null); setErrorMsg("");
   }
+
+  const previewParent = parentVal || parentId || "Parent";
+  const previewChild  = childVal  || childId  || "Child";
 
   return (
     <div className="h-full overflow-y-auto bg-white dark:bg-gray-950 dark:text-gray-100">
@@ -90,13 +146,19 @@ export default function LinkComponentsPage() {
           </div>
         )}
 
-        {/* Two-column layout on md+ */}
         <div className="grid grid-cols-1 gap-5 md:grid-cols-[1fr_300px]">
 
           {/* Left: form */}
           <form onSubmit={handleSubmit} noValidate className="flex flex-col gap-4">
-            <NodeInput label="Parent component" value={parentVal} onChange={setParentVal}
-              hint="Search by component ID or name · org:kaldera" color="#7c3aed" disabled={status === "loading"} />
+            <ComponentInput
+              label="Parent component"
+              value={parentVal}
+              onChange={(v) => { setParentVal(v); setParentId(""); }}
+              onSelect={(c) => { setParentVal(c.name); setParentId(c.id); }}
+              color="#7c3aed"
+              disabled={status === "loading"}
+              allComponents={allComponents}
+            />
 
             <div className="flex justify-center py-1">
               <div className="flex h-8 w-8 items-center justify-center rounded-full border-2 border-emerald-400 bg-emerald-50">
@@ -104,11 +166,18 @@ export default function LinkComponentsPage() {
               </div>
             </div>
 
-            <NodeInput label="Child component" value={childVal} onChange={setChildVal}
-              hint="Search by component ID or name · org:meridian" color="#3b82f6" disabled={status === "loading"} />
+            <ComponentInput
+              label="Child component"
+              value={childVal}
+              onChange={(v) => { setChildVal(v); setChildId(""); }}
+              onSelect={(c) => { setChildVal(c.name); setChildId(c.id); }}
+              color="#3b82f6"
+              disabled={status === "loading"}
+              allComponents={allComponents}
+            />
 
             <div>
-              <label className="mb-1 block text-xs font-medium text-gray-600">
+              <label className="mb-1 block text-xs font-medium text-gray-600 dark:text-gray-400">
                 Quantity / batch note <span className="text-gray-400">(optional)</span>
               </label>
               <input type="text" value={qty} onChange={(e) => setQty(e.target.value)}
@@ -120,7 +189,7 @@ export default function LinkComponentsPage() {
             <div className="rounded-md border border-dashed border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-800/50 px-4 py-3">
               <p className="mb-1 text-[10px] font-semibold uppercase tracking-widest text-gray-400 dark:text-gray-500">Transaction preview</p>
               <pre className="whitespace-pre-wrap font-mono text-xs leading-relaxed text-gray-600 dark:text-gray-400">
-{`› LINK ${parentId} → ${childId}${qty ? ` / ${qty}` : ""}
+{`› LINK ${previewParent} → ${previewChild}${qty ? ` / ${qty}` : ""}
 › fee: ~$0.00025 · confirm: 400ms`}
               </pre>
             </div>
@@ -135,61 +204,69 @@ export default function LinkComponentsPage() {
             <div className="flex items-center gap-3">
               <ActionButton type="button" variant="ghost" onClick={reset} disabled={status === "loading"}>Cancel</ActionButton>
               <ActionButton type="submit" variant="gradient" loading={status === "loading"}
-                disabled={status === "loading" || !parentVal.trim() || !childVal.trim()}
+                disabled={status === "loading" || !parentId || !childId}
                 className="flex-1">
                 {status === "loading" ? "Signing…" : "Confirm & sign on-chain →"}
               </ActionButton>
             </div>
           </form>
 
-          {/* Right: preview panel */}
+          {/* Right panel */}
           <div className="flex flex-col gap-4">
             <SectionCard title="Preview">
               <div className="flex flex-col items-center gap-0 py-3">
-                <div className="flex w-full max-w-[180px] items-center gap-2 rounded-lg border border-gray-200 bg-white px-3 py-2.5 shadow-sm">
+                <div className="flex w-full max-w-[180px] items-center gap-2 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 px-3 py-2.5 shadow-sm">
                   <div className="h-2.5 w-2.5 rounded-full bg-violet-400" />
-                  <span className="truncate text-xs font-semibold text-gray-800">{parentId}</span>
+                  <span className="truncate text-xs font-semibold text-gray-800 dark:text-gray-200">{previewParent.slice(0, 18)}</span>
                 </div>
                 <div className="flex flex-col items-center">
-                  <div className="my-1 h-5 border-l-2 border-dashed border-gray-300" />
-                  <div className="flex h-5 w-5 items-center justify-center rounded-full border border-gray-200 bg-gray-50">
+                  <div className="my-1 h-5 border-l-2 border-dashed border-gray-300 dark:border-gray-600" />
+                  <div className="flex h-5 w-5 items-center justify-center rounded-full border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800">
                     <ArrowDown className="h-3 w-3 text-gray-400" />
                   </div>
-                  <div className="my-1 h-5 border-l-2 border-dashed border-gray-300" />
+                  <div className="my-1 h-5 border-l-2 border-dashed border-gray-300 dark:border-gray-600" />
                 </div>
-                <div className="flex w-full max-w-[180px] items-center gap-2 rounded-lg border border-gray-200 bg-white px-3 py-2.5 shadow-sm">
+                <div className="flex w-full max-w-[180px] items-center gap-2 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 px-3 py-2.5 shadow-sm">
                   <div className="h-2.5 w-2.5 rounded-full bg-blue-400" />
-                  <span className="truncate text-xs font-semibold text-gray-800">{childId}</span>
+                  <span className="truncate text-xs font-semibold text-gray-800 dark:text-gray-200">{previewChild.slice(0, 18)}</span>
                 </div>
               </div>
-              <p className="mt-2 text-center text-xs text-gray-400">
-                A new edge will be appended to the graph and signed by both orgs.
+              <p className="mt-2 text-center text-xs text-gray-400 dark:text-gray-500">
+                A new edge will be appended to the graph and signed on-chain.
               </p>
             </SectionCard>
 
             <SectionCard title="Recent links" noPadding>
-              <table className="w-full text-xs">
-                <thead>
-                  <tr className="border-b border-gray-50 dark:border-gray-800 bg-gray-50 dark:bg-gray-800/50 text-left">
-                    <th className="px-3 py-2 text-[10px] font-semibold uppercase tracking-wide text-gray-400">Parent → Child</th>
-                    <th className="px-3 py-2 text-[10px] font-semibold uppercase tracking-wide text-gray-400">Qty</th>
-                    <th className="px-3 py-2 text-[10px] font-semibold uppercase tracking-wide text-gray-400">When</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {RECENT_LINKS.map((l, i) => (
-                    <tr key={i} className="border-b border-gray-50 dark:border-gray-800 last:border-0 hover:bg-gray-50 dark:hover:bg-gray-800">
-                      <td className="px-3 py-2">
-                        <span className="font-mono text-violet-600">{l.parent}</span>
-                        <span className="text-gray-400"> → </span>
-                        <span className="font-mono text-blue-600">{l.child}</span>
-                      </td>
-                      <td className="px-3 py-2 text-gray-500 dark:text-gray-400">{l.qty}</td>
-                      <td className="px-3 py-2 text-gray-400 dark:text-gray-500">{l.when}</td>
-                    </tr>
+              {linksLoading ? (
+                <div className="space-y-2 p-4">
+                  {Array.from({ length: 3 }).map((_, i) => (
+                    <div key={i} className="h-6 animate-pulse rounded bg-gray-100 dark:bg-gray-700" />
                   ))}
-                </tbody>
-              </table>
+                </div>
+              ) : recentLinks.length === 0 ? (
+                <p className="px-4 py-4 text-xs text-gray-400">No links yet.</p>
+              ) : (
+                <table className="w-full text-xs">
+                  <thead>
+                    <tr className="border-b border-gray-50 dark:border-gray-800 bg-gray-50 dark:bg-gray-800/50 text-left">
+                      <th className="px-3 py-2 text-[10px] font-semibold uppercase tracking-wide text-gray-400">Parent → Child</th>
+                      <th className="px-3 py-2 text-[10px] font-semibold uppercase tracking-wide text-gray-400">When</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {recentLinks.map((l) => (
+                      <tr key={l.id} className="border-b border-gray-50 dark:border-gray-800 last:border-0 hover:bg-gray-50 dark:hover:bg-gray-800">
+                        <td className="px-3 py-2">
+                          <span className="font-medium text-violet-600 dark:text-violet-400 truncate block max-w-[100px]">{l.parentName}</span>
+                          <span className="text-gray-400"> → </span>
+                          <span className="font-medium text-blue-600 dark:text-blue-400 truncate block max-w-[100px]">{l.childName}</span>
+                        </td>
+                        <td className="px-3 py-2 text-gray-400 dark:text-gray-500 whitespace-nowrap">{l.when}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              )}
             </SectionCard>
           </div>
 

@@ -1,0 +1,66 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@import url("https://fonts.googleapis.com/css2?family=Inter+Tight:wght@400;500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap");
+
+:root {
+  --bg: 222 30% 6%;
+  --bg-elev: 224 25% 10%;
+  --bg-elev-2: 223 22% 14%;
+  --fg: 220 25% 94%;
+  --fg-muted: 220 12% 65%;
+  --fg-dim: 220 12% 45%;
+  --border: 223 22% 16%;
+  --border-strong: 223 20% 22%;
+  --accent: 155 87% 52%;
+  --accent-2: 266 100% 64%;
+  --accent-3: 20 100% 65%;
+  --accent-4: 187 85% 53%;
+  --danger: 0 84% 60%;
+  --warn: 38 92% 50%;
+}
+.light {
+  --bg: 220 20% 98%;
+  --bg-elev: 0 0% 100%;
+  --bg-elev-2: 220 20% 95%;
+  --fg: 222 30% 10%;
+  --fg-muted: 220 10% 40%;
+  --fg-dim: 220 10% 55%;
+  --border: 220 15% 90%;
+  --border-strong: 220 15% 80%;
+}
+
+html, body { padding: 0; margin: 0; }
+body {
+  background: hsl(var(--bg));
+  color: hsl(var(--fg));
+  font-family: Inter, system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Ambient glow */
+body::before {
+  content: '';
+  position: fixed; inset: 0; pointer-events: none; z-index: 0;
+  background:
+    radial-gradient(ellipse 50% 40% at 8% 6%, hsl(var(--accent-4) / 0.14), transparent 60%),
+    radial-gradient(ellipse 50% 45% at 95% 12%, hsl(var(--accent) / 0.12), transparent 55%),
+    radial-gradient(ellipse 45% 35% at 88% 90%, hsl(var(--accent-3) / 0.10), transparent 60%),
+    radial-gradient(ellipse 50% 40% at 5% 80%, hsl(var(--accent-2) / 0.12), transparent 60%);
+}
+
+/* React Flow theming */
+.react-flow__node { font-family: 'JetBrains Mono', monospace; font-size: 11px; }
+.react-flow__edge-path { stroke: hsl(var(--border-strong)); stroke-width: 1.2; }
+.react-flow__edge.animated .react-flow__edge-path {
+  stroke: hsl(var(--accent)); stroke-width: 1.6; stroke-dasharray: 5 4;
+  animation: dash 1.2s linear infinite;
+}
+.react-flow__edge.recall .react-flow__edge-path {
+  stroke: hsl(var(--danger)); stroke-width: 1.6; stroke-dasharray: 5 4;
+  animation: dash 1.2s linear infinite;
+}
+@keyframes dash { to { stroke-dashoffset: -18; } }
+.react-flow__controls button { background: hsl(var(--bg-elev)); color: hsl(var(--fg)); border-color: hsl(var(--border)); }
+.react-flow__minimap { background: hsl(var(--bg-elev)); }

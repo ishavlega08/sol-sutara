@@ -21,6 +21,20 @@ enum InviteStatus {
   EXPIRED
 }
 
+enum ComponentStatus {
+  CREATED
+  IN_TRANSIT
+  RECEIVED
+  INSPECTED
+  RECALLED
+  ARCHIVED
+}
+
+enum RecallStatus {
+  ACTIVE
+  RESOLVED
+}
+
 // ─── User ─────────────────────────────────────────────────────────────────────
 
 model User {
@@ -31,10 +45,12 @@ model User {
   created_at     DateTime @default(now())
   updated_at     DateTime @updatedAt
 
-  orgs_created   Organization[]       @relation("OrgCreator")
-  memberships    OrganizationMember[]
-  invites_sent   OrgInvite[]          @relation("InvitesSent")
-  refresh_tokens RefreshToken[]
+  orgs_created    Organization[]       @relation("OrgCreator")
+  memberships     OrganizationMember[]
+  invites_sent    OrgInvite[]          @relation("InvitesSent")
+  refresh_tokens  RefreshToken[]
+  recalls_issued  Recall[]             @relation("RecallsIssued")
+  events_changed  ComponentEvent[]     @relation("EventsChanged")
 }
 
 // ─── Organization ─────────────────────────────────────────────────────────────
@@ -51,6 +67,7 @@ model Organization {
   components Component[]
   members    OrganizationMember[]
   invites    OrgInvite[]
+  recalls    Recall[]
 }
 
 // ─── OrganizationMember ───────────────────────────────────────────────────────
@@ -101,7 +118,7 @@ model RefreshToken {
 // ─── Component ────────────────────────────────────────────────────────────────
 
 model Component {
-  id               String   @id @default(uuid())
+  id               String          @id @default(uuid())
   name             String
   type             String
   supplier         String?
@@ -109,12 +126,24 @@ model Component {
   on_chain_address String?
   on_chain_id      BigInt?
   tx_hash          String?
-  created_at       DateTime @default(now())
+  created_at       DateTime        @default(now())
   org_id           String?
+
+  // Batch / lot / quantity fields (Feature D)
+  batch_number     String?
+  lot_number       String?
+  quantity         Float?
+  unit             String?
+  expiry_date      DateTime?
+
+  // Status lifecycle (Feature E)
+  status           ComponentStatus @default(CREATED)
 
   org          Organization?   @relation(fields: [org_id], references: [id])
   parent_links ComponentLink[] @relation("ParentLinks")
   child_links  ComponentLink[] @relation("ChildLinks")
+  recalls      Recall[]
+  events       ComponentEvent[]
 }
 
 // ─── ComponentLink ────────────────────────────────────────────────────────────
@@ -126,8 +155,45 @@ model ComponentLink {
   tx_hash    String
   created_at DateTime @default(now())
 
+  // Quantity of parent that went into child (Feature D)
+  quantity   Float?
+  unit       String?
+
   parent Component @relation("ParentLinks", fields: [parent_id], references: [id])
   child  Component @relation("ChildLinks", fields: [child_id], references: [id])
 
   @@unique([parent_id, child_id])
+}
+
+// ─── ComponentEvent ───────────────────────────────────────────────────────────
+
+model ComponentEvent {
+  id           String          @id @default(uuid())
+  component_id String
+  from_status  ComponentStatus?
+  to_status    ComponentStatus
+  changed_by   String
+  notes        String?
+  created_at   DateTime        @default(now())
+
+  component Component @relation(fields: [component_id], references: [id], onDelete: Cascade)
+  changer   User      @relation("EventsChanged", fields: [changed_by], references: [id])
+}
+
+// ─── Recall ───────────────────────────────────────────────────────────────────
+
+model Recall {
+  id           String       @id @default(uuid())
+  component_id String
+  reason       String
+  scope        String       @default("Entire batch")
+  issued_by    String
+  issued_at    DateTime     @default(now())
+  resolved_at  DateTime?
+  status       RecallStatus @default(ACTIVE)
+  org_id       String?
+
+  component Component     @relation(fields: [component_id], references: [id])
+  issuer    User          @relation("RecallsIssued", fields: [issued_by], references: [id])
+  org       Organization? @relation(fields: [org_id], references: [id])
 }

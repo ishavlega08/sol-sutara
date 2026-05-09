@@ -6,43 +6,10 @@ import { Download, ChevronDown } from "lucide-react";
 import SupplyChainGraph, { type SupplyNode, type SupplyEdge } from "@/components/graph/SupplyChainGraph";
 import { RiskBadge, type RiskLevel } from "@/components/ui/Badge";
 import ActionButton from "@/components/ui/ActionButton";
+import { getComponents, getComponentTrace, getComponentAffected, getComponentRisk } from "@/lib/api";
+import type { TraceNode, AffectedComponent, ComponentListItem } from "@/types/component";
 
 type Direction = "Upstream" | "Downstream" | "Both";
-
-const NODES: SupplyNode[] = [
-  { id: "SP-01", label: "SP-01", sublabel: "Lithium · Chile",  tier: 1, risk: "low" },
-  { id: "SP-02", label: "SP-02", sublabel: "Cobalt · DRC",     tier: 1, risk: "high" },
-  { id: "SP-03", label: "SP-03", sublabel: "Nickel · Indo",    tier: 1, risk: "medium" },
-  { id: "SP-04", label: "SP-04", sublabel: "Graphite · CN",    tier: 1, risk: "low" },
-  { id: "CM-18", label: "CM-18", sublabel: "Cathode · B-18",   tier: 2, risk: "medium" },
-  { id: "CM-24", label: "CM-24", sublabel: "Anode · A-24",     tier: 2, risk: "low" },
-  { id: "CM-31", label: "CM-31", sublabel: "Cell · NMC-811",   tier: 2, risk: "high" },
-  { id: "AS-07", label: "AS-07", sublabel: "Module · M-7",     tier: 3, risk: "medium" },
-  { id: "AS-09", label: "AS-09", sublabel: "Pack · P-9",       tier: 3, risk: "medium" },
-  { id: "PR-A",  label: "PR-A",  sublabel: "EV Pack · A",      tier: 4, risk: "low" },
-];
-
-const EDGES: SupplyEdge[] = [
-  { from: "SP-01", to: "CM-18" }, { from: "SP-01", to: "CM-24" },
-  { from: "SP-02", to: "CM-18" }, { from: "SP-03", to: "CM-24" },
-  { from: "SP-03", to: "CM-31" }, { from: "SP-04", to: "CM-31" },
-  { from: "CM-18", to: "AS-07" }, { from: "CM-24", to: "AS-09" },
-  { from: "CM-31", to: "AS-09" }, { from: "AS-07", to: "PR-A" },
-  { from: "AS-09", to: "PR-A" },
-];
-
-const NODE_DETAIL: Record<string, { name: string; tier: string; org: string; risk: RiskLevel; parents: number; children: number }> = {
-  "SP-01": { name: "Lithium · Chile",  tier: "Tier 1", org: "org:aster",    risk: "low",    parents: 0, children: 2 },
-  "SP-02": { name: "Cobalt · DRC",     tier: "Tier 1", org: "org:aster",    risk: "high",   parents: 0, children: 1 },
-  "SP-03": { name: "Nickel · Indo",    tier: "Tier 1", org: "org:aster",    risk: "medium", parents: 0, children: 2 },
-  "SP-04": { name: "Graphite · CN",    tier: "Tier 1", org: "org:aster",    risk: "low",    parents: 0, children: 1 },
-  "CM-18": { name: "Cathode B-18",     tier: "Tier 3", org: "org:kaldera",  risk: "medium", parents: 2, children: 1 },
-  "CM-24": { name: "Anode A-24",       tier: "Tier 2", org: "org:meridian", risk: "low",    parents: 2, children: 1 },
-  "CM-31": { name: "Cell NMC-811",     tier: "Tier 2", org: "org:kaldera",  risk: "high",   parents: 2, children: 1 },
-  "AS-07": { name: "Module M-7",       tier: "Tier 3", org: "org:meridian", risk: "medium", parents: 1, children: 1 },
-  "AS-09": { name: "Pack P-9",         tier: "Tier 3", org: "org:meridian", risk: "medium", parents: 2, children: 1 },
-  "PR-A":  { name: "EV Pack A",        tier: "Tier 4", org: "org:meridian", risk: "low",    parents: 2, children: 0 },
-};
 
 const LEGEND = [
   { color: "#10b981", label: "Low risk" },
@@ -53,14 +20,212 @@ const LEGEND = [
 
 const DIR_BTNS: Direction[] = ["Upstream", "Downstream", "Both"];
 
+// ── helpers ───────────────────────────────────────────────────────────────────
+
+const TYPE_TIER: Record<string, 1 | 2 | 3 | 4> = {
+  RAW_MATERIAL: 1, COMPONENT: 2, ASSEMBLY: 3, FINISHED_GOOD: 4,
+};
+function tierForType(type: string): 1 | 2 | 3 | 4 {
+  return TYPE_TIER[type.toUpperCase().replace(/\s+/g, "_")] ?? 2;
+}
+
+/** Flatten a TraceNode tree into SupplyNode[] + SupplyEdge[] (upstream view). */
+function flattenTrace(root: TraceNode): { nodes: SupplyNode[]; edges: SupplyEdge[]; count: number } {
+  const nodesMap = new Map<string, SupplyNode>();
+  const edges: SupplyEdge[] = [];
+
+  function walk(node: TraceNode) {
+    if (!nodesMap.has(node.id)) {
+      nodesMap.set(node.id, {
+        id:       node.id,
+        label:    node.name.slice(0, 12),
+        sublabel: node.type,
+        tier:     tierForType(node.type),
+      });
+    }
+    for (const parent of node.parents) {
+      walk(parent);
+      edges.push({ from: parent.id, to: node.id });
+    }
+  }
+
+  walk(root);
+  return { nodes: Array.from(nodesMap.values()), edges, count: nodesMap.size };
+}
+
+/** Flatten affected (downstream) into SupplyNode[] + SupplyEdge[]. */
+function flattenAffected(
+  root: { id: string; name: string; type: string },
+  affected: AffectedComponent[]
+): { nodes: SupplyNode[]; edges: SupplyEdge[] } {
+  const nodes: SupplyNode[] = [
+    { id: root.id, label: root.name.slice(0, 12), sublabel: root.type, tier: tierForType(root.type) },
+  ];
+  const edges: SupplyEdge[] = [];
+
+  const byDepth = new Map<number, AffectedComponent[]>();
+  for (const a of affected) {
+    if (!byDepth.has(a.depth)) byDepth.set(a.depth, []);
+    byDepth.get(a.depth)!.push(a);
+    nodes.push({ id: a.id, label: a.name.slice(0, 12), sublabel: a.type, tier: Math.min(tierForType(a.type), 4) as 1|2|3|4 });
+  }
+
+  // root → depth-1, depth-n → depth-(n+1)
+  for (const a of byDepth.get(1) ?? []) edges.push({ from: root.id, to: a.id });
+  const maxDepth = Math.max(...Array.from(byDepth.keys()), 1);
+  for (let d = 1; d < maxDepth; d++) {
+    for (const p of byDepth.get(d) ?? [])
+      for (const c of byDepth.get(d + 1) ?? [])
+        edges.push({ from: p.id, to: c.id });
+  }
+
+  return { nodes, edges };
+}
+
+interface NodeInfo {
+  name: string;
+  type: string;
+  parentCount: number;
+  childCount: number;
+  risk: RiskLevel | null;
+}
+
+// ── component ─────────────────────────────────────────────────────────────────
+
 export default function TracePage() {
-  const [query, setQuery]           = useState("PR-A · EV Pack A");
-  const [depth, setDepth]           = useState(6);
-  const [direction, setDirection]   = useState<Direction>("Upstream");
-  const [selectedId, setSelectedId] = useState<string | null>("CM-18");
+  const [query, setQuery]             = useState("");
+  const [depth, setDepth]             = useState(6);
+  const [direction, setDirection]     = useState<Direction>("Upstream");
+  const [selectedId, setSelectedId]   = useState<string | null>(null);
+  const [nodeInfo, setNodeInfo]       = useState<Record<string, NodeInfo>>({});
+
+  const [nodes, setNodes]             = useState<SupplyNode[]>([]);
+  const [edges, setEdges]             = useState<SupplyEdge[]>([]);
+  const [traceRoot, setTraceRoot]     = useState<string | null>(null);
+  const [nodesWalked, setNodesWalked] = useState(0);
+  const [loading, setLoading]         = useState(false);
+  const [error, setError]             = useState<string | null>(null);
+  const [ran, setRan]                 = useState(false);
+
+  // autocomplete
+  const [suggestions, setSuggestions]   = useState<ComponentListItem[]>([]);
+  const [showSugg, setShowSugg]         = useState(false);
+  const [allComponents, setAllComponents] = useState<ComponentListItem[]>([]);
+  const [loadedList, setLoadedList]     = useState(false);
+
+  const loadList = useCallback(async () => {
+    if (loadedList) return;
+    try {
+      const res = await getComponents();
+      setAllComponents(res.components);
+      setLoadedList(true);
+    } catch { /* silent */ }
+  }, [loadedList]);
+
+  const onQueryChange = (val: string) => {
+    setQuery(val);
+    if (val.length < 2) { setSuggestions([]); setShowSugg(false); return; }
+    const q = val.toLowerCase();
+    setSuggestions(allComponents.filter((c) => c.name.toLowerCase().includes(q) || c.id.includes(q)).slice(0, 6));
+    setShowSugg(true);
+  };
+
+  const pickSuggestion = (c: ComponentListItem) => {
+    setQuery(c.name);
+    setSuggestions([]);
+    setShowSugg(false);
+    runTrace(c.id, c.name);
+  };
+
+  const runTrace = useCallback(async (compId?: string, compName?: string) => {
+    let id = compId;
+    if (!id) {
+      const match = allComponents.find(
+        (c) => c.name.toLowerCase() === query.toLowerCase() || c.id === query
+      );
+      if (!match) { setError("Component not found. Select from suggestions."); return; }
+      id = match.id;
+      compName = match.name;
+    }
+
+    setLoading(true);
+    setError(null);
+    setRan(false);
+
+    try {
+      let n: SupplyNode[] = [];
+      let e: SupplyEdge[] = [];
+      let count = 0;
+
+      if (direction === "Upstream") {
+        const traceRes = await getComponentTrace(id);
+        const flat = flattenTrace(traceRes.trace);
+        n = flat.nodes; e = flat.edges; count = flat.count;
+
+      } else if (direction === "Downstream") {
+        const affRes = await getComponentAffected(id);
+        const flat = flattenAffected(affRes.root, affRes.affected);
+        n = flat.nodes; e = flat.edges; count = n.length;
+
+      } else {
+        // Both: run upstream + downstream in parallel, merge
+        const [traceRes, affRes] = await Promise.all([
+          getComponentTrace(id),
+          getComponentAffected(id),
+        ]);
+        const upFlat   = flattenTrace(traceRes.trace);
+        const downFlat = flattenAffected(affRes.root, affRes.affected);
+
+        const nodeMap = new Map<string, SupplyNode>();
+        [...upFlat.nodes, ...downFlat.nodes].forEach((nd) => nodeMap.set(nd.id, nd));
+        const edgeSet = new Set<string>();
+        const allEdges: SupplyEdge[] = [];
+        [...upFlat.edges, ...downFlat.edges].forEach((ed) => {
+          const key = `${ed.from}->${ed.to}`;
+          if (!edgeSet.has(key)) { edgeSet.add(key); allEdges.push(ed); }
+        });
+        n = Array.from(nodeMap.values());
+        e = allEdges;
+        count = n.length;
+      }
+
+      // Fetch risk for all nodes
+      const infoMap: Record<string, NodeInfo> = {};
+      await Promise.allSettled(
+        n.map(async (node) => {
+          try {
+            const riskRes = await getComponentRisk(node.id);
+            const risk = riskRes.risk;
+            infoMap[node.id] = {
+              name:        node.id === id ? (compName ?? query) : node.label,
+              type:        node.sublabel,
+              parentCount: risk.factors.parentCount,
+              childCount:  risk.factors.childCount,
+              risk:        risk.level as RiskLevel,
+            };
+            node.risk = risk.level.toLowerCase() as "low" | "medium" | "high";
+          } catch {
+            infoMap[node.id] = { name: node.label, type: node.sublabel, parentCount: 0, childCount: 0, risk: null };
+          }
+        })
+      );
+
+      setNodes(n);
+      setEdges(e);
+      setNodesWalked(count);
+      setNodeInfo(infoMap);
+      setTraceRoot(compName ?? query);
+      setSelectedId(null);
+      setRan(true);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Trace failed");
+    } finally {
+      setLoading(false);
+    }
+  }, [allComponents, query, direction]);
 
   const onNodeClick = useCallback((id: string) => setSelectedId(id), []);
-  const selected = selectedId ? NODE_DETAIL[selectedId] : null;
+  const selected = selectedId ? nodeInfo[selectedId] : null;
 
   return (
     <div className="flex h-full flex-col overflow-hidden lg:flex-row">
@@ -94,13 +259,31 @@ export default function TracePage() {
 
           {/* Search bar */}
           <div className="mt-3 flex flex-col gap-2 sm:flex-row sm:items-center">
-            <div className="flex flex-1 items-center gap-2.5 rounded-md border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 px-3 py-2">
-              <div className="flex h-4 w-4 flex-shrink-0 items-center justify-center rounded-full border-2 border-gray-300 dark:border-gray-600">
-                <div className="h-1.5 w-1.5 rounded-full bg-gray-300 dark:bg-gray-600" />
+            <div className="relative flex-1">
+              <div className="flex items-center gap-2.5 rounded-md border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 px-3 py-2">
+                <div className="flex h-4 w-4 flex-shrink-0 items-center justify-center rounded-full border-2 border-gray-300 dark:border-gray-600">
+                  <div className="h-1.5 w-1.5 rounded-full bg-gray-300 dark:bg-gray-600" />
+                </div>
+                <input
+                  type="text"
+                  value={query}
+                  onFocus={loadList}
+                  onChange={(e) => onQueryChange(e.target.value)}
+                  placeholder="Search component name or ID…"
+                  className="flex-1 bg-transparent text-sm text-gray-800 dark:text-gray-200 outline-none placeholder:text-gray-400"
+                />
               </div>
-              <input type="text" value={query} onChange={(e) => setQuery(e.target.value)}
-                placeholder="Component ID or name…"
-                className="flex-1 bg-transparent text-sm text-gray-800 dark:text-gray-200 outline-none placeholder:text-gray-400" />
+              {showSugg && suggestions.length > 0 && (
+                <div className="absolute top-full z-20 mt-1 w-full rounded-md border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 shadow-lg">
+                  {suggestions.map((c) => (
+                    <button key={c.id} onMouseDown={() => pickSuggestion(c)}
+                      className="flex w-full items-center justify-between px-3 py-2 text-sm hover:bg-gray-50 dark:hover:bg-gray-700">
+                      <span className="text-gray-800 dark:text-gray-200">{c.name}</span>
+                      <span className="text-xs text-gray-400">{c.type}</span>
+                    </button>
+                  ))}
+                </div>
+              )}
             </div>
             <div className="flex items-center gap-2">
               <div className="relative">
@@ -110,14 +293,32 @@ export default function TracePage() {
                 </select>
                 <ChevronDown className="pointer-events-none absolute right-2 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-gray-400" />
               </div>
-              <ActionButton variant="gradient" className="flex-shrink-0">Run trace</ActionButton>
+              <ActionButton variant="gradient" className="flex-shrink-0" onClick={() => runTrace()} disabled={loading || !query}>
+                {loading ? "Running…" : "Run trace"}
+              </ActionButton>
             </div>
           </div>
+
+          {error && (
+            <p className="mt-2 text-xs text-red-500">{error}</p>
+          )}
         </div>
 
         {/* Graph */}
         <div className="relative flex-1">
-          <SupplyChainGraph nodes={NODES} edges={EDGES} variant="trace" selectedId={selectedId} onNodeClick={onNodeClick} legend={LEGEND} />
+          {!ran && !loading && (
+            <div className="flex h-full items-center justify-center">
+              <p className="text-sm text-gray-400">Search a component and click &quot;Run trace&quot; to visualize its lineage.</p>
+            </div>
+          )}
+          {loading && (
+            <div className="flex h-full items-center justify-center">
+              <p className="text-sm text-gray-400 animate-pulse">Tracing lineage…</p>
+            </div>
+          )}
+          {ran && !loading && (
+            <SupplyChainGraph nodes={nodes} edges={edges} variant="trace" selectedId={selectedId} onNodeClick={onNodeClick} legend={LEGEND} />
+          )}
         </div>
       </div>
 
@@ -127,29 +328,24 @@ export default function TracePage() {
         <div className="px-5 py-4">
           <div className="mb-4 flex items-center justify-between">
             <h2 className="text-sm font-semibold text-gray-900 dark:text-gray-100">Trace result</h2>
-            <span className="flex items-center gap-1 rounded-full border border-emerald-200 dark:border-emerald-800 bg-emerald-50 dark:bg-emerald-950 px-2 py-0.5 text-[10px] font-bold text-emerald-600 dark:text-emerald-400">
-              ● COMPLETE
-            </span>
+            {ran && (
+              <span className="flex items-center gap-1 rounded-full border border-emerald-200 dark:border-emerald-800 bg-emerald-50 dark:bg-emerald-950 px-2 py-0.5 text-[10px] font-bold text-emerald-600 dark:text-emerald-400">
+                ● COMPLETE
+              </span>
+            )}
           </div>
           <div className="flex flex-col gap-2.5 text-sm">
             {[
-              { label: "Origin",        value: query.split("·")[0].trim() || "PR-A" },
+              { label: "Origin",        value: traceRoot ?? "—" },
               { label: "Direction",     value: direction },
-              { label: "Depth reached", value: `${depth} tiers`, bold: true },
-              { label: "Nodes walked",  value: "42", bold: true },
-              { label: "Edges walked",  value: "58", bold: true },
-              { label: "Organizations", value: "4",  bold: true },
+              { label: "Nodes walked",  value: ran ? String(nodesWalked) : "—", bold: true },
+              { label: "Edges walked",  value: ran ? String(edges.length) : "—", bold: true },
             ].map(({ label, value, bold }) => (
               <div key={label} className="flex items-center justify-between">
                 <span className="text-gray-500 dark:text-gray-400">{label}</span>
                 <span className={bold ? "font-semibold text-gray-900 dark:text-gray-200" : "text-gray-700 dark:text-gray-400"}>{value}</span>
               </div>
             ))}
-            <div className="flex items-center justify-between">
-              <span className="text-gray-500">Elapsed</span>
-              <span className="font-semibold text-emerald-600">{"< 200ms"} <span className="text-[10px] font-normal text-gray-400 dark:text-gray-600">★</span></span>
-            </div>
-            <p className="text-[10px] text-gray-400 dark:text-gray-600">★ devnet estimate</p>
           </div>
         </div>
 
@@ -159,22 +355,22 @@ export default function TracePage() {
             <div className="flex flex-col gap-3">
               <div>
                 <p className="text-base font-semibold text-gray-900 dark:text-gray-200">
-                  <span className="text-violet-600">{selectedId}</span> · {selected.name}
+                  <span className="text-violet-600">{selectedId.slice(0, 8)}…</span> · {selected.name}
                 </p>
-                <p className="mt-0.5 text-xs text-gray-400 dark:text-gray-500">{selected.tier} · {selected.org}</p>
+                <p className="mt-0.5 text-xs text-gray-400 dark:text-gray-500">{selected.type}</p>
               </div>
               <div className="flex flex-col gap-2 text-sm">
                 <div className="flex items-center justify-between">
                   <span className="text-gray-500 dark:text-gray-400">Risk</span>
-                  <RiskBadge level={selected.risk} />
+                  {selected.risk ? <RiskBadge level={selected.risk} /> : <span className="text-xs text-gray-400">—</span>}
                 </div>
                 <div className="flex items-center justify-between">
                   <span className="text-gray-500 dark:text-gray-400">Parents</span>
-                  <span className="font-semibold text-gray-900 dark:text-gray-200">{selected.parents}</span>
+                  <span className="font-semibold text-gray-900 dark:text-gray-200">{selected.parentCount}</span>
                 </div>
                 <div className="flex items-center justify-between">
                   <span className="text-gray-500 dark:text-gray-400">Children</span>
-                  <span className="font-semibold text-gray-900 dark:text-gray-200">{selected.children}</span>
+                  <span className="font-semibold text-gray-900 dark:text-gray-200">{selected.childCount}</span>
                 </div>
               </div>
               <Link href={`/components/${selectedId}`}

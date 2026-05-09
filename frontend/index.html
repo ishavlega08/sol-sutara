@@ -1,0 +1,899 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Sol Sutara — The supply chain, set in type.</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&family=Inter:wght@400;450;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+<style>
+:root {
+  --ink: #07090d;
+  --ink-2: #0d1117;
+  --ink-3: #141923;
+  --ink-4: #1c2230;
+  --line: #1f2533;
+  --line-2: #2a3142;
+  --bone: #ecead8;
+  --bone-2: #d6d4c0;
+  --fg: #e8e7da;
+  --fg-2: #a3a496;
+  --fg-3: #6e6f63;
+  --teal: #14F195;
+  --violet: #9945FF;
+  --rust: #e06c3c;
+  --amber: #d8a85c;
+  --crimson: #d65454;
+  --aqua: #6fc3c8;
+  --serif: 'Geist', 'Inter', system-ui, sans-serif;
+  --sans: 'Inter', system-ui, sans-serif;
+  --mono: 'JetBrains Mono', monospace;
+  --mw: 1240px;
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; padding: 0; }
+body {
+  background: var(--ink); color: var(--fg);
+  font: 450 15px/1.55 var(--sans);
+  font-feature-settings: "ss01","cv11";
+  -webkit-font-smoothing: antialiased;
+}
+a { color: inherit; text-decoration: none; }
+button { background: none; border: 0; padding: 0; cursor: pointer; color: inherit; font: inherit; }
+::selection { background: var(--teal); color: #02180e; }
+
+.serif { font-family: var(--serif); font-weight: 600; letter-spacing: -0.025em; }
+.mono { font-family: var(--mono); }
+.tnum { font-variant-numeric: tabular-nums; }
+.italic { font-style: italic; color: var(--fg-2); font-weight: 400; }
+
+.wrap { max-width: var(--mw); margin: 0 auto; padding: 0 32px; }
+.eyebrow { font: 500 11px/1 var(--mono); letter-spacing: 0.2em; color: var(--fg-3); text-transform: uppercase; }
+.rule { height: 1px; background: var(--line); }
+
+/* ============ NAV ============ */
+.nav {
+  position: sticky; top: 0; z-index: 50;
+  background: color-mix(in oklab, var(--ink) 90%, transparent);
+  backdrop-filter: blur(10px);
+  border-bottom: 1px solid var(--line);
+}
+.nav-inner {
+  display: flex; align-items: center; justify-content: space-between;
+  height: 64px;
+}
+.brand { display: flex; align-items: baseline; gap: 10px; font-family: var(--serif); font-size: 20px; font-weight: 500; letter-spacing: -0.02em; }
+.brand-mark { width: 11px; height: 11px; border-radius: 50%; background: var(--teal); box-shadow: 0 0 0 3px color-mix(in oklab, var(--teal) 18%, transparent); transform: translateY(-2px); }
+.brand em { font-style: italic; color: var(--fg-2); font-weight: 400; font-size: 14px; }
+.nav-links { display: flex; align-items: center; gap: 28px; font-size: 13.5px; color: var(--fg-2); }
+.nav-links a:hover { color: var(--fg); }
+.nav-cta { display: flex; align-items: center; gap: 10px; }
+.btn {
+  display: inline-flex; align-items: center; gap: 8px;
+  padding: 8px 14px; border: 1px solid var(--line);
+  border-radius: 5px; background: var(--ink-2);
+  font-size: 13px; font-weight: 500;
+}
+.btn:hover { border-color: var(--line-2); background: var(--ink-3); }
+.btn-primary { background: var(--bone); color: #0a0c12; border-color: var(--bone); font-weight: 600; }
+.btn-primary:hover { background: var(--bone-2); border-color: var(--bone-2); }
+.btn-ghost { background: transparent; border-color: transparent; color: var(--fg-2); }
+.btn-ghost:hover { background: var(--ink-3); color: var(--fg); }
+
+@media (max-width: 900px) { .nav-links { display: none; } }
+
+/* ============ HERO — masthead-style ============ */
+.hero { padding: 36px 0 56px; border-bottom: 1px solid var(--line); }
+.hero-band {
+  display: flex; align-items: baseline; justify-content: space-between;
+  padding-bottom: 14px; border-bottom: 1px solid var(--line); margin-bottom: 36px;
+}
+.hero-band .left { font: 500 11px/1 var(--mono); letter-spacing: 0.2em; color: var(--fg-3); text-transform: uppercase; }
+.hero-band .center { font-family: var(--serif); font-weight: 500; font-size: 14px; color: var(--fg-2); }
+.hero-band .right { font: 500 11px/1 var(--mono); letter-spacing: 0.18em; color: var(--fg-3); text-transform: uppercase; }
+.hero-band .right .live { color: var(--teal); }
+.hero-band .right .live::before { content: '●'; margin-right: 6px; }
+
+.hero-grid {
+  display: grid; grid-template-columns: 1.45fr 1fr; gap: 64px; align-items: end;
+}
+.hero h1 {
+  margin: 0;
+  font-family: var(--serif); font-weight: 500;
+  font-size: clamp(46px, 6.6vw, 92px);
+  line-height: 0.98; letter-spacing: -0.035em;
+  font-variation-settings: "opsz" 144;
+}
+.hero h1 em { font-style: italic; color: var(--fg-2); font-weight: 400; }
+.hero-lede {
+  font-size: 17px; line-height: 1.55; color: var(--fg-2);
+  max-width: 42ch; padding-bottom: 8px;
+}
+.hero-lede b { color: var(--fg); font-weight: 500; }
+.hero-cta { display: flex; gap: 12px; margin-top: 26px; }
+.hero-cta .btn { padding: 11px 18px; font-size: 14px; }
+
+.hero-foot {
+  display: grid; grid-template-columns: repeat(4, 1fr);
+  margin-top: 48px;
+  border-top: 1px solid var(--line); border-bottom: 1px solid var(--line);
+  padding: 18px 0;
+}
+.hero-foot .item { padding: 0 24px; border-left: 1px solid var(--line); }
+.hero-foot .item:first-child { padding-left: 0; border-left: 0; }
+.hero-foot .k { font: 500 10.5px/1 var(--mono); letter-spacing: 0.16em; color: var(--fg-3); text-transform: uppercase; margin-bottom: 10px; }
+.hero-foot .v { font-family: var(--serif); font-size: 22px; font-weight: 500; letter-spacing: -0.015em; }
+.hero-foot .v small { font-family: var(--sans); font-size: 12px; color: var(--fg-2); margin-left: 6px; font-weight: 500; }
+
+/* graph in hero */
+.hero-graph {
+  border: 1px solid var(--line); border-radius: 6px;
+  background: var(--ink-2);
+  padding: 22px 22px 16px;
+  position: relative;
+}
+.hero-graph svg { display: block; width: 100%; height: auto; }
+.hero-graph .cap {
+  font-family: var(--serif); font-weight: 500; font-size: 13px;
+  color: var(--fg-2); border-top: 1px dashed var(--line-2); padding-top: 12px; margin-top: 12px;
+}
+.hero-graph .cap b { font-style: normal; color: var(--fg); font-weight: 500; }
+
+.gedge { fill: none; stroke: var(--line-2); stroke-width: 1.4; }
+.gedge.live { stroke: var(--teal); stroke-width: 1.8; stroke-dasharray: 5 4; animation: dash 1.2s linear infinite; }
+@keyframes dash { to { stroke-dashoffset: -18; } }
+
+@media (max-width: 900px) {
+  .hero-grid { grid-template-columns: 1fr; gap: 36px; }
+  .hero-foot { grid-template-columns: repeat(2, 1fr); }
+  .hero-foot .item:nth-child(3) { border-left: 0; padding-left: 0; }
+}
+
+/* ============ SECTION SCAFFOLDING ============ */
+.sec { padding: 84px 0; border-bottom: 1px solid var(--line); }
+.sec-head {
+  display: grid; grid-template-columns: 1fr 1.2fr; gap: 64px; align-items: end;
+  padding-bottom: 26px; border-bottom: 1px solid var(--line); margin-bottom: 40px;
+}
+.sec-head h2 {
+  margin: 0;
+  font-family: var(--serif); font-weight: 500;
+  font-size: clamp(34px, 4.2vw, 56px); line-height: 1.04; letter-spacing: -0.025em;
+}
+.sec-head h2 em { font-style: italic; color: var(--fg-2); font-weight: 400; }
+.sec-head .kicker { display: flex; flex-direction: column; gap: 14px; }
+.sec-head .kicker p { margin: 0; font-size: 16px; line-height: 1.55; color: var(--fg-2); max-width: 52ch; }
+.sec-head .kicker p b { color: var(--fg); font-weight: 500; }
+
+@media (max-width: 900px) {
+  .sec { padding: 56px 0; }
+  .sec-head { grid-template-columns: 1fr; gap: 18px; }
+}
+
+/* ============ PROBLEM — three columns, classic editorial ============ */
+.three-col { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0; }
+.three-col .col { padding: 0 28px; border-left: 1px solid var(--line); }
+.three-col .col:first-child { padding-left: 0; border-left: 0; }
+.three-col .num { font-family: var(--serif); font-weight: 500; font-size: 36px; font-weight: 500; color: var(--fg-3); margin-bottom: 14px; line-height: 1; }
+.three-col h3 { margin: 0 0 10px; font-family: var(--serif); font-size: 22px; font-weight: 500; letter-spacing: -0.015em; line-height: 1.2; }
+.three-col p { margin: 0; color: var(--fg-2); font-size: 14.5px; line-height: 1.55; }
+.three-col .quote { margin-top: 18px; padding-top: 14px; border-top: 1px dashed var(--line-2); font-family: var(--serif); font-weight: 500; font-size: 13.5px; color: var(--fg-2); }
+
+@media (max-width: 900px) {
+  .three-col { grid-template-columns: 1fr; gap: 36px; }
+  .three-col .col { padding-left: 0; border-left: 0; padding-bottom: 28px; border-bottom: 1px solid var(--line); }
+  .three-col .col:last-child { border-bottom: 0; }
+}
+
+/* ============ HOW — numbered steps with diagram ============ */
+.steps { display: grid; grid-template-columns: 1fr 1.2fr; gap: 56px; }
+.step {
+  display: grid; grid-template-columns: 56px 1fr; gap: 18px;
+  padding: 22px 0; border-bottom: 1px solid var(--line); align-items: start;
+}
+.step:first-child { border-top: 1px solid var(--line); }
+.step .n { font-family: var(--serif); font-size: 42px; font-weight: 500; line-height: 1; color: var(--fg-3); font-variant-numeric: tabular-nums; }
+.step .b h4 { margin: 0 0 6px; font-family: var(--serif); font-size: 21px; font-weight: 500; letter-spacing: -0.015em; }
+.step .b p { margin: 0; color: var(--fg-2); font-size: 14px; line-height: 1.55; }
+.step .b code { font-family: var(--mono); font-size: 11.5px; color: var(--aqua); background: var(--ink-2); padding: 2px 6px; border-radius: 3px; border: 1px solid var(--line); }
+
+.steps-aside { background: var(--ink-2); border: 1px solid var(--line); border-radius: 6px; padding: 28px; align-self: start; position: sticky; top: 96px; }
+.steps-aside .eyebrow { margin-bottom: 18px; }
+.steps-aside svg { width: 100%; height: auto; }
+.steps-aside .cap {
+  font-family: var(--serif); font-weight: 500; font-size: 13px;
+  color: var(--fg-2); border-top: 1px dashed var(--line-2); padding-top: 12px; margin-top: 16px;
+}
+
+@media (max-width: 900px) {
+  .steps { grid-template-columns: 1fr; gap: 36px; }
+  .steps-aside { position: static; }
+}
+
+/* ============ FEATURES — bento with character ============ */
+.bento { display: grid; grid-template-columns: repeat(6, 1fr); grid-auto-rows: minmax(0, auto); gap: 1px; background: var(--line); border: 1px solid var(--line); border-radius: 6px; overflow: hidden; }
+.tile { background: var(--ink); padding: 28px; display: flex; flex-direction: column; gap: 14px; min-height: 220px; }
+.tile.span-2 { grid-column: span 2; }
+.tile.span-3 { grid-column: span 3; }
+.tile.span-4 { grid-column: span 4; }
+.tile.span-6 { grid-column: span 6; }
+.tile-tag { font: 500 10.5px/1 var(--mono); letter-spacing: 0.16em; color: var(--fg-3); text-transform: uppercase; }
+.tile h4 { margin: 0; font-family: var(--serif); font-size: 24px; font-weight: 500; letter-spacing: -0.015em; line-height: 1.15; }
+.tile h4 em { font-style: italic; color: var(--fg-2); font-weight: 400; }
+.tile p { margin: 0; color: var(--fg-2); font-size: 14px; line-height: 1.55; }
+.tile-foot { margin-top: auto; }
+.tile.feat-mint { background: linear-gradient(170deg, var(--ink-2), var(--ink) 60%); }
+.tile.feat-trace { background: var(--ink-2); }
+.tile.feat-recall { background: linear-gradient(170deg, color-mix(in oklab, var(--crimson) 8%, var(--ink-2)), var(--ink) 80%); }
+.tile.feat-trace svg, .tile.feat-mint svg, .tile.feat-recall svg, .tile.feat-risk svg, .tile.feat-sdk svg { display: block; width: 100%; height: auto; }
+
+.code {
+  font-family: var(--mono); font-size: 12px; line-height: 1.7;
+  background: var(--ink); border: 1px solid var(--line); border-radius: 4px;
+  padding: 14px; color: var(--fg-2); overflow-x: auto;
+}
+.code .k { color: var(--violet); }
+.code .s { color: var(--teal); }
+.code .c { color: var(--fg-3); font-style: italic; }
+.code .v { color: var(--aqua); }
+
+@media (max-width: 900px) {
+  .bento { grid-template-columns: 1fr; }
+  .tile.span-2, .tile.span-3, .tile.span-4, .tile.span-6 { grid-column: span 1; }
+}
+
+/* ============ WHY SOLANA — split ============ */
+.why-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0; border: 1px solid var(--line); border-radius: 6px; overflow: hidden; }
+.why-side { padding: 36px; background: var(--ink-2); border-right: 1px solid var(--line); }
+.why-side .pull {
+  font-family: var(--serif); font-size: 28px; font-weight: 500;
+  line-height: 1.25; letter-spacing: -0.02em; max-width: 22ch; margin: 18px 0 28px;
+}
+.why-side .pull em { font-style: italic; color: var(--fg-2); font-weight: 400; }
+.why-side .src { font: 500 11px/1.5 var(--mono); color: var(--fg-3); letter-spacing: 0.06em; text-transform: uppercase; }
+.why-stats { display: grid; grid-template-columns: 1fr 1fr; }
+.why-stat { padding: 32px; border-left: 1px solid var(--line); border-bottom: 1px solid var(--line); }
+.why-stat:nth-child(odd) { border-left: 0; }
+.why-stat:nth-last-child(-n+2) { border-bottom: 0; }
+.why-stat .v { font-family: var(--serif); font-size: 44px; font-weight: 500; letter-spacing: -0.025em; line-height: 1; }
+.why-stat .v small { font-family: var(--sans); font-size: 13px; color: var(--fg-2); margin-left: 6px; font-weight: 500; }
+.why-stat .k { font: 500 10.5px/1 var(--mono); letter-spacing: 0.16em; color: var(--fg-3); text-transform: uppercase; margin-bottom: 12px; }
+.why-stat p { margin: 8px 0 0; color: var(--fg-2); font-size: 13px; line-height: 1.5; }
+
+@media (max-width: 900px) {
+  .why-grid { grid-template-columns: 1fr; }
+  .why-side { border-right: 0; border-bottom: 1px solid var(--line); }
+}
+
+/* ============ ROADMAP ============ */
+.road {
+  display: grid; grid-template-columns: repeat(4, 1fr); gap: 0;
+  border-top: 1px solid var(--line); border-bottom: 1px solid var(--line);
+}
+.road-col { padding: 32px 28px; border-left: 1px solid var(--line); position: relative; }
+.road-col:first-child { border-left: 0; padding-left: 0; }
+.road-col .ph { font: 500 10.5px/1 var(--mono); letter-spacing: 0.18em; color: var(--fg-3); text-transform: uppercase; margin-bottom: 10px; }
+.road-col h4 { margin: 0 0 6px; font-family: var(--serif); font-size: 20px; font-weight: 500; letter-spacing: -0.015em; }
+.road-col h4 em { font-style: italic; color: var(--fg-2); font-weight: 400; }
+.road-col .when { font: 500 11px/1 var(--mono); color: var(--fg-3); letter-spacing: 0.06em; margin-bottom: 18px; }
+.road-col ul { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 9px; }
+.road-col li { font-size: 13px; color: var(--fg-2); display: flex; gap: 8px; align-items: baseline; line-height: 1.45; }
+.road-col li::before { content: '·'; color: var(--fg-3); }
+.road-col.now { background: color-mix(in oklab, var(--teal) 6%, var(--ink)); }
+.road-col.now .ph { color: var(--teal); }
+.road-col.now .when::before { content: '● '; color: var(--teal); }
+
+@media (max-width: 900px) {
+  .road { grid-template-columns: 1fr; }
+  .road-col { border-left: 0; border-top: 1px solid var(--line); padding: 24px 0; }
+  .road-col:first-child { border-top: 0; }
+}
+
+/* ============ FAQ ============ */
+.faq { display: grid; grid-template-columns: 1fr 1.4fr; gap: 56px; }
+.faq-list .q {
+  border-bottom: 1px solid var(--line);
+  padding: 22px 0; cursor: pointer;
+}
+.faq-list .q:first-child { border-top: 1px solid var(--line); }
+.faq-list .q-h {
+  display: flex; justify-content: space-between; align-items: baseline; gap: 18px;
+}
+.faq-list .q-h h4 { margin: 0; font-family: var(--serif); font-size: 19px; font-weight: 500; letter-spacing: -0.012em; }
+.faq-list .q-h .toggle { font-family: var(--serif); font-size: 24px; color: var(--fg-3); line-height: 1; transition: transform .2s; }
+.faq-list .q.open .q-h .toggle { transform: rotate(45deg); color: var(--teal); }
+.faq-list .a { display: none; padding-top: 12px; color: var(--fg-2); font-size: 14.5px; line-height: 1.6; max-width: 60ch; }
+.faq-list .q.open .a { display: block; }
+@media (max-width: 900px) { .faq { grid-template-columns: 1fr; gap: 22px; } }
+
+/* ============ CTA ============ */
+.cta {
+  padding: 96px 0; border-bottom: 1px solid var(--line);
+  background:
+    radial-gradient(ellipse 600px 240px at 80% 100%, color-mix(in oklab, var(--teal) 9%, transparent), transparent 70%),
+    radial-gradient(ellipse 500px 200px at 10% 0%, color-mix(in oklab, var(--violet) 10%, transparent), transparent 70%);
+}
+.cta-grid { display: grid; grid-template-columns: 1.2fr 1fr; gap: 56px; align-items: end; }
+.cta h2 {
+  margin: 0;
+  font-family: var(--serif); font-weight: 500;
+  font-size: clamp(40px, 5.4vw, 76px); line-height: 1.02; letter-spacing: -0.03em;
+}
+.cta h2 em { font-style: italic; color: var(--fg-2); font-weight: 400; }
+.cta p { margin: 18px 0 0; color: var(--fg-2); font-size: 16px; line-height: 1.55; max-width: 50ch; }
+.cta-actions { display: flex; flex-direction: column; gap: 14px; }
+.cta-actions .row { display: flex; gap: 12px; }
+.cta-actions .btn { padding: 12px 20px; font-size: 14px; }
+.cta-actions .meta { font: 500 11px/1.6 var(--mono); color: var(--fg-3); letter-spacing: 0.06em; text-transform: uppercase; }
+
+@media (max-width: 900px) { .cta-grid { grid-template-columns: 1fr; gap: 32px; } }
+
+/* ============ FOOTER ============ */
+.foot { padding: 48px 0 36px; }
+.foot-top { display: grid; grid-template-columns: 1.4fr 1fr 1fr 1fr; gap: 40px; padding-bottom: 36px; border-bottom: 1px solid var(--line); }
+.foot-brand .brand { font-size: 22px; }
+.foot-brand p { margin: 14px 0 0; color: var(--fg-2); font-size: 13px; max-width: 36ch; line-height: 1.55; }
+.foot-col h5 { margin: 0 0 14px; font: 500 10.5px/1 var(--mono); letter-spacing: 0.18em; color: var(--fg-3); text-transform: uppercase; }
+.foot-col a { display: block; padding: 5px 0; color: var(--fg-2); font-size: 13.5px; }
+.foot-col a:hover { color: var(--fg); }
+.foot-bot { display: flex; justify-content: space-between; align-items: center; padding-top: 22px; font: 500 11px/1 var(--mono); color: var(--fg-3); letter-spacing: 0.08em; text-transform: uppercase; }
+
+@media (max-width: 900px) { .foot-top { grid-template-columns: 1fr 1fr; } .foot-bot { flex-direction: column; gap: 12px; align-items: flex-start; } }
+
+</style>
+</head>
+<body>
+
+<!-- ========== NAV ========== -->
+<header class="nav">
+  <div class="wrap nav-inner">
+    <a class="brand" href="#">
+      <span class="brand-mark"></span>
+      <span>Sol Sutara</span>
+      <em>· devnet</em>
+    </a>
+    <nav class="nav-links">
+      <a href="#how">How it works</a>
+      <a href="#features">Product</a>
+      <a href="#why">Why Solana</a>
+      <a href="#road">Roadmap</a>
+      <a href="#faq">FAQ</a>
+    </nav>
+    <div class="nav-cta">
+      <a class="btn btn-ghost" href="dashboard-v2.html">Sign in</a>
+      <a class="btn btn-primary" href="dashboard-v2.html">Get devnet access →</a>
+    </div>
+  </div>
+</header>
+
+<!-- ========== HERO ========== -->
+<section class="hero">
+  <div class="wrap">
+    <div class="hero-band">
+      <div class="left">Vol. I · Issue 04 · Apr 26</div>
+      <div class="center">— building in public —</div>
+      <div class="right"><span class="live">live · devnet</span></div>
+    </div>
+
+    <div class="hero-grid">
+      <div>
+        <h1>The supply chain,<br/><em>set in type.</em></h1>
+        <div class="hero-cta">
+          <a class="btn btn-primary" href="dashboard-v2.html">Open the sandbox →</a>
+          <a class="btn" href="#how">Read how it works</a>
+        </div>
+      </div>
+      <div>
+        <p class="hero-lede">One graph. Every part you ship — from raw to finished good — <b>signed by every supplier in line</b>, written to Solana, traceable in milliseconds. We're building it in the open. The sandbox is live.</p>
+      </div>
+    </div>
+
+    <div class="hero-foot">
+      <div class="item"><div class="k">Network</div><div class="v">Solana <small>devnet</small></div></div>
+      <div class="item"><div class="k">Trace latency</div><div class="v tnum">41 <small>ms median</small></div></div>
+      <div class="item"><div class="k">Per-write fee</div><div class="v tnum">$0.0008 <small>amortized</small></div></div>
+      <div class="item"><div class="k">Status</div><div class="v">Pre-mainnet <small>· design partners only</small></div></div>
+    </div>
+
+    <div style="margin-top: 56px;">
+      <div class="hero-graph">
+        <svg viewBox="0 0 1100 280" fill="none" aria-hidden="true">
+          <defs>
+            <marker id="arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="5" markerHeight="5" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="currentColor"/></marker>
+          </defs>
+          <g stroke="currentColor" stroke-opacity=".18" stroke-dasharray="2 4">
+            <line x1="0" y1="46" x2="1100" y2="46"/><line x1="0" y1="120" x2="1100" y2="120"/><line x1="0" y1="194" x2="1100" y2="194"/>
+          </g>
+          <g fill="var(--fg-3)" font-family="JetBrains Mono" font-size="9.5" letter-spacing="1.4">
+            <text x="0" y="22">TIER 4 · RAW</text>
+            <text x="0" y="96">TIER 3 · COMPONENT</text>
+            <text x="0" y="170">TIER 2 · SUBASSEMBLY</text>
+            <text x="0" y="244">TIER 1 · PRODUCT</text>
+          </g>
+
+          <!-- raw -->
+          <g><circle cx="160" cy="46" r="6" fill="var(--rust)"/><text x="160" y="32" font-family="Geist" font-weight="500" font-size="11" text-anchor="middle" fill="var(--fg-2)">Lithium · Chile</text>
+            <circle cx="340" cy="46" r="6" fill="var(--rust)"/><text x="340" y="32" font-family="Geist" font-weight="500" font-size="11" text-anchor="middle" fill="var(--fg-2)">Cobalt · DRC</text>
+            <circle cx="560" cy="46" r="6" fill="var(--rust)"/><text x="560" y="32" font-family="Geist" font-weight="500" font-size="11" text-anchor="middle" fill="var(--fg-2)">Nickel · ID</text>
+            <circle cx="780" cy="46" r="6" fill="var(--rust)"/><text x="780" y="32" font-family="Geist" font-weight="500" font-size="11" text-anchor="middle" fill="var(--fg-2)">Graphite · CN</text>
+            <circle cx="960" cy="46" r="6" fill="var(--rust)"/><text x="960" y="32" font-family="Geist" font-weight="500" font-size="11" text-anchor="middle" fill="var(--fg-2)">Copper · CL</text>
+          </g>
+
+          <!-- components -->
+          <g>
+            <rect x="220" y="106" width="80" height="28" rx="3" fill="var(--ink-3)" stroke="var(--aqua)" stroke-width="1.4"/><text x="260" y="124" font-family="JetBrains Mono" font-size="10.5" text-anchor="middle" fill="var(--fg)">CM-18</text>
+            <rect x="500" y="106" width="80" height="28" rx="3" fill="var(--ink-3)" stroke="var(--aqua)" stroke-width="1.4"/><text x="540" y="124" font-family="JetBrains Mono" font-size="10.5" text-anchor="middle" fill="var(--fg)">CM-31</text>
+            <rect x="720" y="106" width="80" height="28" rx="3" fill="var(--ink-3)" stroke="var(--aqua)" stroke-width="1.4"/><text x="760" y="124" font-family="JetBrains Mono" font-size="10.5" text-anchor="middle" fill="var(--fg)">CM-24</text>
+          </g>
+
+          <!-- subassembly -->
+          <g>
+            <rect x="320" y="180" width="80" height="28" rx="3" fill="var(--ink-3)" stroke="var(--amber)" stroke-width="1.4"/><text x="360" y="198" font-family="JetBrains Mono" font-size="10.5" text-anchor="middle" fill="var(--fg)">AS-07</text>
+            <rect x="600" y="180" width="80" height="28" rx="3" fill="var(--ink-3)" stroke="var(--amber)" stroke-width="1.4"/><text x="640" y="198" font-family="JetBrains Mono" font-size="10.5" text-anchor="middle" fill="var(--fg)">AS-09</text>
+            <rect x="800" y="180" width="80" height="28" rx="3" fill="var(--ink-3)" stroke="var(--amber)" stroke-width="1.4"/><text x="840" y="198" font-family="JetBrains Mono" font-size="10.5" text-anchor="middle" fill="var(--fg)">AS-12</text>
+          </g>
+
+          <!-- product -->
+          <g><rect x="460" y="252" width="120" height="22" rx="3" fill="var(--teal)"/><text x="520" y="267" font-family="JetBrains Mono" font-size="10.5" font-weight="700" text-anchor="middle" fill="#02180e">PR-A · EV PACK</text></g>
+
+          <!-- edges -->
+          <g class="gedge">
+            <path d="M340 46 C 340 80, 540 80, 540 106" marker-end="url(#arr)"/>
+            <path d="M560 46 C 560 80, 540 80, 540 106" marker-end="url(#arr)"/>
+            <path d="M780 46 C 780 80, 760 80, 760 106" marker-end="url(#arr)"/>
+            <path d="M960 46 C 960 80, 760 80, 760 106" marker-end="url(#arr)"/>
+            <path d="M260 134 C 260 156, 360 156, 360 180" marker-end="url(#arr)"/>
+            <path d="M540 134 C 540 156, 640 156, 640 180" marker-end="url(#arr)"/>
+            <path d="M540 134 C 540 156, 840 156, 840 180" marker-end="url(#arr)"/>
+            <path d="M760 134 C 760 156, 840 156, 840 180" marker-end="url(#arr)"/>
+            <path d="M360 208 C 360 232, 520 232, 520 252" marker-end="url(#arr)"/>
+            <path d="M640 208 C 640 232, 520 232, 520 252" marker-end="url(#arr)"/>
+            <path d="M840 208 C 840 232, 520 232, 520 252" marker-end="url(#arr)"/>
+          </g>
+
+          <!-- live trace -->
+          <g class="gedge live">
+            <path d="M520 252 C 520 232, 360 232, 360 208"/>
+            <path d="M360 208 C 360 156, 260 156, 260 134"/>
+            <path d="M260 134 C 260 80, 160 80, 160 52"/>
+          </g>
+
+          <!-- annotation -->
+          <g>
+            <line x1="160" y1="60" x2="100" y2="84" stroke="var(--teal)" stroke-opacity=".5" stroke-width="1"/>
+            <text x="98" y="100" font-family="Geist" font-weight="500" font-size="11.5" fill="var(--teal)" text-anchor="end">↑ depth 4 · 41 ms</text>
+          </g>
+        </svg>
+        <div class="cap"><b>The graph,</b> live — every part you ship traced back to the salar it came from. Each edge is a signature from the org one tier up. None of this lives in your ERP.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ========== PROBLEM ========== -->
+<section class="sec" id="problem">
+  <div class="wrap">
+    <div class="sec-head">
+      <h2>The supply chain<br/><em>has no memory.</em></h2>
+      <div class="kicker">
+        <p class="eyebrow">The problem</p>
+        <p>Every recall is an archaeology project. Every audit is a spreadsheet rodeo. Every claim of "ethically sourced" is <b>somebody's word</b>, attached to a PDF, attached to an email — until it isn't.</p>
+        <p>We've shipped supply chains for forty years on the assumption that paper trails would scale. They didn't.</p>
+      </div>
+    </div>
+
+    <div class="three-col">
+      <div class="col">
+        <div class="num">i.</div>
+        <h3>Trust is a phone call.</h3>
+        <p>You get a notice from a tier-1 supplier. They got it from tier-2. Tier-2's emailing tier-3. By the time the recall lands in customer hands, you've burned a week on the phone.</p>
+        <div class="quote">— "Three days of incident response is a Tuesday." — head of QA, EV OEM</div>
+      </div>
+      <div class="col">
+        <div class="num">ii.</div>
+        <h3>Provenance is a PDF.</h3>
+        <p>"Conflict-free cobalt." "Organic." "Single-origin." The certificate is real. Whether it tracks the actual lot in your warehouse — that's a different question, and nobody can answer it in seconds.</p>
+        <div class="quote">— Buyers will pay <b style="color: var(--fg);">17%</b> more for verifiable origin (McKinsey, '24).</div>
+      </div>
+      <div class="col">
+        <div class="num">iii.</div>
+        <h3>Audits are theatre.</h3>
+        <p>Once a year, an auditor flies in, samples 4% of records, signs off, leaves. The other 96% is goodwill. Regulators are catching up — DPP in EU, FSMA 204 in US — and goodwill won't pass.</p>
+        <div class="quote">— EU Digital Product Passport: mandatory for batteries <b style="color: var(--fg);">Feb 2027</b>.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ========== HOW IT WORKS ========== -->
+<section class="sec" id="how">
+  <div class="wrap">
+    <div class="sec-head">
+      <h2>One graph.<br/><em>Every signature.</em></h2>
+      <div class="kicker">
+        <p class="eyebrow">How it works</p>
+        <p>Sol Sutara turns each component into a compressed NFT on Solana. Each parent–child link is a co-signed edge. Trace runs against an indexed graph — not a chain walk — so a lookup that takes hours in your ERP takes <b>tens of milliseconds</b> here.</p>
+      </div>
+    </div>
+
+    <div class="steps">
+      <div>
+        <div class="step">
+          <div class="n">01</div>
+          <div class="b">
+            <h4>Register a part.</h4>
+            <p>Mint a compressed NFT for any raw, component, subassembly, or finished good. <code>POST /components</code> from your ERP, or use the dashboard. Costs a fraction of a cent on Solana.</p>
+          </div>
+        </div>
+        <div class="step">
+          <div class="n">02</div>
+          <div class="b">
+            <h4>Link parts together.</h4>
+            <p>When supplier and buyer both confirm a parent–child relationship, the edge is co-signed and committed. Two signatures, one immutable record.</p>
+          </div>
+        </div>
+        <div class="step">
+          <div class="n">03</div>
+          <div class="b">
+            <h4>Trace upstream — or down.</h4>
+            <p>Pick any node. We walk the graph in both directions, returning every parent and child, with org signatures intact. Median <code>41 ms</code> in our sandbox.</p>
+          </div>
+        </div>
+        <div class="step">
+          <div class="n">04</div>
+          <div class="b">
+            <h4>Recall, surgically.</h4>
+            <p>Tag a contaminated lot. Every downstream child resolves automatically. Notifications go on-chain to every affected org. No phone trees.</p>
+          </div>
+        </div>
+      </div>
+
+      <aside class="steps-aside">
+        <div class="eyebrow">A trace, in flight</div>
+        <svg viewBox="0 0 460 320" fill="none">
+          <defs><marker id="arr2" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="5" markerHeight="5" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="var(--teal)"/></marker></defs>
+          <g stroke="currentColor" stroke-opacity=".15" stroke-dasharray="2 4">
+            <line x1="0" y1="40" x2="460" y2="40"/><line x1="0" y1="130" x2="460" y2="130"/><line x1="0" y1="220" x2="460" y2="220"/><line x1="0" y1="290" x2="460" y2="290"/>
+          </g>
+          <g fill="var(--fg-3)" font-family="JetBrains Mono" font-size="9" letter-spacing="1.2">
+            <text x="0" y="18">RAW</text><text x="0" y="108">COMPONENT</text><text x="0" y="198">SUBASSEMBLY</text><text x="0" y="268">PRODUCT</text>
+          </g>
+          <g><circle cx="100" cy="40" r="6" fill="var(--rust)"/><circle cx="240" cy="40" r="6" fill="var(--rust)"/><circle cx="380" cy="40" r="6" fill="var(--rust)"/></g>
+          <g>
+            <rect x="60" y="116" width="80" height="28" rx="3" fill="var(--ink)" stroke="var(--aqua)" stroke-width="1.4"/><text x="100" y="134" font-family="JetBrains Mono" font-size="10" text-anchor="middle" fill="var(--fg)">CM-18</text>
+            <rect x="200" y="116" width="80" height="28" rx="3" fill="var(--ink)" stroke="var(--aqua)" stroke-width="1.4"/><text x="240" y="134" font-family="JetBrains Mono" font-size="10" text-anchor="middle" fill="var(--fg)">CM-31</text>
+            <rect x="340" y="116" width="80" height="28" rx="3" fill="var(--ink)" stroke="var(--aqua)" stroke-width="1.4"/><text x="380" y="134" font-family="JetBrains Mono" font-size="10" text-anchor="middle" fill="var(--fg)">CM-24</text>
+          </g>
+          <g>
+            <rect x="120" y="206" width="80" height="28" rx="3" fill="var(--ink)" stroke="var(--amber)" stroke-width="1.4"/><text x="160" y="224" font-family="JetBrains Mono" font-size="10" text-anchor="middle" fill="var(--fg)">AS-07</text>
+            <rect x="280" y="206" width="80" height="28" rx="3" fill="var(--ink)" stroke="var(--amber)" stroke-width="1.4"/><text x="320" y="224" font-family="JetBrains Mono" font-size="10" text-anchor="middle" fill="var(--fg)">AS-09</text>
+          </g>
+          <rect x="180" y="280" width="120" height="22" rx="3" fill="var(--teal)"/><text x="240" y="295" font-family="JetBrains Mono" font-size="11" font-weight="700" text-anchor="middle" fill="#02180e">PR-A</text>
+          <g class="gedge">
+            <path d="M100 40 C 100 80, 100 80, 100 116" marker-end="url(#arr2)"/>
+            <path d="M240 40 C 240 80, 240 80, 240 116" marker-end="url(#arr2)"/>
+            <path d="M380 40 C 380 80, 380 80, 380 116" marker-end="url(#arr2)"/>
+            <path d="M100 144 C 100 175, 160 175, 160 206" marker-end="url(#arr2)"/>
+            <path d="M240 144 C 240 175, 160 175, 160 206" marker-end="url(#arr2)"/>
+            <path d="M240 144 C 240 175, 320 175, 320 206" marker-end="url(#arr2)"/>
+            <path d="M380 144 C 380 175, 320 175, 320 206" marker-end="url(#arr2)"/>
+            <path d="M160 234 C 160 256, 240 256, 240 280" marker-end="url(#arr2)"/>
+            <path d="M320 234 C 320 256, 240 256, 240 280" marker-end="url(#arr2)"/>
+          </g>
+          <g class="gedge live">
+            <path d="M240 280 C 240 256, 160 256, 160 234"/>
+            <path d="M160 234 C 160 175, 100 175, 100 144"/>
+            <path d="M100 116 C 100 80, 100 80, 100 46"/>
+          </g>
+          <g><line x1="100" y1="60" x2="34" y2="86" stroke="var(--teal)" stroke-opacity=".4"/><text x="32" y="100" font-family="Geist" font-weight="500" font-size="11" fill="var(--teal)" text-anchor="end">41 ms</text></g>
+        </svg>
+        <div class="cap">A finished EV pack, traced back to the Chilean salar. Nine nodes. Ten edges. <b>One query.</b></div>
+      </aside>
+    </div>
+  </div>
+</section>
+
+<!-- ========== FEATURES (BENTO) ========== -->
+<section class="sec" id="features">
+  <div class="wrap">
+    <div class="sec-head">
+      <h2>Built for the<br/><em>way you actually ship.</em></h2>
+      <div class="kicker">
+        <p class="eyebrow">The product</p>
+        <p>An ERP-shaped surface on top of Solana — components, links, traces, recalls, audit-grade exports. The chain is the substrate, not the UI.</p>
+      </div>
+    </div>
+
+    <div class="bento">
+      <div class="tile feat-mint span-3">
+        <div class="tile-tag">01 · Mint</div>
+        <h4>Compressed NFTs. <em>Per part.</em></h4>
+        <p>Every component is a compressed NFT. Cheap to mint, cheap to query, signed by your org's wallet. Metadata lives on Shadow Drive or IPFS — you choose.</p>
+        <div class="tile-foot">
+          <div class="code"><span class="c">// register a part</span>
+<span class="k">await</span> sutara.<span class="v">components</span>.create({
+  id: <span class="s">"CM-18"</span>,
+  name: <span class="s">"Cathode B-18, NMC-881"</span>,
+  type: <span class="s">"Component"</span>,
+})</div>
+        </div>
+      </div>
+
+      <div class="tile feat-trace span-3">
+        <div class="tile-tag">02 · Trace</div>
+        <h4>One query. <em>Whole graph.</em></h4>
+        <p>Indexed parent–child relationships. Walk upstream, downstream, or both — <code style="font-family: var(--mono); color: var(--aqua); font-size: 12px;">trace.upstream(id, { depth: 7 })</code>. Median 41 ms in sandbox.</p>
+        <div class="tile-foot">
+          <svg viewBox="0 0 360 110" fill="none">
+            <g stroke="var(--line)" stroke-dasharray="2 4">
+              <line x1="0" y1="20" x2="360" y2="20"/><line x1="0" y1="60" x2="360" y2="60"/><line x1="0" y1="100" x2="360" y2="100"/>
+            </g>
+            <g><circle cx="60" cy="20" r="5" fill="var(--rust)"/><circle cx="180" cy="20" r="5" fill="var(--rust)"/><circle cx="300" cy="20" r="5" fill="var(--rust)"/>
+              <rect x="100" y="50" width="60" height="20" rx="3" fill="var(--ink-3)" stroke="var(--aqua)" stroke-width="1.3"/>
+              <rect x="220" y="50" width="60" height="20" rx="3" fill="var(--ink-3)" stroke="var(--aqua)" stroke-width="1.3"/>
+              <rect x="160" y="92" width="60" height="14" rx="3" fill="var(--teal)"/></g>
+            <g class="gedge live">
+              <path d="M190 92 C 190 80, 130 80, 130 70"/>
+              <path d="M130 50 C 130 30, 60 30, 60 26"/>
+            </g>
+            <g class="gedge">
+              <path d="M180 26 C 180 30, 130 30, 130 50"/>
+              <path d="M300 26 C 300 30, 250 30, 250 50"/>
+              <path d="M130 70 C 130 80, 190 80, 190 92"/>
+              <path d="M250 70 C 250 80, 190 80, 190 92"/>
+            </g>
+          </svg>
+        </div>
+      </div>
+
+      <div class="tile feat-recall span-2">
+        <div class="tile-tag" style="color: var(--crimson);">03 · Recall</div>
+        <h4>Blast radius, <em>before you announce.</em></h4>
+        <p>Tag a contaminated lot. We resolve every downstream child and quote you the cost before a single notification ships.</p>
+      </div>
+
+      <div class="tile feat-risk span-2">
+        <div class="tile-tag">04 · Risk score</div>
+        <h4>0–100, <em>per node.</em></h4>
+        <p>Single-source raw materials, geographies under sanctions, suppliers without recent signatures — all factored. The dashboard sorts by risk by default.</p>
+        <div class="tile-foot" style="display: flex; gap: 8px; align-items: baseline;">
+          <span style="display: inline-flex; align-items: center; gap: 6px;"><span style="width: 8px; height: 8px; border-radius: 50%; background: var(--teal);"></span><span class="mono" style="font-size: 11px; color: var(--fg-2); letter-spacing: 0.06em;">LOW · 4,122</span></span>
+          <span style="display: inline-flex; align-items: center; gap: 6px;"><span style="width: 8px; height: 8px; border-radius: 50%; background: var(--amber);"></span><span class="mono" style="font-size: 11px; color: var(--fg-2); letter-spacing: 0.06em;">MED · 84</span></span>
+          <span style="display: inline-flex; align-items: center; gap: 6px;"><span style="width: 8px; height: 8px; border-radius: 50%; background: var(--crimson);"></span><span class="mono" style="font-size: 11px; color: var(--fg-2); letter-spacing: 0.06em;">HIGH · 12</span></span>
+        </div>
+      </div>
+
+      <div class="tile feat-sdk span-2">
+        <div class="tile-tag">05 · SDK</div>
+        <h4>One npm install. <em>That's the integration.</em></h4>
+        <p>TypeScript-first SDK. Wallet, signer, indexer, retries, batching — handled. ERP webhooks first-class.</p>
+        <div class="tile-foot"><code style="font-family: var(--mono); font-size: 11.5px; color: var(--aqua); background: var(--ink); padding: 4px 8px; border: 1px solid var(--line); border-radius: 3px;">$ npm i @sutara/sdk</code></div>
+      </div>
+
+      <div class="tile span-3" style="background: var(--ink-2);">
+        <div class="tile-tag">06 · Audit-grade exports</div>
+        <h4>PDF the regulator <em>actually accepts.</em></h4>
+        <p>One click on any product → a sealed PDF with every signature, every tx hash, every metadata URI in the chain. Designed against EU DPP and FSMA 204 requirements.</p>
+      </div>
+
+      <div class="tile span-3">
+        <div class="tile-tag">07 · Multi-org by design</div>
+        <h4>Your suppliers <em>sign with you.</em></h4>
+        <p>Edges require co-signature. No "we got the data from them" hand-waving — both orgs sign or the edge doesn't exist. The cryptography is the contract.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ========== WHY SOLANA ========== -->
+<section class="sec" id="why">
+  <div class="wrap">
+    <div class="sec-head">
+      <h2>Why Solana?<br/><em>Because the math works.</em></h2>
+      <div class="kicker">
+        <p class="eyebrow">Infrastructure</p>
+        <p>Supply chains write a lot. Millions of components, edges, signatures per year for any real manufacturer. Anything but Solana — or a chain like it — turns this from a product into an academic exercise.</p>
+      </div>
+    </div>
+
+    <div class="why-grid">
+      <div class="why-side">
+        <div class="eyebrow" style="color: var(--teal);">A note from the team</div>
+        <div class="pull">We tried Ethereum first. <em>The maths didn't math.</em> A single OEM mints ~ 4M parts a year. At $5 a write, that's a $20M tax to do <em>nothing useful yet.</em></div>
+        <div class="src">— Sol Sutara, build-in-public log #07</div>
+      </div>
+      <div class="why-stats">
+        <div class="why-stat">
+          <div class="k">Per-part write</div>
+          <div class="v tnum">$0.0008<small>/ amortized</small></div>
+          <p>Compressed NFTs put 4M parts inside a budget any line manager can sign off.</p>
+        </div>
+        <div class="why-stat">
+          <div class="k">Block time</div>
+          <div class="v tnum">~400<small>ms</small></div>
+          <p>Edges confirm faster than the time it takes to walk down a warehouse aisle.</p>
+        </div>
+        <div class="why-stat">
+          <div class="k">Throughput ceiling</div>
+          <div class="v tnum">65k<small>tps theoretical</small></div>
+          <p>Headroom for the day every loading bay in the supplier network goes live at once.</p>
+        </div>
+        <div class="why-stat">
+          <div class="k">Tooling maturity</div>
+          <div class="v tnum">2026<small>· production</small></div>
+          <p>Wallet adapters, RPC providers, indexers, mainstream-grade. Not 2021 anymore.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ========== ROADMAP ========== -->
+<section class="sec" id="road">
+  <div class="wrap">
+    <div class="sec-head">
+      <h2>Building, in public.<br/><em>One issue at a time.</em></h2>
+      <div class="kicker">
+        <p class="eyebrow">Roadmap</p>
+        <p>We ship every two weeks and write up what changed. The sandbox is open today; mainnet follows once design partners are happy. No pre-sales. No tokens. <b>The product is the pitch.</b></p>
+      </div>
+    </div>
+
+    <div class="road">
+      <div class="road-col">
+        <div class="ph">Q4 2025 · Shipped</div>
+        <h4>Foundations</h4>
+        <div class="when">Oct — Dec '25</div>
+        <ul>
+          <li>cNFT schema for components</li>
+          <li>Co-signed edges (parent–child)</li>
+          <li>Trace API · upstream + downstream</li>
+          <li>Devnet integration</li>
+        </ul>
+      </div>
+      <div class="road-col now">
+        <div class="ph">Q2 2026 · Now</div>
+        <h4>Sandbox <em>+ design partners</em></h4>
+        <div class="when">Apr — Jun '26</div>
+        <ul>
+          <li>Multi-org workspace</li>
+          <li>Recall simulation + dispatch</li>
+          <li>TypeScript SDK · v0.4</li>
+          <li>EU DPP audit export</li>
+        </ul>
+      </div>
+      <div class="road-col">
+        <div class="ph">Q3 2026</div>
+        <h4>Mainnet beta</h4>
+        <div class="when">Jul — Sep '26</div>
+        <ul>
+          <li>Mainnet writes</li>
+          <li>SSO + role-based access</li>
+          <li>FSMA 204 audit export</li>
+          <li>ERP connectors · SAP, NetSuite</li>
+        </ul>
+      </div>
+      <div class="road-col">
+        <div class="ph">Q4 2026</div>
+        <h4>General availability</h4>
+        <div class="when">Oct — Dec '26</div>
+        <ul>
+          <li>99.9% SLA · Growth tier</li>
+          <li>Dedicated indexer · Enterprise</li>
+          <li>Public verification widget</li>
+          <li>Mobile inspector app</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ========== FAQ ========== -->
+<section class="sec" id="faq">
+  <div class="wrap">
+    <div class="sec-head">
+      <h2>The questions<br/><em>we keep getting asked.</em></h2>
+      <div class="kicker">
+        <p class="eyebrow">FAQ</p>
+        <p>If you've been around supply-chain blockchain projects before, you have justified scepticism. We share most of it. Here are the ones that come up every call.</p>
+      </div>
+    </div>
+
+    <div class="faq">
+      <div></div>
+      <div class="faq-list" id="faq-list">
+        <div class="q open">
+          <div class="q-h"><h4>Is this another supply-chain blockchain that doesn't ship?</h4><span class="toggle">+</span></div>
+          <div class="a">Probably the right thing to ask. Difference: we're not selling a token. The product is a hosted graph + SDK. You pay in dollars (or USDC if you must). Solana is an implementation detail — you can use Sol Sutara without ever touching a wallet.</div>
+        </div>
+        <div class="q">
+          <div class="q-h"><h4>Why not just use a Postgres + audit log?</h4><span class="toggle">+</span></div>
+          <div class="a">You can. But you can't make your suppliers sign rows in your database. The cryptography is what makes "tier-3 said this" actually verifiable instead of trusting your tier-1 to forward the truth. A central database belongs to one party; this graph doesn't.</div>
+        </div>
+        <div class="q">
+          <div class="q-h"><h4>Does my whole supply chain need to be on it?</h4><span class="toggle">+</span></div>
+          <div class="a">No. Start with one tier-1 supplier and one product line. The graph grows where signatures grow. The parts you can't get signed are still recorded — just marked as unverified. Recall + audit work either way.</div>
+        </div>
+        <div class="q">
+          <div class="q-h"><h4>What about IP-sensitive supply data?</h4><span class="toggle">+</span></div>
+          <div class="a">Component metadata can live off-chain (Shadow Drive, IPFS, your own S3). Only the hash and signature are public. The graph topology is opt-in — you can keep edges private to participating orgs only.</div>
+        </div>
+        <div class="q">
+          <div class="q-h"><h4>How are you priced?</h4><span class="toggle">+</span></div>
+          <div class="a">$0 on devnet, free during build season. Production tiers start at $490/mo for 500k writes + 250k traces, or $0.0008 per write on top. Enterprise is custom — dedicated indexer + SAML. No tokens, no pre-sales.</div>
+        </div>
+        <div class="q">
+          <div class="q-h"><h4>Who are you?</h4><span class="toggle">+</span></div>
+          <div class="a">A small team. Ex-Stripe, ex-Solana Labs, one person who spent eight years inside an automotive OEM's supplier-quality team. Building in public, hiring slowly, shipping every two weeks.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ========== CTA ========== -->
+<section class="cta">
+  <div class="wrap">
+    <div class="cta-grid">
+      <div>
+        <h2>The graph is open.<br/><em>Bring a tier-1.</em></h2>
+        <p>Devnet sandbox, no card, no token. Pick one supplier and one product line — we'll walk you through standing up your first signed edge in an afternoon.</p>
+      </div>
+      <div class="cta-actions">
+        <div class="row">
+          <a class="btn btn-primary" href="dashboard-v2.html" style="padding: 12px 20px; font-size: 14px;">Open the sandbox →</a>
+          <a class="btn" href="#" style="padding: 12px 20px; font-size: 14px;">Talk to a builder</a>
+        </div>
+        <div class="meta">No card · 14-day workspace · We'll match you with a design-partner engineer</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ========== FOOT ========== -->
+<footer class="foot">
+  <div class="wrap">
+    <div class="foot-top">
+      <div class="foot-brand">
+        <div class="brand"><span class="brand-mark"></span><span>Sol Sutara</span><em>· devnet</em></div>
+        <p>The supply chain, set in type. Built in public on Solana, since Q4 2025.</p>
+      </div>
+      <div class="foot-col">
+        <h5>Product</h5>
+        <a href="#how">How it works</a>
+        <a href="#features">Features</a>
+        <a href="dashboard-v2.html">Dashboard</a>
+        <a href="#road">Roadmap</a>
+      </div>
+      <div class="foot-col">
+        <h5>Company</h5>
+        <a href="#">Build log</a>
+        <a href="#">Press kit</a>
+        <a href="#">Hiring</a>
+        <a href="#">Contact</a>
+      </div>
+      <div class="foot-col">
+        <h5>Resources</h5>
+        <a href="#">Docs</a>
+        <a href="#">SDK</a>
+        <a href="#">Status</a>
+        <a href="#">Security</a>
+      </div>
+    </div>
+    <div class="foot-bot">
+      <span>© 2026 Sol Sutara · Vol. I · Issue 04</span>
+      <span>Building in public · devnet · Solana</span>
+    </div>
+  </div>
+</footer>
+
+<script>
+// FAQ accordion
+document.querySelectorAll('#faq-list .q').forEach(q => {
+  q.addEventListener('click', () => q.classList.toggle('open'));
+});
+</script>
+
+</body>
+</html>

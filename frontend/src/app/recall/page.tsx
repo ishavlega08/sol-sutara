@@ -5,52 +5,181 @@ import { RefreshCw, ChevronDown, AlertTriangle } from "lucide-react";
 import SupplyChainGraph, { type SupplyNode, type SupplyEdge } from "@/components/graph/SupplyChainGraph";
 import { StatusBadge } from "@/components/ui/Badge";
 import ActionButton from "@/components/ui/ActionButton";
-
-const NODES: SupplyNode[] = [
-  { id: "SP-01", label: "SP-01", sublabel: "Lithium",      tier: 1, state: "unaffected" },
-  { id: "SP-02", label: "SP-02", sublabel: "Cobalt · DRC", tier: 1, state: "affected" },
-  { id: "SP-03", label: "SP-03", sublabel: "Nickel",       tier: 1, state: "unaffected" },
-  { id: "SP-04", label: "SP-04", sublabel: "Graphite",     tier: 1, state: "unaffected" },
-  { id: "CM-18", label: "CM-18", sublabel: "Cathode B-18", tier: 2, state: "affected" },
-  { id: "CM-24", label: "CM-24", sublabel: "Anode A-24",   tier: 2, state: "unaffected" },
-  { id: "CM-31", label: "CM-31", sublabel: "Cell NMC-811", tier: 2, state: "affected" },
-  { id: "AS-07", label: "AS-07", sublabel: "Module M-7",   tier: 3, state: "propagating" },
-  { id: "AS-09", label: "AS-09", sublabel: "Pack P-9",     tier: 3, state: "propagating" },
-  { id: "PR-A",  label: "PR-A",  sublabel: "EV Pack A",    tier: 4, state: "propagating" },
-];
-
-const EDGES: SupplyEdge[] = [
-  { from: "SP-01", to: "CM-18", highlighted: false },
-  { from: "SP-01", to: "CM-24", highlighted: false },
-  { from: "SP-02", to: "CM-18", highlighted: true },
-  { from: "SP-02", to: "CM-31", highlighted: true },
-  { from: "SP-03", to: "CM-24", highlighted: false },
-  { from: "SP-03", to: "CM-31", highlighted: false },
-  { from: "SP-04", to: "CM-31", highlighted: false },
-  { from: "CM-18", to: "AS-07", highlighted: true },
-  { from: "CM-24", to: "AS-09", highlighted: false },
-  { from: "CM-31", to: "AS-09", highlighted: true },
-  { from: "AS-07", to: "PR-A",  highlighted: true },
-  { from: "AS-09", to: "PR-A",  highlighted: true },
-];
+import { getComponents, getComponentAffected, createRecall } from "@/lib/api";
+import type { ComponentListItem, AffectedComponent } from "@/types/component";
 
 const LEGEND = [
-  { color: "#ef4444", label: "Affected" },
-  { color: "#9ca3af", label: "Unaffected" },
+  { color: "#ef4444", label: "Affected (root)" },
   { color: "#f59e0b", label: "Propagating" },
+  { color: "#9ca3af", label: "Unaffected" },
 ];
 
-const DCS = [
-  { id: "DC-01 Berlin",    units: 864 },
-  { id: "DC-02 Tokyo",     units: 1142 },
-  { id: "DC-03 Austin",    units: 906 },
-  { id: "DC-04 Melbourne", units: 500 },
-];
+const TYPE_TIER: Record<string, 1 | 2 | 3 | 4> = {
+  RAW_MATERIAL: 1, COMPONENT: 2, ASSEMBLY: 3, FINISHED_GOOD: 4,
+};
+function tierForType(type: string): 1 | 2 | 3 | 4 {
+  return TYPE_TIER[type.toUpperCase().replace(/\s+/g, "_")] ?? 2;
+}
+
+function buildGraph(
+  root: { id: string; name: string; type: string },
+  affected: AffectedComponent[]
+): { nodes: SupplyNode[]; edges: SupplyEdge[] } {
+  const nodes: SupplyNode[] = [
+    {
+      id:       root.id,
+      label:    root.name.slice(0, 12),
+      sublabel: root.type,
+      tier:     tierForType(root.type),
+      state:    "affected",
+    },
+  ];
+  const edges: SupplyEdge[] = [];
+
+  // Group by depth so we can wire parent→child edges
+  const byDepth = new Map<number, AffectedComponent[]>();
+  for (const a of affected) {
+    if (!byDepth.has(a.depth)) byDepth.set(a.depth, []);
+    byDepth.get(a.depth)!.push(a);
+  }
+
+  for (const a of affected) {
+    nodes.push({
+      id:       a.id,
+      label:    a.name.slice(0, 12),
+      sublabel: a.type,
+      tier:     Math.min(tierForType(a.type), 4) as 1 | 2 | 3 | 4,
+      state:    "propagating",
+    });
+  }
+
+  // Edges: root → depth-1 items; depth-1 → depth-2 etc.
+  // Since we don't have exact parent info per affected node here, we wire
+  // root → all depth-1, and each depth-n item → all depth-(n+1) items (approximation).
+  const depth1 = byDepth.get(1) ?? [];
+  for (const a of depth1) {
+    edges.push({ from: root.id, to: a.id, highlighted: true });
+  }
+  const maxDepth = Math.max(...Array.from(byDepth.keys()), 1);
+  for (let d = 1; d < maxDepth; d++) {
+    const parents = byDepth.get(d) ?? [];
+    const children = byDepth.get(d + 1) ?? [];
+    for (const p of parents) {
+      for (const c of children) {
+        edges.push({ from: p.id, to: c.id, highlighted: true });
+      }
+    }
+  }
+
+  return { nodes, edges };
+}
 
 export default function RecallPage() {
-  const [query, setQuery]   = useState("SP-02 · Cobalt DRC batch 881");
+  const [query, setQuery]   = useState("");
   const [scope, setScope]   = useState("Entire batch");
-  const [active, setActive] = useState(true);
+  const [active, setActive] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [error, setError]   = useState<string | null>(null);
+
+  const [nodes, setNodes]   = useState<SupplyNode[]>([]);
+  const [edges, setEdges]   = useState<SupplyEdge[]>([]);
+  const [total, setTotal]   = useState(0);
+  const [rootName, setRootName] = useState("");
+  const [selectedId, setSelectedId] = useState<string | null>(null);
+
+  // Recall issuance
+  const [recallReason, setRecallReason] = useState("");
+  const [recalling, setRecalling]       = useState(false);
+  const [recallDone, setRecallDone]     = useState(false);
+  const [recallError, setRecallError]   = useState<string | null>(null);
+
+  // autocomplete
+  const [suggestions, setSuggestions]     = useState<ComponentListItem[]>([]);
+  const [showSugg, setShowSugg]           = useState(false);
+  const [allComponents, setAllComponents] = useState<ComponentListItem[]>([]);
+  const [loadedList, setLoadedList]       = useState(false);
+
+  const loadList = useCallback(async () => {
+    if (loadedList) return;
+    try {
+      const res = await getComponents();
+      setAllComponents(res.components);
+      setLoadedList(true);
+    } catch { /* silent */ }
+  }, [loadedList]);
+
+  const onQueryChange = (val: string) => {
+    setQuery(val);
+    if (val.length < 2) { setSuggestions([]); setShowSugg(false); return; }
+    const q = val.toLowerCase();
+    setSuggestions(allComponents.filter((c) => c.name.toLowerCase().includes(q) || c.id.includes(q)).slice(0, 6));
+    setShowSugg(true);
+  };
+
+  const pickSuggestion = (c: ComponentListItem) => {
+    setQuery(c.name);
+    setSelectedId(c.id);
+    setSuggestions([]);
+    setShowSugg(false);
+    triggerRecall(c.id, c.name);
+  };
+
+  const triggerRecall = useCallback(async (compId?: string, compName?: string) => {
+    let id = compId;
+    if (!id) {
+      const match = allComponents.find(
+        (c) => c.name.toLowerCase() === query.toLowerCase() || c.id === query
+      );
+      if (!match) { setError("Component not found. Select from the dropdown."); return; }
+      id = match.id;
+      compName = match.name;
+    }
+
+    setLoading(true);
+    setError(null);
+    setActive(false);
+
+    try {
+      const res = await getComponentAffected(id);
+      const { nodes: n, edges: e } = buildGraph(res.root, res.affected);
+      setNodes(n);
+      setEdges(e);
+      setTotal(res.total);
+      setRootName(compName ?? res.root.name);
+      setActive(true);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Recall failed");
+    } finally {
+      setLoading(false);
+    }
+  }, [allComponents, query]);
+
+  const reset = () => {
+    setActive(false);
+    setNodes([]);
+    setEdges([]);
+    setTotal(0);
+    setQuery("");
+    setError(null);
+    setSelectedId(null);
+    setRecallReason("");
+    setRecallDone(false);
+    setRecallError(null);
+  };
+
+  const handleIssueRecall = async () => {
+    if (!selectedId || !recallReason.trim()) return;
+    setRecalling(true);
+    setRecallError(null);
+    try {
+      await createRecall({ componentId: selectedId, reason: recallReason.trim(), scope });
+      setRecallDone(true);
+    } catch (err) {
+      setRecallError(err instanceof Error ? err.message : "Failed to issue recall");
+    } finally {
+      setRecalling(false);
+    }
+  };
 
   const onNodeClick = useCallback(() => {}, []);
 
@@ -68,30 +197,49 @@ export default function RecallPage() {
               <p className="mt-1 text-sm text-gray-400 dark:text-gray-500">Flag a defective component. See the blast radius before you lift the phone.</p>
             </div>
             <div className="flex flex-shrink-0 flex-wrap items-center gap-2">
-              <ActionButton variant="ghost" onClick={() => setActive(false)}>
+              <ActionButton variant="ghost" onClick={reset}>
                 <RefreshCw className="h-3.5 w-3.5" />
                 Reset
               </ActionButton>
               <ActionButton
                 variant="danger"
-                onClick={() => setActive(true)}
+                onClick={() => triggerRecall()}
+                disabled={loading || !query}
                 className="border-red-300 bg-red-500 text-white hover:bg-red-600"
               >
                 <AlertTriangle className="h-3.5 w-3.5" />
-                Trigger recall
+                {loading ? "Running…" : "Trigger recall"}
               </ActionButton>
             </div>
           </div>
 
           {/* Search bar */}
           <div className="mt-3 flex flex-col gap-2 sm:flex-row sm:items-center">
-            <div className="flex flex-1 items-center gap-2.5 rounded-md border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 px-3 py-2">
-              <div className="flex h-4 w-4 flex-shrink-0 items-center justify-center rounded-full border-2 border-gray-300 dark:border-gray-600">
-                <div className="h-1.5 w-1.5 rounded-full bg-gray-300 dark:bg-gray-600" />
+            <div className="relative flex-1">
+              <div className="flex items-center gap-2.5 rounded-md border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 px-3 py-2">
+                <div className="flex h-4 w-4 flex-shrink-0 items-center justify-center rounded-full border-2 border-gray-300 dark:border-gray-600">
+                  <div className="h-1.5 w-1.5 rounded-full bg-gray-300 dark:bg-gray-600" />
+                </div>
+                <input
+                  type="text"
+                  value={query}
+                  onFocus={loadList}
+                  onChange={(e) => onQueryChange(e.target.value)}
+                  placeholder="Search defective component…"
+                  className="flex-1 bg-transparent text-sm text-gray-800 dark:text-gray-200 outline-none placeholder:text-gray-400"
+                />
               </div>
-              <input type="text" value={query} onChange={(e) => setQuery(e.target.value)}
-                placeholder="Component ID or name…"
-                className="flex-1 bg-transparent text-sm text-gray-800 dark:text-gray-200 outline-none placeholder:text-gray-400" />
+              {showSugg && suggestions.length > 0 && (
+                <div className="absolute top-full z-20 mt-1 w-full rounded-md border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 shadow-lg">
+                  {suggestions.map((c) => (
+                    <button key={c.id} onMouseDown={() => pickSuggestion(c)}
+                      className="flex w-full items-center justify-between px-3 py-2 text-sm hover:bg-gray-50 dark:hover:bg-gray-700">
+                      <span className="text-gray-800 dark:text-gray-200">{c.name}</span>
+                      <span className="text-xs text-gray-400">{c.type}</span>
+                    </button>
+                  ))}
+                </div>
+              )}
             </div>
             <div className="relative">
               <select value={scope} onChange={(e) => setScope(e.target.value)}
@@ -103,11 +251,25 @@ export default function RecallPage() {
               <ChevronDown className="pointer-events-none absolute right-2 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-gray-400" />
             </div>
           </div>
+
+          {error && <p className="mt-2 text-xs text-red-500">{error}</p>}
         </div>
 
         {/* Graph */}
         <div className="relative flex-1">
-          <SupplyChainGraph nodes={NODES} edges={EDGES} variant="recall" onNodeClick={onNodeClick} legend={LEGEND} />
+          {!active && !loading && (
+            <div className="flex h-full items-center justify-center">
+              <p className="text-sm text-gray-400">Search a component and click &quot;Trigger recall&quot; to see its blast radius.</p>
+            </div>
+          )}
+          {loading && (
+            <div className="flex h-full items-center justify-center">
+              <p className="animate-pulse text-sm text-gray-400">Computing blast radius…</p>
+            </div>
+          )}
+          {active && !loading && (
+            <SupplyChainGraph nodes={nodes} edges={edges} variant="recall" onNodeClick={onNodeClick} legend={LEGEND} />
+          )}
         </div>
       </div>
 
@@ -123,46 +285,61 @@ export default function RecallPage() {
           <div className="my-4 h-1 w-full overflow-hidden rounded-full bg-gray-100 dark:bg-gray-700">
             <div className="h-full rounded-full bg-emerald-400 transition-all" style={{ width: active ? "100%" : "0%" }} />
           </div>
-          <p className="text-[10px] font-semibold uppercase tracking-widest text-gray-400 dark:text-gray-500">Affected units</p>
-          <p className="mt-1 text-4xl font-bold text-gray-900 dark:text-gray-100">3,412</p>
-          <p className="mt-0.5 text-xs font-semibold text-teal-600">across 4 DCs</p>
-          <div className="mt-5 flex flex-col gap-3 border-t border-gray-100 dark:border-gray-700 pt-4 text-sm">
-            {[
-              { label: "Downstream components", value: "18" },
-              { label: "Finished products",      value: "1 SKU" },
-              { label: "Distribution centers",   value: "4" },
-              { label: "Open shipments",         value: "12 in transit", color: "text-amber-500" },
-              { label: "Est. financial impact",  value: "$2.8M",         color: "text-red-500" },
-            ].map(({ label, value, color }) => (
-              <div key={label} className="flex items-center justify-between">
-                <span className="text-gray-500 dark:text-gray-400">{label}</span>
-                <span className={`font-semibold ${color ?? "text-gray-900 dark:text-gray-200"}`}>{value}</span>
-              </div>
-            ))}
-          </div>
-        </div>
 
-        {/* Distribution centers */}
-        <div className="border-t border-gray-100 dark:border-gray-800 px-5 py-4">
-          <h3 className="mb-3 text-sm font-semibold text-gray-900 dark:text-gray-100">Affected distribution centers</h3>
-          <div className="flex flex-col divide-y divide-gray-50 dark:divide-gray-800">
-            {DCS.map((dc) => (
-              <div key={dc.id} className="flex items-center justify-between py-2.5 text-sm">
-                <span className="text-gray-700 dark:text-gray-300">{dc.id}</span>
-                <span className="font-medium text-gray-500 dark:text-gray-400">{dc.units.toLocaleString()} units</span>
+          {active ? (
+            <>
+              <p className="text-[10px] font-semibold uppercase tracking-widest text-gray-400 dark:text-gray-500">Affected root</p>
+              <p className="mt-1 text-lg font-bold text-gray-900 dark:text-gray-100 truncate">{rootName}</p>
+              <p className="text-[10px] font-semibold uppercase tracking-widest text-gray-400 dark:text-gray-500 mt-3">Downstream components affected</p>
+              <p className="mt-1 text-4xl font-bold text-gray-900 dark:text-gray-100">{total}</p>
+              <div className="mt-5 flex flex-col gap-3 border-t border-gray-100 dark:border-gray-700 pt-4 text-sm">
+                {[
+                  { label: "Downstream components", value: String(total) },
+                  { label: "Nodes in graph",        value: String(nodes.length) },
+                  { label: "Edges in graph",        value: String(edges.length) },
+                ].map(({ label, value }) => (
+                  <div key={label} className="flex items-center justify-between">
+                    <span className="text-gray-500 dark:text-gray-400">{label}</span>
+                    <span className="font-semibold text-gray-900 dark:text-gray-200">{value}</span>
+                  </div>
+                ))}
               </div>
-            ))}
-          </div>
+            </>
+          ) : (
+            <p className="text-sm text-gray-400 dark:text-gray-500">
+              {loading ? "Computing…" : "No recall active. Trigger one to see impact."}
+            </p>
+          )}
         </div>
 
         {/* CTA */}
         <div className="mt-auto border-t border-gray-100 dark:border-gray-800 p-4">
-          <button
-            className="w-full rounded-md py-3 text-sm font-semibold text-white transition hover:opacity-90"
-            style={{ background: "linear-gradient(135deg, #7c3aed, #10b981)" }}
-          >
-            Issue targeted recall →
-          </button>
+          {recallDone ? (
+            <div className="rounded-md border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-medium text-emerald-700">
+              Recall issued and recorded on-chain.
+            </div>
+          ) : (
+            <>
+              {active && (
+                <textarea
+                  value={recallReason}
+                  onChange={(e) => setRecallReason(e.target.value)}
+                  placeholder="Reason for recall (required)…"
+                  rows={2}
+                  className="mb-3 w-full rounded-md border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 px-3 py-2 text-xs text-gray-700 dark:text-gray-300 outline-none focus:border-violet-400 placeholder:text-gray-400 resize-none"
+                />
+              )}
+              {recallError && <p className="mb-2 text-xs text-red-500">{recallError}</p>}
+              <button
+                onClick={handleIssueRecall}
+                disabled={!active || recalling || !recallReason.trim()}
+                className="w-full rounded-md py-3 text-sm font-semibold text-white transition hover:opacity-90 disabled:opacity-40"
+                style={{ background: "linear-gradient(135deg, #7c3aed, #10b981)" }}
+              >
+                {recalling ? "Issuing recall…" : "Issue targeted recall →"}
+              </button>
+            </>
+          )}
         </div>
 
       </div>

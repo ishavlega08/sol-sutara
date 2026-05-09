@@ -1,74 +1,39 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { ArrowLeft, Download, AlertTriangle, ExternalLink, ArrowUp, ArrowDown } from "lucide-react";
 import { RiskBadge, StatusBadge, type RiskLevel } from "@/components/ui/Badge";
 import SectionCard from "@/components/ui/SectionCard";
 import ActionButton from "@/components/ui/ActionButton";
+import StatusChanger from "@/components/ui/StatusChanger";
+import StatusTimeline from "@/components/ui/StatusTimeline";
+import OnChainBadge from "@/components/ui/OnChainBadge";
+import { getComponentById, getComponentChildren, getComponentParents, getComponentRisk, getComponentEvents } from "@/lib/api";
+import type { ComponentListItem, ChildLink, RiskScore, ComponentEvent, ComponentStatus } from "@/types/component";
 
-type RelItem = { id: string; label: string; risk: RiskLevel };
+// ── types ─────────────────────────────────────────────────────────────────────
 
-interface ComponentDetail {
-  id: string; name: string; subtitle: string;
-  risk: RiskLevel; riskScore: number;
-  metadata: {
-    componentId: string; type: string; ownerOrg: string; ownerOrgHash: string;
-    metadataUri: string; metadataHash: string; compressedNft: string;
-    created: string; txSignature: string;
-  };
-  lineage: {
-    parents: { id: string; label: string }[];
-    self:    { id: string; label: string };
-    children:{ id: string; label: string }[];
-  };
-  riskDetails: { dependencies: string; graphDepth: string; reuseFactor: string; singleSource: string; geoRisk: string };
-  suggestedActions: string[];
-  parents:  RelItem[];
-  children: RelItem[];
+interface ParentLink {
+  linkId: string;
+  txHash: string;
+  createdAt: string;
+  parent: { id: string; name: string; onChainId: string | null; onChainAddress: string | null };
 }
 
-const COMPONENTS: Record<string, ComponentDetail> = {
-  "CM-18": {
-    id: "CM-18", name: "Cathode B-18", subtitle: "Lithium cobalt oxide cathode, batch 881",
-    risk: "MEDIUM", riskScore: 65,
-    metadata: { componentId: "CM-18·batch-881", type: "Cathode (NMC)", ownerOrg: "org:kaldera", ownerOrgHash: "4Jk8…p9Qp", metadataUri: "shdw://cathode-b18-881.json", metadataHash: "0x4a8b…c2f1", compressedNft: "cNFT · 9Q2p…mFfE", created: "Apr 14, 2026 · 09:14 UTC", txSignature: "2pF9…mN3h" },
-    lineage: { parents: [{ id: "SP-02", label: "Cobalt · DRC" }, { id: "SP-01", label: "Lithium · Chile" }], self: { id: "CM-18", label: "Cathode · B-18" }, children: [{ id: "AS-07", label: "Module · M-7" }] },
-    riskDetails: { dependencies: "2 upstream", graphDepth: "tier 3 of 7", reuseFactor: "1 downstream", singleSource: "Yes (SP-02)", geoRisk: "High (DRC)" },
-    suggestedActions: ["Add secondary cobalt supplier", "Run batch audit", "Flag for recall drill"],
-    parents:  [{ id: "SP-02", label: "SP-02 Cobalt · DRC", risk: "HIGH" }, { id: "SP-01", label: "SP-01 Lithium · Chile", risk: "LOW" }],
-    children: [{ id: "AS-07", label: "AS-07 Module · M-7", risk: "MEDIUM" }],
-  },
-  "SP-01": {
-    id: "SP-01", name: "Lithium · Chile salar", subtitle: "Spodumene concentrate, salar batch 2025",
-    risk: "LOW", riskScore: 18,
-    metadata: { componentId: "SP-01·batch-chile", type: "Raw Material", ownerOrg: "org:aster", ownerOrgHash: "8Ab1…q7Rp", metadataUri: "shdw://lithium-sp01.json", metadataHash: "0x1b2c…a8d4", compressedNft: "cNFT · 3Px1…nQ9k", created: "Jan 12, 2025 · 07:00 UTC", txSignature: "5aR1…kP2m" },
-    lineage: { parents: [], self: { id: "SP-01", label: "Lithium · Chile" }, children: [{ id: "CM-18", label: "Cathode · B-18" }, { id: "CM-24", label: "Anode · A-24" }] },
-    riskDetails: { dependencies: "0 upstream", graphDepth: "tier 1 of 7", reuseFactor: "3 downstream", singleSource: "No", geoRisk: "Low (Chile)" },
-    suggestedActions: ["Review supplier certification", "Schedule next audit"],
-    parents:  [],
-    children: [{ id: "CM-18", label: "CM-18 Cathode · B-18", risk: "MEDIUM" }, { id: "CM-24", label: "CM-24 Anode · A-24", risk: "LOW" }],
-  },
-  "SP-02": {
-    id: "SP-02", name: "Cobalt · DRC b-881", subtitle: "Refined cobalt sulfate, DRC batch 881",
-    risk: "HIGH", riskScore: 88,
-    metadata: { componentId: "SP-02·batch-881", type: "Raw Material", ownerOrg: "org:aster", ownerOrgHash: "8Ab1…q7Rp", metadataUri: "shdw://cobalt-sp02-881.json", metadataHash: "0x9c3e…b1f7", compressedNft: "cNFT · 7Lm3…pR4q", created: "Jan 14, 2025 · 11:30 UTC", txSignature: "8bQ4…yT3n" },
-    lineage: { parents: [], self: { id: "SP-02", label: "Cobalt · DRC" }, children: [{ id: "CM-18", label: "Cathode · B-18" }, { id: "CM-31", label: "NMC-811" }] },
-    riskDetails: { dependencies: "0 upstream", graphDepth: "tier 1 of 7", reuseFactor: "2 downstream", singleSource: "Yes", geoRisk: "High (DRC)" },
-    suggestedActions: ["Source alternative supplier", "Escalate geo risk review", "Flag for recall drill"],
-    parents:  [],
-    children: [{ id: "CM-18", label: "CM-18 Cathode · B-18", risk: "MEDIUM" }, { id: "CM-31", label: "CM-31 NMC-811", risk: "HIGH" }],
-  },
-};
+type RelItem = { id: string; label: string; risk: RiskLevel | null };
+
+// ── helpers ───────────────────────────────────────────────────────────────────
 
 const RISK_COLOR: Record<string, string> = { LOW: "#10b981", MEDIUM: "#f59e0b", HIGH: "#ef4444" };
 
-function RiskGauge({ score, level }: { score: number; level: RiskLevel }) {
+function RiskGauge({ score, level }: { score: number; level: string }) {
   const key   = level.toUpperCase() as "LOW" | "MEDIUM" | "HIGH";
-  const color = RISK_COLOR[key];
+  const color = RISK_COLOR[key] ?? "#6b7280";
   const r = 52; const cx = 64; const cy = 64;
-  const circ  = 2 * Math.PI * r;
-  const arc   = circ * 0.75;
-  const fill  = arc * (score / 100);
+  const circ = 2 * Math.PI * r;
+  const arc  = circ * 0.75;
+  const fill = arc * (score / 100);
   return (
     <div className="flex flex-col items-center">
       <div className="relative">
@@ -98,10 +63,92 @@ function MetaRow({ label, children, highlight }: { label: string; children: Reac
   );
 }
 
+function SkeletonBlock({ h = "h-40" }: { h?: string }) {
+  return <div className={`${h} animate-pulse rounded-xl bg-gray-100 dark:bg-gray-800`} />;
+}
+
+// ── page ──────────────────────────────────────────────────────────────────────
+
 export default function ComponentDetailPage({ params }: { params: { id: string } }) {
   const { id } = params;
-  const comp: ComponentDetail = COMPONENTS[id] ?? { ...COMPONENTS["CM-18"], id, name: id, subtitle: "Supply chain component" };
-  const riskKey = comp.risk.toUpperCase() as "LOW" | "MEDIUM" | "HIGH";
+
+  const [component, setComponent] = useState<ComponentListItem | null>(null);
+  const [parents, setParents]     = useState<ParentLink[]>([]);
+  const [children, setChildren]   = useState<ChildLink[]>([]);
+  const [risk, setRisk]           = useState<RiskScore | null>(null);
+  const [events, setEvents]       = useState<ComponentEvent[]>([]);
+  const [loading, setLoading]     = useState(true);
+  const [error, setError]         = useState<string | null>(null);
+
+  useEffect(() => {
+    setLoading(true);
+    setError(null);
+
+    Promise.allSettled([
+      getComponentById(id),
+      getComponentParents(id),
+      getComponentChildren(id),
+      getComponentRisk(id),
+      getComponentEvents(id),
+    ]).then(([compRes, parentsRes, childrenRes, riskRes, eventsRes]) => {
+      if (compRes.status === "fulfilled")    setComponent(compRes.value.component);
+      else setError("Component not found.");
+
+      if (parentsRes.status === "fulfilled")  setParents(parentsRes.value.parents as ParentLink[]);
+      if (childrenRes.status === "fulfilled") setChildren(childrenRes.value.children);
+      if (riskRes.status === "fulfilled")     setRisk(riskRes.value.risk);
+      if (eventsRes.status === "fulfilled")   setEvents(eventsRes.value.events);
+    }).finally(() => setLoading(false));
+  }, [id]);
+
+  const parentItems: RelItem[] = parents.map((p) => ({
+    id:    p.parent.id,
+    label: p.parent.id.slice(0, 8) + "…",
+    risk:  null,
+  }));
+  const childItems: RelItem[] = children.map((c) => ({
+    id:    c.child.id,
+    label: c.child.name,
+    risk:  null,
+  }));
+
+  const riskKey = risk?.level ?? "LOW";
+  const riskVariant = riskKey === "HIGH" ? "error" : riskKey === "MEDIUM" ? "warning" : "success";
+
+  if (loading) {
+    return (
+      <div className="h-full overflow-y-auto bg-white dark:bg-gray-950">
+        <div className="mx-auto max-w-6xl px-4 py-6 sm:px-6 lg:px-8 space-y-5">
+          <SkeletonBlock h="h-10" />
+          <SkeletonBlock h="h-16" />
+          <div className="grid grid-cols-1 gap-5 lg:grid-cols-[1fr_300px]">
+            <div className="space-y-5">
+              <SkeletonBlock h="h-32" />
+              <SkeletonBlock h="h-48" />
+              <SkeletonBlock h="h-40" />
+            </div>
+            <div className="space-y-5">
+              <SkeletonBlock h="h-48" />
+              <SkeletonBlock h="h-40" />
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (error || !component) {
+    return (
+      <div className="flex h-full items-center justify-center">
+        <div className="text-center">
+          <p className="text-sm text-red-500">{error ?? "Component not found."}</p>
+          <Link href="/components" className="mt-3 inline-block text-sm text-violet-600 hover:underline">
+            ← Back to components
+          </Link>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="h-full overflow-y-auto bg-white dark:bg-gray-950">
@@ -117,24 +164,27 @@ export default function ComponentDetailPage({ params }: { params: { id: string }
               <Download className="h-3.5 w-3.5" /> Export lineage
             </ActionButton>
             <ActionButton variant="danger">
-              <AlertTriangle className="h-3.5 w-3.5" /> Simulate recall
+              <Link href={`/recall?id=${id}`} className="flex items-center gap-1.5">
+                <AlertTriangle className="h-3.5 w-3.5" /> Simulate recall
+              </Link>
             </ActionButton>
             <ActionButton variant="gradient">
-              <Link href="/trace">View trace →</Link>
+              <Link href={`/trace?id=${id}`}>View trace →</Link>
             </ActionButton>
           </div>
         </div>
 
-        {/* Component heading */}
+        {/* Heading */}
         <div className="mb-6">
           <h1 className="flex flex-wrap items-baseline gap-2 text-2xl font-bold text-gray-900 dark:text-gray-100">
-            <span className="text-violet-600">{comp.id}</span>
-            <span>· {comp.name}</span>
+            <span className="font-mono text-violet-600 text-lg">{id.slice(0, 8)}…</span>
+            <span>· {component.name}</span>
           </h1>
           <div className="mt-1.5 flex flex-wrap items-center gap-2 text-sm text-gray-500 dark:text-gray-400">
-            <span>{comp.subtitle}</span>
+            <span>{component.type}</span>
+            {component.supplier && <><span className="text-gray-300">·</span><span>{component.supplier}</span></>}
             <span className="text-gray-300">·</span>
-            <StatusBadge label={`${riskKey} RISK`} variant={riskKey === "HIGH" ? "error" : riskKey === "MEDIUM" ? "warning" : "success"} />
+            <StatusBadge label={`${riskKey} RISK`} variant={riskVariant} />
           </div>
         </div>
 
@@ -147,26 +197,24 @@ export default function ComponentDetailPage({ params }: { params: { id: string }
             {/* Lineage preview */}
             <SectionCard
               title="Lineage preview"
-              action={<Link href="/trace" className="text-xs font-medium text-teal-600 hover:text-teal-700">Open in Trace →</Link>}
+              action={<Link href={`/trace`} className="text-xs font-medium text-teal-600 hover:text-teal-700">Open in Trace →</Link>}
             >
               <div className="flex flex-wrap items-center justify-center gap-2 py-4">
-                {comp.lineage.parents.length > 0 && (
+                {parentItems.length > 0 && (
                   <div className="flex flex-col gap-2">
-                    {comp.lineage.parents.map((p) => (
-                      <div key={p.id} className="flex items-center gap-2 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 px-3 py-2 shadow-sm">
+                    {parentItems.map((p) => (
+                      <Link key={p.id} href={`/components/${p.id}`}
+                        className="flex items-center gap-2 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 px-3 py-2 shadow-sm hover:border-gray-300 dark:hover:border-gray-600">
                         <div className="h-2 w-2 rounded-full bg-red-400 flex-shrink-0" />
-                        <div className="flex flex-col leading-tight">
-                          <span className="text-xs font-semibold text-gray-800 dark:text-gray-200">{p.id}</span>
-                          <span className="text-[10px] text-gray-400 dark:text-gray-500">{p.label}</span>
-                        </div>
-                      </div>
+                        <span className="text-xs font-semibold text-gray-800 dark:text-gray-200">{p.label}</span>
+                      </Link>
                     ))}
                   </div>
                 )}
-                {comp.lineage.parents.length > 0 && (
+                {parentItems.length > 0 && (
                   <svg width="50" height="60" className="flex-shrink-0 overflow-visible">
-                    {comp.lineage.parents.map((_, i) => {
-                      const total = comp.lineage.parents.length;
+                    {parentItems.map((_, i) => {
+                      const total = parentItems.length;
                       const y = total === 1 ? 30 : (i / (total - 1)) * 50 + 5;
                       return <path key={i} d={`M 0 ${y} C 25 ${y}, 25 30, 50 30`} fill="none" stroke="#6ee7b7" strokeWidth="1.5" strokeDasharray="4 3" />;
                     })}
@@ -175,74 +223,104 @@ export default function ComponentDetailPage({ params }: { params: { id: string }
                 <div className="flex items-center gap-2 rounded-lg border-2 border-violet-400 dark:border-violet-600 bg-violet-50 dark:bg-violet-900/30 px-3 py-2 shadow-sm">
                   <div className="h-2 w-2 rounded-full bg-violet-500 flex-shrink-0" />
                   <div className="flex flex-col leading-tight">
-                    <span className="text-xs font-semibold text-gray-800 dark:text-gray-200">{comp.lineage.self.id}</span>
-                    <span className="text-[10px] text-gray-400 dark:text-gray-500">{comp.lineage.self.label}</span>
+                    <span className="text-xs font-semibold text-gray-800 dark:text-gray-200">{id.slice(0, 8)}…</span>
+                    <span className="text-[10px] text-gray-400 dark:text-gray-500">{component.name}</span>
                   </div>
                 </div>
-                {comp.lineage.children.length > 0 && (
+                {childItems.length > 0 && (
                   <svg width="50" height="60" className="flex-shrink-0 overflow-visible">
-                    {comp.lineage.children.map((_, i) => {
-                      const total = comp.lineage.children.length;
+                    {childItems.map((_, i) => {
+                      const total = childItems.length;
                       const y = total === 1 ? 30 : (i / (total - 1)) * 50 + 5;
                       return <path key={i} d={`M 0 30 C 25 30, 25 ${y}, 50 ${y}`} fill="none" stroke="#6ee7b7" strokeWidth="1.5" strokeDasharray="4 3" />;
                     })}
                   </svg>
                 )}
-                {comp.lineage.children.length > 0 && (
+                {childItems.length > 0 && (
                   <div className="flex flex-col gap-2">
-                    {comp.lineage.children.map((c) => (
-                      <div key={c.id} className="flex items-center gap-2 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 px-3 py-2 shadow-sm">
+                    {childItems.map((c) => (
+                      <Link key={c.id} href={`/components/${c.id}`}
+                        className="flex items-center gap-2 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 px-3 py-2 shadow-sm hover:border-gray-300 dark:hover:border-gray-600">
                         <div className="h-2 w-2 rounded-full bg-gray-300 dark:bg-gray-600 flex-shrink-0" />
-                        <div className="flex flex-col leading-tight">
-                          <span className="text-xs font-semibold text-gray-800 dark:text-gray-200">{c.id}</span>
-                          <span className="text-[10px] text-gray-400 dark:text-gray-500">{c.label}</span>
-                        </div>
-                      </div>
+                        <span className="text-xs font-semibold text-gray-800 dark:text-gray-200">{c.label}</span>
+                      </Link>
                     ))}
                   </div>
+                )}
+                {parentItems.length === 0 && childItems.length === 0 && (
+                  <p className="text-xs text-gray-400">No relationships yet — link this component to others.</p>
                 )}
               </div>
             </SectionCard>
 
             {/* Metadata */}
             <SectionCard title="Metadata" noPadding>
-              <div className="divide-y divide-gray-50">
-                <MetaRow label="Component ID"><span className="font-mono text-sm">{comp.metadata.componentId}</span></MetaRow>
-                <MetaRow label="Type">{comp.metadata.type}</MetaRow>
-                <MetaRow label="Owner org" highlight>
-                  <span className="flex flex-wrap items-center gap-1.5">
-                    {comp.metadata.ownerOrg}
-                    <span className="text-gray-400">·</span>
-                    <span className="font-mono text-xs text-violet-600">{comp.metadata.ownerOrgHash}</span>
-                  </span>
+              <div className="divide-y divide-gray-50 dark:divide-gray-800">
+                <MetaRow label="Component ID"><span className="font-mono text-sm">{id}</span></MetaRow>
+                <MetaRow label="Type">{component.type}</MetaRow>
+                {component.supplier && <MetaRow label="Supplier">{component.supplier}</MetaRow>}
+                <MetaRow label="Status" highlight>
+                  <span className={`inline-block rounded-full px-2 py-0.5 text-xs font-semibold ${
+                    component.status === "RECALLED" ? "bg-red-100 text-red-700" :
+                    component.status === "IN_TRANSIT" ? "bg-blue-100 text-blue-700" :
+                    component.status === "INSPECTED" ? "bg-violet-100 text-violet-700" :
+                    component.status === "RECEIVED" ? "bg-cyan-100 text-cyan-700" :
+                    component.status === "ARCHIVED" ? "bg-gray-200 text-gray-600" :
+                    "bg-gray-100 text-gray-600"
+                  }`}>{component.status ?? "CREATED"}</span>
+                </MetaRow>
+                {component.batch_number && <MetaRow label="Batch number"><span className="font-mono text-xs">{component.batch_number}</span></MetaRow>}
+                {component.lot_number && <MetaRow label="Lot number"><span className="font-mono text-xs">{component.lot_number}</span></MetaRow>}
+                {component.quantity != null && (
+                  <MetaRow label="Quantity">{component.quantity} {component.unit ?? ""}</MetaRow>
+                )}
+                {component.expiry_date && (
+                  <MetaRow label="Expiry date">
+                    {new Date(component.expiry_date).toLocaleDateString("en-US", { dateStyle: "medium" })}
+                  </MetaRow>
+                )}
+                <MetaRow label="Org ID">
+                  <span className="font-mono text-xs text-violet-600">{component.org_id ?? "—"}</span>
                 </MetaRow>
                 <MetaRow label="Metadata URI">
-                  <span className="rounded bg-gray-100 dark:bg-gray-800 px-2 py-0.5 font-mono text-xs text-gray-600 dark:text-gray-400">{comp.metadata.metadataUri}</span>
-                </MetaRow>
-                <MetaRow label="Metadata hash"><span className="font-mono text-sm text-gray-700 dark:text-gray-400">{comp.metadata.metadataHash}</span></MetaRow>
-                <MetaRow label="Compressed NFT">
-                  <span className="flex flex-wrap items-center gap-2">
-                    <span className="font-mono text-sm text-gray-700 dark:text-gray-400">{comp.metadata.compressedNft}</span>
-                    <StatusBadge label="MINTED" variant="success" />
+                  <span className="rounded bg-gray-100 dark:bg-gray-800 px-2 py-0.5 font-mono text-xs text-gray-600 dark:text-gray-400 break-all">
+                    {component.metadata_uri || "—"}
                   </span>
                 </MetaRow>
-                <MetaRow label="Created"><span className="text-sm text-gray-700 dark:text-gray-400">{comp.metadata.created}</span></MetaRow>
-                <MetaRow label="Tx signature">
-                  <a href={`https://explorer.solana.com/tx/${comp.metadata.txSignature}?cluster=devnet`}
-                    target="_blank" rel="noopener noreferrer"
-                    className="flex items-center gap-1 font-mono text-xs text-teal-600 hover:text-teal-800">
-                    {comp.metadata.txSignature} <ExternalLink className="h-3 w-3" />
-                  </a>
+                <MetaRow label="On-chain address">
+                  <span className="font-mono text-xs text-gray-600 dark:text-gray-400 break-all">{component.on_chain_address ?? "—"}</span>
                 </MetaRow>
+                <MetaRow label="On-chain ID">
+                  <span className="font-mono text-sm">{component.on_chain_id ?? "—"}</span>
+                </MetaRow>
+                <MetaRow label="Created">
+                  <span className="text-sm text-gray-700 dark:text-gray-400">
+                    {new Date(component.created_at).toLocaleString("en-US", { dateStyle: "medium", timeStyle: "short" })}
+                  </span>
+                </MetaRow>
+                {component.tx_hash && (
+                  <MetaRow label="Tx signature">
+                    <a href={`https://explorer.solana.com/tx/${component.tx_hash}?cluster=devnet`}
+                      target="_blank" rel="noopener noreferrer"
+                      className="flex items-center gap-1 font-mono text-xs text-teal-600 hover:text-teal-800 break-all">
+                      {component.tx_hash} <ExternalLink className="h-3 w-3 flex-shrink-0" />
+                    </a>
+                  </MetaRow>
+                )}
               </div>
+            </SectionCard>
+
+            {/* Status lifecycle */}
+            <SectionCard title="Status lifecycle">
+              <StatusTimeline events={events} />
             </SectionCard>
 
             {/* Relationships */}
             <SectionCard title="Relationships" noPadding>
-              <div className="grid grid-cols-1 divide-y divide-gray-100 sm:grid-cols-2 sm:divide-x sm:divide-y-0">
+              <div className="grid grid-cols-1 divide-y divide-gray-100 dark:divide-gray-800 sm:grid-cols-2 sm:divide-x sm:divide-y-0">
                 {([
-                  { label: "Parents", items: comp.parents,  icon: ArrowUp },
-                  { label: "Children", items: comp.children, icon: ArrowDown },
+                  { label: "Parents", items: parentItems, icon: ArrowUp },
+                  { label: "Children", items: childItems, icon: ArrowDown },
                 ] as { label: string; items: RelItem[]; icon: React.ElementType }[]).map(({ label, items, icon: Icon }) => (
                   <div key={label} className="p-4">
                     <p className="mb-3 flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-widest text-gray-400">
@@ -255,8 +333,8 @@ export default function ComponentDetailPage({ params }: { params: { id: string }
                       {items.map((item) => (
                         <Link key={item.id} href={`/components/${item.id}`}
                           className="flex items-center justify-between rounded-md border border-gray-200 dark:border-gray-700 px-3 py-2 hover:border-gray-300 dark:hover:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-800">
-                          <span className="text-sm text-gray-800 dark:text-gray-300">{item.label}</span>
-                          <RiskBadge level={item.risk} short />
+                          <span className="text-sm text-gray-800 dark:text-gray-300 truncate">{item.label}</span>
+                          {item.risk && <RiskBadge level={item.risk} short />}
                         </Link>
                       ))}
                     </div>
@@ -269,33 +347,59 @@ export default function ComponentDetailPage({ params }: { params: { id: string }
 
           {/* Right */}
           <div className="flex flex-col gap-5">
-            <SectionCard title="Risk score">
-              <RiskGauge score={comp.riskScore} level={comp.risk} />
-              <div className="mt-5 flex flex-col gap-3 border-t border-gray-100 dark:border-gray-700 pt-4 text-sm">
-                {[
-                  { label: "Dependencies",  value: comp.riskDetails.dependencies },
-                  { label: "Graph depth",   value: comp.riskDetails.graphDepth },
-                  { label: "Reuse factor",  value: comp.riskDetails.reuseFactor },
-                  { label: "Single-source", value: comp.riskDetails.singleSource, accent: comp.riskDetails.singleSource.startsWith("Yes") },
-                  { label: "Geo risk",      value: comp.riskDetails.geoRisk,      accent: comp.riskDetails.geoRisk.startsWith("High") },
-                ].map(({ label, value, accent }) => (
-                  <div key={label} className="flex items-center justify-between">
-                    <span className="text-gray-500 dark:text-gray-400">{label}</span>
-                    <span className={`font-medium ${accent ? "text-amber-500" : "text-gray-900 dark:text-gray-300"}`}>{value}</span>
-                  </div>
-                ))}
-              </div>
+
+            {/* On-chain verification */}
+            <SectionCard title="On-chain verification">
+              <OnChainBadge componentId={id} />
             </SectionCard>
 
-            <SectionCard title="Suggested actions">
-              <div className="flex flex-col gap-2">
-                {comp.suggestedActions.map((action, i) => (
-                  <button key={i} className="w-full rounded-md border border-gray-200 dark:border-gray-700 px-3 py-2.5 text-left text-sm text-gray-700 dark:text-gray-300 hover:border-gray-300 dark:hover:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-800">
-                    → {action}
-                  </button>
-                ))}
-              </div>
+            {/* Status changer */}
+            <SectionCard title="Update status">
+              <StatusChanger
+                componentId={id}
+                currentStatus={(component.status ?? "CREATED") as ComponentStatus}
+                onStatusChange={(newStatus) => {
+                  setComponent((prev) => prev ? { ...prev, status: newStatus } : prev);
+                  getComponentEvents(id).then((r) => setEvents(r.events)).catch(() => {});
+                }}
+              />
             </SectionCard>
+
+            <SectionCard title="Risk score">
+              {risk ? (
+                <>
+                  <RiskGauge score={risk.score} level={risk.level} />
+                  <div className="mt-5 flex flex-col gap-3 border-t border-gray-100 dark:border-gray-700 pt-4 text-sm">
+                    {[
+                      { label: "Parent count",       value: String(risk.factors.parentCount) },
+                      { label: "Child count",        value: String(risk.factors.childCount) },
+                      { label: "Upstream depth",     value: String(risk.factors.upstreamDepth) },
+                      { label: "Downstream depth",   value: String(risk.factors.downstreamDepth) },
+                      { label: "Reuse frequency",    value: `${risk.factors.reuseFrequency}x` },
+                    ].map(({ label, value }) => (
+                      <div key={label} className="flex items-center justify-between">
+                        <span className="text-gray-500 dark:text-gray-400">{label}</span>
+                        <span className="font-medium text-gray-900 dark:text-gray-300">{value}</span>
+                      </div>
+                    ))}
+                  </div>
+                </>
+              ) : (
+                <p className="py-4 text-center text-sm text-gray-400">Risk data unavailable.</p>
+              )}
+            </SectionCard>
+
+            {risk && risk.explanation.length > 0 && (
+              <SectionCard title="Risk factors">
+                <div className="flex flex-col gap-2">
+                  {risk.explanation.map((line, i) => (
+                    <div key={i} className="rounded-md border border-amber-100 dark:border-amber-900 bg-amber-50 dark:bg-amber-950/40 px-3 py-2 text-xs text-amber-700 dark:text-amber-400">
+                      {line}
+                    </div>
+                  ))}
+                </div>
+              </SectionCard>
+            )}
           </div>
 
         </div>
