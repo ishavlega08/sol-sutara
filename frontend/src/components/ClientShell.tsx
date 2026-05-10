@@ -1,27 +1,50 @@
 "use client";
 
-import { useState } from "react";
-import { usePathname } from "next/navigation";
+import { useEffect, useState } from "react";
+import { usePathname, useRouter } from "next/navigation";
 import { PrivyProvider } from "@privy-io/react-auth";
 import TopNavbar from "@/components/TopNavbar";
 import Sidebar from "@/components/Sidebar";
 import { ThemeProvider } from "@/context/ThemeContext";
-import { AuthProvider } from "@/context/AuthContext";
+import { AuthProvider, useAuth } from "@/context/AuthContext";
 
-// Pages that render without the sidebar/navbar shell
-const AUTH_PATHS = ["/login", "/onboarding", "/landing", "/devnet-access", "/"];
+// Pages that render without the sidebar/navbar shell (and without auth guard)
+const PUBLIC_PATHS = ["/login", "/onboarding", "/landing", "/devnet-access", "/"];
 
-function isAuthPath(pathname: string): boolean {
-    return AUTH_PATHS.some((p) => pathname === p || pathname.startsWith(p + "/"))
+function isPublicPath(pathname: string): boolean {
+    return PUBLIC_PATHS.some((p) => pathname === p || pathname.startsWith(p + "/"))
         || pathname.startsWith("/invite/");
 }
 
 function AppShell({ children }: { children: React.ReactNode }) {
     const pathname    = usePathname();
+    const router      = useRouter();
     const [mobileOpen, setMobileOpen] = useState(false);
+    const { isAuthenticated, isLoading } = useAuth();
 
-    if (isAuthPath(pathname)) {
+    // Client-side auth guard — replaces the broken middleware cookie check
+    useEffect(() => {
+        if (isPublicPath(pathname)) return;
+        if (isLoading) return;
+        if (!isAuthenticated) {
+            router.replace(`/login?redirect=${encodeURIComponent(pathname)}`);
+        }
+    }, [isAuthenticated, isLoading, pathname, router]);
+
+    if (isPublicPath(pathname)) {
         return <>{children}</>;
+    }
+
+    // Show nothing while auth loads to avoid a flash of protected content
+    if (isLoading || !isAuthenticated) {
+        return (
+            <div className="flex h-screen items-center justify-center bg-gray-50 dark:bg-gray-950">
+                <svg className="h-6 w-6 animate-spin text-violet-600" fill="none" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+                </svg>
+            </div>
+        );
     }
 
     return (
