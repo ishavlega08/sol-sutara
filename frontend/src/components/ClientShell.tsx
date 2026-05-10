@@ -35,6 +35,11 @@ function AppShell({ children }: { children: React.ReactNode }) {
     );
 }
 
+// Privy embedded wallets require HTTPS — disable on plain HTTP to prevent a hard crash
+const isHttps = typeof window !== "undefined"
+    ? window.location.protocol === "https:"
+    : true; // SSR: assume HTTPS, Privy resolves correctly server-side
+
 export default function ClientShell({ children }: { children: React.ReactNode }) {
     return (
         <PrivyProvider
@@ -42,7 +47,7 @@ export default function ClientShell({ children }: { children: React.ReactNode })
             config={{
                 loginMethods: ["email", "wallet"],
                 embeddedWallets: {
-                    solana: { createOnLogin: "all-users" },
+                    solana: { createOnLogin: isHttps ? "all-users" : "off" },
                     ethereum: { createOnLogin: "off" },
                 },
                 appearance: {

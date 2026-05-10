@@ -6,11 +6,11 @@ import { useState } from "react";
 const FAQ_ITEMS = [
   {
     q: "Is this another supply-chain blockchain that doesn't ship?",
-    a: "Probably the right thing to ask. Difference: we're not selling a token. The product is a hosted graph + SDK. You pay in dollars (or USDC if you must). Solana is an implementation detail — you can use Sol Sutara without ever touching a wallet.",
+    a: "Probably the right thing to ask. Difference: we're not selling a token. The product is a hosted graph + REST API. You pay in dollars. Solana is where component records and links are anchored — you interact through our API, not a wallet.",
   },
   {
     q: "Why not just use a Postgres + audit log?",
-    a: "You can. But you can't make your suppliers sign rows in your database. The cryptography is what makes \u201ctier-3 said this\u201d actually verifiable instead of trusting your tier-1 to forward the truth. A central database belongs to one party; this graph doesn't.",
+    a: "You can. The difference is the anchor layer — every component write and every link is recorded on Solana with a tx hash you can independently verify. Your Postgres belongs to you; the on-chain record belongs to nobody. Multi-org co-signing (so tier-3 cryptographically vouches for their own data) is on the Q3 roadmap.",
   },
   {
     q: "Does my whole supply chain need to be on it?",
@@ -78,8 +78,8 @@ export default function LandingPage() {
             <div>
               <p className="hero-lede">
                 One graph. Every part you ship — from raw to finished good —{" "}
-                <b>signed by every supplier in line</b>, written to Solana, traceable in
-                milliseconds. We&apos;re building it in the open. The sandbox is live.
+                <b>anchored on Solana with a tamper-evident tx hash</b>, indexed for
+                millisecond traces. We&apos;re building it in the open. The sandbox is live.
               </p>
             </div>
           </div>
@@ -158,7 +158,7 @@ export default function LandingPage() {
                   <text x="98" y="100" fontFamily="Geist" fontWeight="500" fontSize="11.5" fill="var(--teal)" textAnchor="end">↑ depth 4 · 41 ms</text>
                 </g>
               </svg>
-              <div className="cap"><b>The graph,</b> live — every part you ship traced back to the salar it came from. Each edge is a signature from the org one tier up. None of this lives in your ERP.</div>
+              <div className="cap"><b>The graph,</b> live — every part you ship traced back to the salar it came from. Each edge is an on-chain record with a verifiable tx hash. None of this lives in your ERP.</div>
             </div>
           </div>
         </div>
@@ -202,19 +202,19 @@ export default function LandingPage() {
       <section className="sec" id="how">
         <div className="wrap">
           <div className="sec-head">
-            <h2>One graph.<br /><em>Every signature.</em></h2>
+            <h2>One graph.<br /><em>Every record on-chain.</em></h2>
             <div className="kicker">
               <p className="eyebrow">How it works</p>
-              <p>Sol Sutara turns each component into a compressed NFT on Solana. Each parent–child link is a co-signed edge. Trace runs against an indexed graph — not a chain walk — so a lookup that takes hours in your ERP takes <b>tens of milliseconds</b> here.</p>
+              <p>Sol Sutara writes each component as an on-chain account via an Anchor program on Solana. Parent–child relationships are recorded with a verifiable tx hash. Trace runs against an indexed graph — not a chain walk — so a lookup that takes hours in your ERP takes <b>tens of milliseconds</b> here.</p>
             </div>
           </div>
           <div className="steps">
             <div>
               {[
-                { n: "01", h: "Register a part.", p: <span>Mint a compressed NFT for any raw, component, subassembly, or finished good. <code>POST /components</code> from your ERP, or use the dashboard. Costs a fraction of a cent on Solana.</span> },
-                { n: "02", h: "Link parts together.", p: "When supplier and buyer both confirm a parent–child relationship, the edge is co-signed and committed. Two signatures, one immutable record." },
-                { n: "03", h: "Trace upstream — or down.", p: <span>Pick any node. We walk the graph in both directions, returning every parent and child, with org signatures intact. Median <code>41 ms</code> in our sandbox.</span> },
-                { n: "04", h: "Recall, surgically.", p: "Tag a contaminated lot. Every downstream child resolves automatically. Notifications go on-chain to every affected org. No phone trees." },
+                { n: "01", h: "Register a part.", p: <span>Create an on-chain record for any raw material, component, subassembly, or finished good. <code>POST /components</code> from your ERP, or use the dashboard. Each write produces a verifiable Solana tx hash.</span> },
+                { n: "02", h: "Link parts together.", p: "Define parent–child relationships between components. Each link is written on-chain and indexed — giving you a permanent, tamper-evident record of your supply graph." },
+                { n: "03", h: "Trace upstream — or down.", p: <span>Pick any node. We walk the indexed graph in both directions, returning every parent and child with their on-chain tx references. Median <code>41 ms</code> in our sandbox.</span> },
+                { n: "04", h: "Recall, surgically.", p: "Tag a contaminated lot. Every downstream child resolves automatically via BFS. Affected orgs are notified immediately. No phone trees." },
               ].map((s) => (
                 <div key={s.n} className="step">
                   <div className="n">{s.n}</div>
@@ -288,13 +288,13 @@ export default function LandingPage() {
           </div>
           <div className="bento">
             <div className="tile feat-mint span-3">
-              <div className="tile-tag">01 · Mint</div>
-              <h4>Compressed NFTs. <em>Per part.</em></h4>
-              <p>Every component is a compressed NFT. Cheap to mint, cheap to query, signed by your org&apos;s wallet. Metadata lives on Shadow Drive or IPFS — you choose.</p>
+              <div className="tile-tag">01 · Register</div>
+              <h4>On-chain records. <em>Per part.</em></h4>
+              <p>Every component is written as an Anchor account on Solana devnet. Each write returns a verifiable tx hash. Metadata uploaded to IPFS via Pinata — immutable and auditable.</p>
               <div className="tile-foot">
                 <div className="code">
                   <span className="c">{"// register a part"}</span>{"\n"}
-                  <span className="k">await</span>{" sutara."}<span className="v">components</span>{".create({\n  id: "}<span className="s">{'"CM-18"'}</span>{",\n  name: "}<span className="s">{'"Cathode B-18, NMC-881"'}</span>{",\n  type: "}<span className="s">{'"Component"'}</span>{",\n})"}
+                  <span className="k">POST</span>{" /api/components\n{\n  id: "}<span className="s">{'"CM-18"'}</span>{",\n  name: "}<span className="s">{'"Cathode B-18, NMC-881"'}</span>{",\n  type: "}<span className="s">{'"Component"'}</span>{"\n}"}
                 </div>
               </div>
             </div>
@@ -332,7 +332,7 @@ export default function LandingPage() {
             <div className="tile feat-risk span-2">
               <div className="tile-tag">04 · Risk score</div>
               <h4>0–100, <em>per node.</em></h4>
-              <p>Single-source raw materials, geographies under sanctions, suppliers without recent signatures — all factored. The dashboard sorts by risk by default.</p>
+              <p>Single-source raw materials, geographies under sanctions, suppliers with pending status — all factored. The dashboard sorts by risk by default.</p>
               <div className="tile-foot" style={{ display: "flex", gap: 8, alignItems: "baseline" }}>
                 {[{ c: "var(--teal)", l: "LOW · 4,122" }, { c: "var(--amber)", l: "MED · 84" }, { c: "var(--crimson)", l: "HIGH · 12" }].map((r) => (
                   <span key={r.l} style={{ display: "inline-flex", alignItems: "center", gap: 6 }}>
@@ -343,24 +343,24 @@ export default function LandingPage() {
               </div>
             </div>
             <div className="tile feat-sdk span-2">
-              <div className="tile-tag">05 · SDK</div>
-              <h4>One npm install. <em>That&apos;s the integration.</em></h4>
-              <p>TypeScript-first SDK. Wallet, signer, indexer, retries, batching — handled. ERP webhooks first-class.</p>
+              <div className="tile-tag">05 · Webhooks & API</div>
+              <h4>Real-time events. <em>Your endpoints.</em></h4>
+              <p>REST API for all resources. Webhook subscriptions with HMAC-SHA256 signing — shipment updates, supplier approvals, recall alerts, document uploads, delivered to your system in real time.</p>
               <div className="tile-foot">
                 <code style={{ fontFamily: "var(--mono)", fontSize: 11.5, color: "var(--aqua)", background: "var(--ink)", padding: "4px 8px", border: "1px solid var(--line)", borderRadius: 3 }}>
-                  $ npm i @sutara/sdk
+                  X-Sutara-Signature: sha256=…
                 </code>
               </div>
             </div>
             <div className="tile span-3" style={{ background: "var(--ink-2)" }}>
-              <div className="tile-tag">06 · Audit-grade exports</div>
-              <h4>PDF the regulator <em>actually accepts.</em></h4>
-              <p>One click on any product → a sealed PDF with every signature, every tx hash, every metadata URI in the chain. Designed against EU DPP and FSMA 204 requirements.</p>
+              <div className="tile-tag">06 · Shipment tracking</div>
+              <h4>End-to-end logistics. <em>Status at every hop.</em></h4>
+              <p>Create shipments, attach them to suppliers, and track every status transition — from pickup through customs hold to delivery — with a full timestamped event log per shipment.</p>
             </div>
             <div className="tile span-3">
               <div className="tile-tag">07 · Multi-org by design</div>
-              <h4>Your suppliers <em>sign with you.</em></h4>
-              <p>Edges require co-signature. No &ldquo;we got the data from them&rdquo; hand-waving — both orgs sign or the edge doesn&apos;t exist. The cryptography is the contract.</p>
+              <h4>Isolated workspaces. <em>Role-based access.</em></h4>
+              <p>Every org gets its own isolated workspace. OWNER → ADMIN → MEMBER → VIEWER roles enforced at the API level. Invite team members by email. Co-signed supplier management coming in Q3.</p>
             </div>
           </div>
         </div>
@@ -373,7 +373,7 @@ export default function LandingPage() {
             <h2>Why Solana?<br /><em>Because the math works.</em></h2>
             <div className="kicker">
               <p className="eyebrow">Infrastructure</p>
-              <p>Supply chains write a lot. Millions of components, edges, signatures per year for any real manufacturer. Anything but Solana — or a chain like it — turns this from a product into an academic exercise.</p>
+              <p>Supply chains write a lot. Millions of components, links, and events per year for any real manufacturer. Anything but Solana — or a chain like it — turns this from a product into an academic exercise.</p>
             </div>
           </div>
           <div className="why-grid">
@@ -384,7 +384,7 @@ export default function LandingPage() {
             </div>
             <div className="why-stats">
               {[
-                { k: "Per-part write",       v: "$0.0008", s: "/ amortized",       p: "Compressed NFTs put 4M parts inside a budget any line manager can sign off." },
+                { k: "Per-part write",       v: "$0.0008", s: "/ amortized",       p: "On-chain Anchor accounts put 4M parts inside a budget any line manager can sign off." },
                 { k: "Block time",           v: "~400",    s: "ms",                p: "Edges confirm faster than the time it takes to walk down a warehouse aisle." },
                 { k: "Throughput ceiling",   v: "65k",     s: "tps theoretical",   p: "Headroom for the day every loading bay in the supplier network goes live at once." },
                 { k: "Tooling maturity",     v: "2026",    s: "· production",      p: "Wallet adapters, RPC providers, indexers, mainstream-grade. Not 2021 anymore." },
@@ -415,25 +415,25 @@ export default function LandingPage() {
               <div className="ph">Q4 2025 · Shipped</div>
               <h4>Foundations</h4>
               <div className="when">Oct — Dec &apos;25</div>
-              <ul><li>cNFT schema for components</li><li>Co-signed edges (parent–child)</li><li>Trace API · upstream + downstream</li><li>Devnet integration</li></ul>
+              <ul><li>Anchor program · component accounts on-chain</li><li>Parent–child links with tx hash</li><li>Trace API · upstream + downstream</li><li>Devnet integration</li></ul>
             </div>
             <div className="road-col now">
               <div className="ph">Q2 2026 · Now</div>
-              <h4>Sandbox <em>+ design partners</em></h4>
+              <h4>SCM core <em>+ sandbox</em></h4>
               <div className="when">Apr — Jun &apos;26</div>
-              <ul><li>Multi-org workspace</li><li>Recall simulation + dispatch</li><li>TypeScript SDK · v0.4</li><li>EU DPP audit export</li></ul>
+              <ul><li>Multi-org workspace · RBAC</li><li>Supplier profiles + status workflows</li><li>Shipment tracking + event timeline</li><li>Webhooks · HMAC-signed real-time events</li><li>Recall simulation + BFS dispatch</li><li>Document uploads · IPFS via Pinata</li></ul>
             </div>
             <div className="road-col">
               <div className="ph">Q3 2026</div>
-              <h4>Mainnet beta</h4>
+              <h4>On-chain signatures</h4>
               <div className="when">Jul — Sep &apos;26</div>
-              <ul><li>Mainnet writes</li><li>SSO + role-based access</li><li>FSMA 204 audit export</li><li>ERP connectors · SAP, NetSuite</li></ul>
+              <ul><li>Compressed NFTs · Bubblegum / spl-account-compression</li><li>Multi-org co-signed edges</li><li>Supplier wallet signing</li><li>SSO + SAML</li></ul>
             </div>
             <div className="road-col">
               <div className="ph">Q4 2026</div>
               <h4>General availability</h4>
               <div className="when">Oct — Dec &apos;26</div>
-              <ul><li>99.9% SLA · Growth tier</li><li>Dedicated indexer · Enterprise</li><li>Public verification widget</li><li>Mobile inspector app</li></ul>
+              <ul><li>Mainnet writes · 99.9% SLA</li><li>EU DPP + FSMA 204 audit exports</li><li>ERP connectors · SAP, NetSuite</li><li>Public verification widget</li></ul>
             </div>
           </div>
         </div>
@@ -472,7 +472,7 @@ export default function LandingPage() {
           <div className="cta-grid">
             <div>
               <h2>The graph is open.<br /><em>Bring a tier-1.</em></h2>
-              <p>Devnet sandbox, no card, no token. Pick one supplier and one product line — we&apos;ll walk you through standing up your first signed edge in an afternoon.</p>
+              <p>Devnet sandbox, no card, no token. Pick one supplier and one product line — we&apos;ll walk you through registering your first components and tracing them end-to-end in an afternoon.</p>
             </div>
             <div className="cta-actions">
               <div className="row">
