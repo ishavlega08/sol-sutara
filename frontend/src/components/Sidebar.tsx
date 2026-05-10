@@ -19,7 +19,7 @@ type NavItem = {
 };
 
 const WORKSPACE: NavItem[] = [
-    { label: "Dashboard",  href: "/",               icon: LayoutDashboard, match: (p) => p === "/" },
+    { label: "Dashboard",  href: "/dashboard",      icon: LayoutDashboard, match: (p) => p === "/dashboard" },
     { label: "Components", href: "/components",      icon: Boxes,           match: (p) => p.startsWith("/components") && !p.startsWith("/components/link") },
     { label: "Link",       href: "/components/link", icon: Link2,           match: (p) => p === "/components/link" },
     { label: "Trace",      href: "/trace",           icon: GitMerge,        match: (p) => p === "/trace" },

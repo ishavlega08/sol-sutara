@@ -27,3 +27,5 @@ export { getShipments, getShipmentById, createShipment, updateShipmentStatus, up
 export { uploadDocument, getDocuments, getDocumentById, deleteDocument, fileToBase64 } from "./documents";
 export { getNotifications, getUnreadCount, markNotificationRead, markAllRead } from "./notifications";
 export { getWebhooks, getWebhookById, createWebhook, updateWebhook, rotateWebhookSecret, deleteWebhook, getWebhookEvents, retryWebhookDeliveries } from "./webhooks";
+export { getOrgPlan, getOrgUsage, getPlanCatalogue, updateOrgPlan } from "./billing";
+export type { OrgPlan, PlanLimits, OrgUsage, PlanCatalogue } from "./billing";

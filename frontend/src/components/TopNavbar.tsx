@@ -39,6 +39,7 @@ function NotificationBell() {
 
 const PAGE_LABELS: Record<string, string> = {
     "/":                        "Dashboard",
+    "/dashboard":               "Dashboard",
     "/components":              "Components",
     "/components/create":       "Create Component",
     "/components/link":         "Link Components",

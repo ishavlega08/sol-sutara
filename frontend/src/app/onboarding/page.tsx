@@ -37,7 +37,7 @@ export default function OnboardingPage() {
     useEffect(() => {
         if (isLoading) return;
         if (!isAuthenticated) router.replace("/login");
-        if (hasOrg)           router.replace("/");
+        if (hasOrg)           router.replace("/components");
     }, [isAuthenticated, isLoading, hasOrg, router]);
 
     async function handleCreate(e: React.FormEvent) {
@@ -48,7 +48,7 @@ export default function OnboardingPage() {
         try {
             const { org } = await createOrg(orgName.trim());
             setSession(user as AuthUser, true, { id: org.id, name: org.name } as AuthOrg);
-            router.replace("/");
+            router.replace("/components");
         } catch (err: unknown) {
             setError(err instanceof Error ? err.message : "Failed to create organization");
         } finally {
@@ -65,7 +65,7 @@ export default function OnboardingPage() {
         try {
             const { org } = await joinOrg(inviteToken);
             setSession(user as AuthUser, true, { id: org.id, name: org.name } as AuthOrg);
-            router.replace("/");
+            router.replace("/components");
         } catch (err: unknown) {
             setError(err instanceof Error ? err.message : "Invalid or expired invite");
         } finally {

@@ -5,7 +5,15 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
 
 export default function LoginPage() {
-    const { isAuthenticated, isLoading, hasOrg, login } = useAuth();
+    const {
+        isAuthenticated,
+        isLoading,
+        hasOrg,
+        login,
+        privyAuthenticated,
+        backendAuthFailed,
+        retryAuth,
+    } = useAuth();
     const router       = useRouter();
     const searchParams = useSearchParams();
     const redirectParam = searchParams.get("redirect");
@@ -21,6 +29,13 @@ export default function LoginPage() {
             router.replace(hasOrg ? redirect : "/onboarding");
         }
     }, [isAuthenticated, isLoading, hasOrg, redirect, router]);
+
+    // ── Determine what to render in the button area ───────────────────────────
+    // 1. isLoading OR (Privy authed but backend not done yet) → spinner
+    // 2. Privy authed but backend failed → retry button
+    // 3. Not authenticated at all → Privy login button
+    const showSpinner = isLoading || (privyAuthenticated && !isAuthenticated && !backendAuthFailed);
+    const showRetry   = !isLoading && privyAuthenticated && !isAuthenticated && backendAuthFailed;
 
     return (
         <div className="flex min-h-screen items-center justify-center bg-gray-50 dark:bg-gray-950 px-4">
@@ -48,12 +63,25 @@ export default function LoginPage() {
                         New users are created automatically on first sign-in.
                     </p>
 
-                    {isLoading ? (
+                    {showSpinner ? (
                         <div className="flex justify-center py-4">
                             <svg className="h-5 w-5 animate-spin text-violet-600" fill="none" viewBox="0 0 24 24">
                                 <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
                                 <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
                             </svg>
+                        </div>
+                    ) : showRetry ? (
+                        <div className="space-y-3">
+                            <p className="text-center text-sm text-red-500 dark:text-red-400">
+                                Could not reach the server. Check your connection and try again.
+                            </p>
+                            <button
+                                onClick={retryAuth}
+                                className="w-full rounded-md py-2.5 text-sm font-semibold text-white transition hover:opacity-90"
+                                style={{ background: "linear-gradient(135deg, #7c3aed, #6d28d9)" }}
+                            >
+                                Retry →
+                            </button>
                         </div>
                     ) : (
                         <button

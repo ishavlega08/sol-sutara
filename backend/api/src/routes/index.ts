@@ -13,6 +13,7 @@ import shipmentRoutes     from "../modules/shipment/shipment.routes";
 import documentRoutes     from "../modules/document/document.routes";
 import notificationRoutes from "../modules/notification/notification.routes";
 import webhookRoutes      from "../modules/webhook/webhook.routes";
+import billingRoutes      from "../modules/billing/billing.routes";
 
 const router = Router();
 
@@ -31,5 +32,6 @@ router.use("/shipments",     shipmentRoutes);
 router.use("/documents",     documentRoutes);
 router.use("/notifications", notificationRoutes);
 router.use("/webhooks",      webhookRoutes);
+router.use("/billing",       billingRoutes);
 
 export default router;

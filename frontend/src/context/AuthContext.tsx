@@ -26,29 +26,35 @@ export interface AuthOrg {
 }
 
 interface AuthState {
-    user:            AuthUser | null;
-    org:             AuthOrg | null;
-    role:            string | null;
-    hasOrg:          boolean;
-    isLoading:       boolean;
-    isAuthenticated: boolean;
-    login:           () => void;
-    logout:          () => Promise<void>;
-    setSession:      (user: AuthUser, hasOrg: boolean, org: AuthOrg | null) => void;
+    user:              AuthUser | null;
+    org:               AuthOrg | null;
+    role:              string | null;
+    hasOrg:            boolean;
+    isLoading:         boolean;
+    isAuthenticated:   boolean;
+    privyAuthenticated: boolean;
+    backendAuthFailed: boolean;
+    login:             () => void;
+    logout:            () => Promise<void>;
+    retryAuth:         () => Promise<void>;
+    setSession:        (user: AuthUser, hasOrg: boolean, org: AuthOrg | null) => void;
 }
 
 // ─── Context ──────────────────────────────────────────────────────────────────
 
 const AuthContext = createContext<AuthState>({
-    user:            null,
-    org:             null,
-    role:            null,
-    hasOrg:          false,
-    isLoading:       true,
-    isAuthenticated: false,
-    login:           () => {},
-    logout:          async () => {},
-    setSession:      () => {},
+    user:              null,
+    org:               null,
+    role:              null,
+    hasOrg:            false,
+    isLoading:         true,
+    isAuthenticated:   false,
+    privyAuthenticated: false,
+    backendAuthFailed: false,
+    login:             () => {},
+    logout:            async () => {},
+    retryAuth:         async () => {},
+    setSession:        () => {},
 });
 
 export function useAuth() {
@@ -60,14 +66,35 @@ export function useAuth() {
 export function AuthProvider({ children }: { children: ReactNode }) {
     const { ready, authenticated, user: privyUser, login: privyLogin, logout: privyLogout, getAccessToken } = usePrivy();
 
-    const [user,      setUser]      = useState<AuthUser | null>(null);
-    const [org,       setOrg]       = useState<AuthOrg  | null>(null);
-    const [role,      setRole]      = useState<string   | null>(null);
-    const [hasOrg,    setHasOrg]    = useState(false);
-    const [isLoading, setIsLoading] = useState(true);
+    const [user,              setUser]              = useState<AuthUser | null>(null);
+    const [org,               setOrg]               = useState<AuthOrg  | null>(null);
+    const [role,              setRole]              = useState<string   | null>(null);
+    const [hasOrg,            setHasOrg]            = useState(false);
+    const [isLoading,         setIsLoading]         = useState(true);
+    const [backendAuthFailed, setBackendAuthFailed] = useState(false);
 
     // Prevent double-processing the same Privy login event
     const handledPrivyLogin = useRef(false);
+
+    // ── Shared backend auth logic ─────────────────────────────────────────────
+
+    const runBackendAuth = useCallback(async () => {
+        setIsLoading(true);
+        setBackendAuthFailed(false);
+        try {
+            const privyToken = await getAccessToken();
+            if (!privyToken) throw new Error("No Privy access token");
+
+            const { user: u, org: o, hasOrg: h } = await apiLogin(privyToken);
+            applySession(u, h, o);
+        } catch (err) {
+            console.error("Auth error:", err);
+            setBackendAuthFailed(true);
+        } finally {
+            setIsLoading(false);
+        }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [getAccessToken]);
 
     // ── Restore session on mount via refresh cookie ───────────────────────────
     useEffect(() => {
@@ -94,29 +121,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         if (handledPrivyLogin.current) return;
         handledPrivyLogin.current = true;
 
-        async function handlePrivyAuth() {
-            setIsLoading(true);
-            try {
-                const privyToken = await getAccessToken();
-                if (!privyToken) throw new Error("No Privy access token");
-
-                const { user: u, org: o, hasOrg: h } = await apiLogin(privyToken);
-                applySession(u, h, o);
-            } catch (err) {
-                console.error("Auth error:", err);
-            } finally {
-                setIsLoading(false);
-            }
-        }
-
-        handlePrivyAuth();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [ready, authenticated, privyUser]);
+        runBackendAuth();
+    }, [ready, authenticated, privyUser, runBackendAuth]);
 
     // Reset the flag when Privy logs out
     useEffect(() => {
         if (!authenticated) {
             handledPrivyLogin.current = false;
+            setBackendAuthFailed(false);
         }
     }, [authenticated]);
 
@@ -126,8 +138,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setUser(u);
         setHasOrg(h);
         setOrg(o);
-        // role is embedded in org membership — the backend returns it via the
-        // access cookie; surface it separately if the API returns it
     }
 
     const setSession = useCallback(
@@ -136,6 +146,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         },
         []
     );
+
+    // Retry backend auth without re-triggering Privy (Privy session already exists)
+    const retryAuth = useCallback(async () => {
+        handledPrivyLogin.current = false; // allow re-run after retry
+        await runBackendAuth();
+        handledPrivyLogin.current = true;
+    }, [runBackendAuth]);
 
     const logout = useCallback(async () => {
         try {
@@ -146,6 +163,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setOrg(null);
         setRole(null);
         setHasOrg(false);
+        setBackendAuthFailed(false);
     }, [privyLogout]);
 
     const isAuthenticated = !!user;
@@ -159,8 +177,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                 hasOrg,
                 isLoading: isLoading || !ready,
                 isAuthenticated,
-                login:  privyLogin,
+                privyAuthenticated: authenticated,
+                backendAuthFailed,
+                login:      privyLogin,
                 logout,
+                retryAuth,
                 setSession,
             }}
         >
