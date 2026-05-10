@@ -5,6 +5,37 @@ import { usePathname } from "next/navigation";
 import { Search, Bell, Menu, Plus } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 import { useRole } from "@/hooks/useRole";
+import { useState, useEffect } from "react";
+import { getUnreadCount } from "@/lib/api/notifications";
+
+function NotificationBell() {
+    const [count, setCount] = useState(0);
+
+    useEffect(() => {
+        let alive = true;
+        async function poll() {
+            try {
+                const res = await getUnreadCount();
+                if (alive) setCount(res.count);
+            } catch { /* silent — no auth yet or network error */ }
+        }
+        poll();
+        const id = setInterval(poll, 30_000);
+        return () => { alive = false; clearInterval(id); };
+    }, []);
+
+    return (
+        <Link href="/notifications"
+            className="relative rounded-md p-1.5 text-gray-500 transition hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-800">
+            <Bell className="h-4 w-4" />
+            {count > 0 && (
+                <span className="absolute right-0.5 top-0.5 flex h-4 w-4 items-center justify-center rounded-full bg-red-500 text-[9px] font-bold text-white leading-none">
+                    {count > 99 ? "99+" : count}
+                </span>
+            )}
+        </Link>
+    );
+}
 
 const PAGE_LABELS: Record<string, string> = {
     "/":                        "Dashboard",
@@ -20,12 +51,22 @@ const PAGE_LABELS: Record<string, string> = {
     "/settings/organization":   "Organization",
     "/settings/members":        "Members",
     "/settings/api-keys":       "API Keys",
+    "/settings/webhooks":       "Webhooks",
+    "/suppliers":               "Suppliers",
+    "/suppliers/create":        "New Supplier",
+    "/shipments":               "Shipments",
+    "/shipments/create":        "New Shipment",
+    "/notifications":           "Notifications",
 };
 
 function getPageLabel(pathname: string): string {
     if (PAGE_LABELS[pathname]) return PAGE_LABELS[pathname];
-    const match = pathname.match(/^\/components\/([^/]+)$/);
-    if (match) return `Components / ${match[1]}`;
+    const componentMatch = pathname.match(/^\/components\/([^/]+)$/);
+    if (componentMatch) return `Components / ${componentMatch[1]}`;
+    const supplierMatch = pathname.match(/^\/suppliers\/([^/]+)$/);
+    if (supplierMatch) return `Suppliers / ${supplierMatch[1]}`;
+    const shipmentMatch = pathname.match(/^\/shipments\/([^/]+)$/);
+    if (shipmentMatch) return `Shipments / ${shipmentMatch[1]}`;
     return "Dashboard";
 }
 
@@ -72,9 +113,7 @@ export default function TopNavbar({ onMenuClick }: { onMenuClick?: () => void })
                     <kbd className="rounded border border-gray-200 bg-white px-1.5 py-0.5 text-[9px] font-medium text-gray-400 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-500">⌘K</kbd>
                 </div>
 
-                <button className="rounded-md p-1.5 text-gray-500 transition hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-800">
-                    <Bell className="h-4 w-4" />
-                </button>
+                <NotificationBell />
 
                 {canCreate && (
                     <Link

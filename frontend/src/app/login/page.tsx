@@ -8,7 +8,11 @@ export default function LoginPage() {
     const { isAuthenticated, isLoading, hasOrg, login } = useAuth();
     const router       = useRouter();
     const searchParams = useSearchParams();
-    const redirect     = searchParams.get("redirect") ?? "/";
+    const redirectParam = searchParams.get("redirect");
+    // Avoid redirecting back to public/landing pages after login
+    const redirect = (redirectParam && redirectParam !== "/" && !redirectParam.startsWith("/devnet-access"))
+        ? redirectParam
+        : "/components";
 
     // Redirect if already authenticated
     useEffect(() => {

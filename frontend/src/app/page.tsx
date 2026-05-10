@@ -53,7 +53,7 @@ export default function LandingPage() {
           </nav>
           <div className="nav-cta">
             <Link className="btn btn-ghost" href="/login">Sign in</Link>
-            <Link className="btn btn-primary" href="/login">Get devnet access →</Link>
+            <Link className="btn btn-primary" href="/devnet-access">Get devnet access →</Link>
           </div>
         </div>
       </header>

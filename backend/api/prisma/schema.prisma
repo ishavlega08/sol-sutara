@@ -35,6 +35,59 @@ enum RecallStatus {
   RESOLVED
 }
 
+// ── Phase 1: Core SCM Enums ───────────────────────────────────────────────────
+
+enum ShipmentStatus {
+  CREATED
+  PICKED_UP
+  IN_TRANSIT
+  CUSTOMS_HOLD
+  DELAYED
+  DELIVERED
+  CANCELLED
+}
+
+enum ShipmentPriority {
+  LOW
+  STANDARD
+  HIGH
+  URGENT
+}
+
+enum SupplierStatus {
+  PENDING_REVIEW
+  APPROVED
+  SUSPENDED
+  REJECTED
+}
+
+enum SupplierRisk {
+  LOW
+  MEDIUM
+  HIGH
+  CRITICAL
+}
+
+enum DocumentType {
+  INVOICE
+  CERTIFICATION
+  CUSTOMS
+  INSPECTION_REPORT
+  BILL_OF_LADING
+  OTHER
+}
+
+enum WebhookStatus {
+  ACTIVE
+  DISABLED
+}
+
+enum DeliveryStatus {
+  PENDING
+  SUCCESS
+  FAILED
+}
+
 // ─── User ─────────────────────────────────────────────────────────────────────
 
 model User {
@@ -45,12 +98,20 @@ model User {
   created_at     DateTime @default(now())
   updated_at     DateTime @updatedAt
 
-  orgs_created    Organization[]       @relation("OrgCreator")
-  memberships     OrganizationMember[]
-  invites_sent    OrgInvite[]          @relation("InvitesSent")
-  refresh_tokens  RefreshToken[]
-  recalls_issued  Recall[]             @relation("RecallsIssued")
-  events_changed  ComponentEvent[]     @relation("EventsChanged")
+  orgs_created   Organization[]       @relation("OrgCreator")
+  memberships    OrganizationMember[]
+  invites_sent   OrgInvite[]          @relation("InvitesSent")
+  refresh_tokens RefreshToken[]
+  recalls_issued Recall[]             @relation("RecallsIssued")
+  events_changed ComponentEvent[]     @relation("EventsChanged")
+
+  // Phase 1
+  suppliers_created  Supplier[]      @relation("SuppliersCreated")
+  shipments_created  Shipment[]      @relation("ShipmentsCreated")
+  shipment_events    ShipmentEvent[] @relation("ShipmentEventsRecorded")
+  documents_uploaded Document[]      @relation("DocumentsUploaded")
+  webhooks_created   Webhook[]       @relation("WebhooksCreated")
+  notifications      Notification[]  @relation("UserNotifications")
 }
 
 // ─── Organization ─────────────────────────────────────────────────────────────
@@ -68,6 +129,13 @@ model Organization {
   members    OrganizationMember[]
   invites    OrgInvite[]
   recalls    Recall[]
+
+  // Phase 1
+  suppliers     Supplier[]
+  shipments     Shipment[]
+  documents     Document[]
+  webhooks      Webhook[]
+  notifications Notification[]
 }
 
 // ─── OrganizationMember ───────────────────────────────────────────────────────
@@ -129,21 +197,27 @@ model Component {
   created_at       DateTime        @default(now())
   org_id           String?
 
-  // Batch / lot / quantity fields (Feature D)
-  batch_number     String?
-  lot_number       String?
-  quantity         Float?
-  unit             String?
-  expiry_date      DateTime?
+  // Batch / lot / quantity fields
+  batch_number String?
+  lot_number   String?
+  quantity     Float?
+  unit         String?
+  expiry_date  DateTime?
 
-  // Status lifecycle (Feature E)
-  status           ComponentStatus @default(CREATED)
+  // Status lifecycle
+  status ComponentStatus @default(CREATED)
 
-  org          Organization?   @relation(fields: [org_id], references: [id])
-  parent_links ComponentLink[] @relation("ParentLinks")
-  child_links  ComponentLink[] @relation("ChildLinks")
-  recalls      Recall[]
-  events       ComponentEvent[]
+  // Phase 1: optional FK to structured Supplier profile (backward compatible)
+  supplier_id String?
+
+  org              Organization?   @relation(fields: [org_id], references: [id])
+  parent_links     ComponentLink[] @relation("ParentLinks")
+  child_links      ComponentLink[] @relation("ChildLinks")
+  recalls          Recall[]
+  events           ComponentEvent[]
+  supplier_profile Supplier?       @relation("ComponentSupplier", fields: [supplier_id], references: [id])
+
+  @@index([supplier_id])
 }
 
 // ─── ComponentLink ────────────────────────────────────────────────────────────
@@ -155,9 +229,8 @@ model ComponentLink {
   tx_hash    String
   created_at DateTime @default(now())
 
-  // Quantity of parent that went into child (Feature D)
-  quantity   Float?
-  unit       String?
+  quantity Float?
+  unit     String?
 
   parent Component @relation("ParentLinks", fields: [parent_id], references: [id])
   child  Component @relation("ChildLinks", fields: [child_id], references: [id])
@@ -168,13 +241,13 @@ model ComponentLink {
 // ─── ComponentEvent ───────────────────────────────────────────────────────────
 
 model ComponentEvent {
-  id           String          @id @default(uuid())
+  id           String           @id @default(uuid())
   component_id String
   from_status  ComponentStatus?
   to_status    ComponentStatus
   changed_by   String
   notes        String?
-  created_at   DateTime        @default(now())
+  created_at   DateTime         @default(now())
 
   component Component @relation(fields: [component_id], references: [id], onDelete: Cascade)
   changer   User      @relation("EventsChanged", fields: [changed_by], references: [id])
@@ -196,4 +269,172 @@ model Recall {
   component Component     @relation(fields: [component_id], references: [id])
   issuer    User          @relation("RecallsIssued", fields: [issued_by], references: [id])
   org       Organization? @relation(fields: [org_id], references: [id])
+}
+
+// ── Phase 1: Core SCM Models ──────────────────────────────────────────────────
+
+// ─── Supplier ─────────────────────────────────────────────────────────────────
+
+model Supplier {
+  id             String         @id @default(uuid())
+  org_id         String
+  supplier_code  String
+  company_name   String
+  legal_name     String?
+  contact_email  String?
+  contact_phone  String?
+  country        String?
+  address        String?
+  status         SupplierStatus @default(PENDING_REVIEW)
+  risk_level     SupplierRisk   @default(LOW)
+  certifications String[]
+  notes          String?
+  created_at     DateTime       @default(now())
+  updated_at     DateTime       @updatedAt
+  created_by     String
+
+  org        Organization  @relation(fields: [org_id], references: [id], onDelete: Cascade)
+  creator    User          @relation("SuppliersCreated", fields: [created_by], references: [id])
+  shipments  Shipment[]
+  documents  Document[]    @relation("SupplierDocuments")
+  components Component[]   @relation("ComponentSupplier")
+
+  @@unique([org_id, supplier_code])
+  @@index([org_id])
+}
+
+// ─── Shipment ─────────────────────────────────────────────────────────────────
+
+model Shipment {
+  id                 String           @id @default(uuid())
+  org_id             String
+  shipment_number    String           @unique
+  supplier_id        String?
+  origin             String
+  destination        String
+  carrier            String?
+  tracking_number    String?
+  status             ShipmentStatus   @default(CREATED)
+  priority           ShipmentPriority @default(STANDARD)
+  estimated_delivery DateTime?
+  actual_delivery    DateTime?
+  notes              String?
+  created_at         DateTime         @default(now())
+  updated_at         DateTime         @updatedAt
+  created_by         String
+
+  org       Organization    @relation(fields: [org_id], references: [id], onDelete: Cascade)
+  supplier  Supplier?       @relation(fields: [supplier_id], references: [id])
+  creator   User            @relation("ShipmentsCreated", fields: [created_by], references: [id])
+  events    ShipmentEvent[]
+  documents Document[]      @relation("ShipmentDocuments")
+
+  @@index([org_id])
+  @@index([status])
+}
+
+// ─── ShipmentEvent ────────────────────────────────────────────────────────────
+
+model ShipmentEvent {
+  id          String          @id @default(uuid())
+  shipment_id String
+  from_status ShipmentStatus?
+  to_status   ShipmentStatus
+  location    String?
+  notes       String?
+  recorded_by String
+  created_at  DateTime        @default(now())
+
+  shipment Shipment @relation(fields: [shipment_id], references: [id], onDelete: Cascade)
+  recorder User     @relation("ShipmentEventsRecorded", fields: [recorded_by], references: [id])
+
+  @@index([shipment_id])
+}
+
+// ─── Document ─────────────────────────────────────────────────────────────────
+
+model Document {
+  id          String       @id @default(uuid())
+  org_id      String
+  name        String
+  type        DocumentType @default(OTHER)
+  file_url    String
+  file_size   Int?
+  mime_type   String?
+  checksum    String?
+  shipment_id String?
+  supplier_id String?
+  uploaded_by String
+  created_at  DateTime     @default(now())
+
+  org      Organization @relation(fields: [org_id], references: [id], onDelete: Cascade)
+  shipment Shipment?    @relation("ShipmentDocuments", fields: [shipment_id], references: [id])
+  supplier Supplier?    @relation("SupplierDocuments", fields: [supplier_id], references: [id])
+  uploader User         @relation("DocumentsUploaded", fields: [uploaded_by], references: [id])
+
+  @@index([org_id])
+  @@index([shipment_id])
+  @@index([supplier_id])
+}
+
+// ─── Webhook ──────────────────────────────────────────────────────────────────
+
+model Webhook {
+  id         String        @id @default(uuid())
+  org_id     String
+  url        String
+  secret     String
+  events     String[]
+  status     WebhookStatus @default(ACTIVE)
+  created_by String
+  created_at DateTime      @default(now())
+  updated_at DateTime      @updatedAt
+
+  org        Organization      @relation(fields: [org_id], references: [id], onDelete: Cascade)
+  creator    User              @relation("WebhooksCreated", fields: [created_by], references: [id])
+  deliveries WebhookDelivery[]
+
+  @@index([org_id])
+}
+
+// ─── WebhookDelivery ──────────────────────────────────────────────────────────
+
+model WebhookDelivery {
+  id           String         @id @default(uuid())
+  webhook_id   String
+  event        String
+  payload      Json
+  status       DeliveryStatus @default(PENDING)
+  status_code  Int?
+  response     String?
+  attempts     Int            @default(0)
+  next_retry   DateTime?
+  created_at   DateTime       @default(now())
+  delivered_at DateTime?
+
+  webhook Webhook @relation(fields: [webhook_id], references: [id], onDelete: Cascade)
+
+  @@index([webhook_id])
+  @@index([status])
+  @@index([next_retry])
+}
+
+// ─── Notification ─────────────────────────────────────────────────────────────
+
+model Notification {
+  id         String   @id @default(uuid())
+  user_id    String
+  org_id     String
+  title      String
+  body       String
+  type       String
+  entity_id  String?
+  read       Boolean  @default(false)
+  created_at DateTime @default(now())
+
+  user User         @relation("UserNotifications", fields: [user_id], references: [id], onDelete: Cascade)
+  org  Organization @relation(fields: [org_id], references: [id], onDelete: Cascade)
+
+  @@index([user_id, read])
+  @@index([org_id])
 }

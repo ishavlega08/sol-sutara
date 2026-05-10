@@ -5,7 +5,7 @@ import { useRouter, usePathname } from "next/navigation";
 import {
     LayoutDashboard, Boxes, Link2, GitMerge, AlertOctagon,
     BarChart2, CreditCard, FileText, Building2, Users, Key,
-    ChevronDown, Moon, Sun, X, LogOut,
+    ChevronDown, Moon, Sun, X, LogOut, Truck, Package, Bell, Webhook,
 } from "lucide-react";
 import { useTheme } from "@/context/ThemeContext";
 import { useAuth } from "@/context/AuthContext";
@@ -25,6 +25,9 @@ const WORKSPACE: NavItem[] = [
     { label: "Trace",      href: "/trace",           icon: GitMerge,        match: (p) => p === "/trace" },
     { label: "Recall",     href: "/recall",          icon: AlertOctagon,    match: (p) => p === "/recall", badge: "NEW" },
     { label: "Analytics",  href: "/analytics",       icon: BarChart2,       match: (p) => p === "/analytics" },
+    { label: "Suppliers",  href: "/suppliers",       icon: Building2,       match: (p) => p.startsWith("/suppliers") },
+    { label: "Shipments",  href: "/shipments",       icon: Truck,           match: (p) => p.startsWith("/shipments") },
+    { label: "Notifications", href: "/notifications", icon: Bell,           match: (p) => p.startsWith("/notifications") },
 ];
 
 const BILLING: NavItem[] = [
@@ -36,6 +39,7 @@ const SETTINGS: NavItem[] = [
     { label: "Organization", href: "/settings/organization", icon: Building2, match: (p) => p.startsWith("/settings/organization") },
     { label: "Members",      href: "/settings/members",      icon: Users,     match: (p) => p.startsWith("/settings/members") },
     { label: "API keys",     href: "/settings/api-keys",     icon: Key,       match: (p) => p.startsWith("/settings/api-keys") },
+    { label: "Webhooks",    href: "/settings/webhooks",     icon: Webhook,   match: (p) => p.startsWith("/settings/webhooks") },
 ];
 
 function NavLink({ item, active, onClick }: { item: NavItem; active: boolean; onClick?: () => void }) {
