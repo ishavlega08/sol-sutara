@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import Logo from "@/components/Logo";
 import { useState } from "react";
 import { CheckCircle2, Loader2 } from "lucide-react";
 
@@ -70,7 +71,7 @@ export default function DevnetAccessPage() {
       <header className="nav">
         <div className="wrap nav-inner">
           <Link className="brand" href="/">
-            <span className="brand-mark" />
+            <Logo size={22} />
             <span>Sol Sutara</span>
             <em>· devnet</em>
           </Link>

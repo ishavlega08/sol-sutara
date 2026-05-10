@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import Logo from "@/components/Logo";
 import { useState } from "react";
 
 const FAQ_ITEMS = [
@@ -40,7 +41,7 @@ export default function LandingPage() {
       <header className="nav">
         <div className="wrap nav-inner">
           <Link className="brand" href="/">
-            <span className="brand-mark" />
+            <Logo size={22} />
             <span>Sol Sutara</span>
             <em>· devnet</em>
           </Link>
@@ -490,7 +491,7 @@ export default function LandingPage() {
         <div className="wrap">
           <div className="foot-top">
             <div className="foot-brand">
-              <div className="brand"><span className="brand-mark" /><span>Sol Sutara</span><em>· devnet</em></div>
+              <div className="brand"><Logo size={18} /><span>Sol Sutara</span><em>· devnet</em></div>
               <p>The supply chain, set in type. Built in public on Solana, since Q4 2025.</p>
             </div>
             <div className="foot-col">

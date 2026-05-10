@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Search, Bell, Menu, Plus } from "lucide-react";
+import Logo from "@/components/Logo";
 import { useAuth } from "@/context/AuthContext";
 import { useRole } from "@/hooks/useRole";
 import { useState, useEffect } from "react";
@@ -84,9 +85,7 @@ export default function TopNavbar({ onMenuClick }: { onMenuClick?: () => void })
                 <button onClick={onMenuClick} className="mr-1 rounded-md p-1 text-gray-500 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-800 md:hidden">
                     <Menu className="h-4 w-4" />
                 </button>
-                <svg viewBox="0 0 14 14" className="h-4 w-4 flex-shrink-0" fill="none">
-                    <path d="M7 1L13 12H1L7 1Z" fill="currentColor" className="text-gray-900 dark:text-gray-100" />
-                </svg>
+                <Logo size={22} className="flex-shrink-0" />
                 <span className="text-sm font-semibold text-gray-900 dark:text-gray-100">Sol Sutara</span>
                 <span className="ml-0.5 hidden rounded-full bg-emerald-100 px-2 py-0.5 text-[9px] font-bold uppercase tracking-wide text-emerald-700 dark:bg-emerald-950 dark:text-emerald-400 sm:inline">
                     Devnet

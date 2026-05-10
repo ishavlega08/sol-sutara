@@ -19,13 +19,14 @@ export interface ActivityItem {
 }
 
 export async function getDashboardStats(orgId?: string): Promise<DashboardStats> {
-    const where = orgId ? { org_id: orgId } : {};
-    const linkWhere = orgId ? { parent: { org_id: orgId } } : {};
+    if (!orgId) return { totalComponents: 0, totalLinks: 0, maxGraphDepth: 0, highRiskCount: 0, activeRecallCount: 0, recentActivity: [] };
+    const where = { org_id: orgId };
+    const linkWhere = { parent: { org_id: orgId } };
 
     const [totalComponents, totalLinks, activeRecallCount, recentComponents, recentLinks] = await Promise.all([
         prisma.component.count({ where }),
         prisma.componentLink.count({ where: linkWhere }),
-        prisma.recall.count({ where: { status: "ACTIVE", ...(orgId ? { org_id: orgId } : {}) } }),
+        prisma.recall.count({ where: { status: "ACTIVE", org_id: orgId } }),
         prisma.component.findMany({
             where,
             orderBy: { created_at: "desc" },
@@ -123,8 +124,9 @@ export interface RecentLink {
 }
 
 export async function getRecentLinks(orgId?: string, limit = 10): Promise<RecentLink[]> {
+    if (!orgId) return [];
     const links = await prisma.componentLink.findMany({
-        where:   orgId ? { parent: { org_id: orgId } } : {},
+        where:   { parent: { org_id: orgId } },
         orderBy: { created_at: "desc" },
         take:    limit,
         include: {
@@ -155,8 +157,9 @@ export interface OrgLink {
 }
 
 export async function getAllLinks(orgId?: string): Promise<OrgLink[]> {
+    if (!orgId) return [];
     const links = await prisma.componentLink.findMany({
-        where:   orgId ? { parent: { org_id: orgId } } : {},
+        where:   { parent: { org_id: orgId } },
         select:  { id: true, parent_id: true, child_id: true, tx_hash: true },
         orderBy: { created_at: "asc" },
     });
@@ -178,18 +181,17 @@ export interface ComponentRiskSummary {
 }
 
 export async function getBatchRisk(orgId?: string): Promise<ComponentRiskSummary[]> {
-    const where = orgId ? { org_id: orgId } : {};
-
+    if (!orgId) return [];
     const [components, parentCounts, childCounts] = await Promise.all([
-        prisma.component.findMany({ where, select: { id: true, name: true } }),
+        prisma.component.findMany({ where: { org_id: orgId }, select: { id: true, name: true } }),
         prisma.componentLink.groupBy({
             by:     ["child_id"],
-            where:  orgId ? { child: { org_id: orgId } } : {},
+            where:  { child: { org_id: orgId } },
             _count: { parent_id: true },
         }),
         prisma.componentLink.groupBy({
             by:     ["parent_id"],
-            where:  orgId ? { parent: { org_id: orgId } } : {},
+            where:  { parent: { org_id: orgId } },
             _count: { child_id: true },
         }),
     ]);

@@ -3,6 +3,7 @@
 import { useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
+import Logo from "@/components/Logo";
 
 export default function LoginPage() {
     const {
@@ -44,9 +45,7 @@ export default function LoginPage() {
                 {/* Logo + brand */}
                 <div className="mb-8 flex flex-col items-center gap-3 text-center">
                     <div className="flex items-center gap-2">
-                        <svg viewBox="0 0 14 14" className="h-7 w-7" fill="none">
-                            <path d="M7 1L13 12H1L7 1Z" fill="currentColor" className="text-gray-900 dark:text-gray-100" />
-                        </svg>
+                        <Logo size={36} />
                         <span className="text-xl font-bold text-gray-900 dark:text-gray-100">Sol Sutara</span>
                     </div>
                     <p className="text-sm text-gray-500 dark:text-gray-400">

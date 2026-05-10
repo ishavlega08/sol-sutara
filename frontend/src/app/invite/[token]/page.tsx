@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { CheckCircle, AlertCircle } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
+import Logo from "@/components/Logo";
 import { getInviteDetails, joinOrg } from "@/lib/api/orgs";
 import type { InviteDetails } from "@/lib/api/orgs";
 import type { AuthUser, AuthOrg } from "@/context/AuthContext";
@@ -76,9 +77,7 @@ export default function InvitePage() {
                 {/* Brand */}
                 <div className="mb-8 flex justify-center">
                     <div className="flex items-center gap-2">
-                        <svg viewBox="0 0 14 14" className="h-6 w-6" fill="none">
-                            <path d="M7 1L13 12H1L7 1Z" fill="currentColor" className="text-gray-900 dark:text-gray-100" />
-                        </svg>
+                        <Logo size={30} />
                         <span className="text-lg font-bold text-gray-900 dark:text-gray-100">Sol Sutara</span>
                     </div>
                 </div>

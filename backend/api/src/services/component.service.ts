@@ -19,8 +19,9 @@ export interface CreateComponentInput {
 }
 
 export async function getComponents(orgId?: string) {
+    if (!orgId) return [];
     return prisma.component.findMany({
-        where:   orgId ? { org_id: orgId } : undefined,
+        where:   { org_id: orgId },
         orderBy: { created_at: "desc" },
     });
 }

@@ -5,6 +5,8 @@ import { useRouter } from "next/navigation";
 import { Building2, Users } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 import { createOrg, joinOrg } from "@/lib/api/orgs";
+import Logo from "@/components/Logo";
+import { apiRefresh } from "@/lib/api/auth";
 import type { AuthUser, AuthOrg } from "@/context/AuthContext";
 
 type Tab = "create" | "join";
@@ -40,6 +42,20 @@ export default function OnboardingPage() {
         if (hasOrg)           router.replace("/components");
     }, [isAuthenticated, isLoading, hasOrg, router]);
 
+    // After org creation/join, refresh the session so the new JWT includes the orgId.
+    // Without this, the stale access token has orgId=undefined and all API calls
+    // that require an org would fail or leak data.
+    async function refreshAndNavigate(orgId: string, orgName: string) {
+        try {
+            const { user: u, org: o, hasOrg: h } = await apiRefresh();
+            setSession(u, h, o);
+        } catch {
+            // Fallback: use the data we already have from createOrg/joinOrg
+            setSession(user as AuthUser, true, { id: orgId, name: orgName } as AuthOrg);
+        }
+        router.replace("/components");
+    }
+
     async function handleCreate(e: React.FormEvent) {
         e.preventDefault();
         if (!orgName.trim()) { setError("Organization name is required"); return; }
@@ -47,8 +63,7 @@ export default function OnboardingPage() {
         setError("");
         try {
             const { org } = await createOrg(orgName.trim());
-            setSession(user as AuthUser, true, { id: org.id, name: org.name } as AuthOrg);
-            router.replace("/components");
+            await refreshAndNavigate(org.id, org.name);
         } catch (err: unknown) {
             setError(err instanceof Error ? err.message : "Failed to create organization");
         } finally {
@@ -64,8 +79,7 @@ export default function OnboardingPage() {
         setError("");
         try {
             const { org } = await joinOrg(inviteToken);
-            setSession(user as AuthUser, true, { id: org.id, name: org.name } as AuthOrg);
-            router.replace("/components");
+            await refreshAndNavigate(org.id, org.name);
         } catch (err: unknown) {
             setError(err instanceof Error ? err.message : "Invalid or expired invite");
         } finally {
@@ -82,9 +96,7 @@ export default function OnboardingPage() {
                 {/* Brand */}
                 <div className="mb-8 flex flex-col items-center gap-2 text-center">
                     <div className="flex items-center gap-2">
-                        <svg viewBox="0 0 14 14" className="h-6 w-6" fill="none">
-                            <path d="M7 1L13 12H1L7 1Z" fill="currentColor" className="text-gray-900 dark:text-gray-100" />
-                        </svg>
+                        <Logo size={30} />
                         <span className="text-lg font-bold text-gray-900 dark:text-gray-100">Sol Sutara</span>
                     </div>
                     <h1 className="mt-1 text-xl font-semibold text-gray-900 dark:text-gray-100">Set up your workspace</h1>
