@@ -1,15 +1,14 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import { Building2, RefreshCw, Copy, Check, Loader2, Save } from "lucide-react";
+import { RefreshCw, Copy, Check, Loader2, Save } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 import { useRole } from "@/hooks/useRole";
-import { getOrgById } from "@/lib/api/orgs";
+import { getOrgById, updateOrg } from "@/lib/api/orgs";
 import type { OrgDetails } from "@/lib/api/orgs";
 import PageHeader from "@/components/ui/PageHeader";
 import SectionCard from "@/components/ui/SectionCard";
 import ActionButton from "@/components/ui/ActionButton";
-import client from "@/lib/api/client";
 
 function CopyButton({ text }: { text: string }) {
     const [copied, setCopied] = useState(false);
@@ -43,7 +42,7 @@ function Field({ label, value, mono }: { label: string; value?: string | null; m
 
 export default function OrganizationSettingsPage() {
     const { org } = useAuth();
-    const { isAdmin } = useRole();
+    const { isOwner } = useRole();
 
     const [details, setDetails]   = useState<OrgDetails | null>(null);
     const [loading, setLoading]   = useState(true);
@@ -77,7 +76,7 @@ export default function OrganizationSettingsPage() {
         setSaving(true);
         setSaveError(null);
         try {
-            await client.patch(`/orgs/${org.id}`, { name: newName.trim() });
+            await updateOrg(org.id, newName.trim());
             await load();
             setEditing(false);
         } catch {
@@ -93,7 +92,7 @@ export default function OrganizationSettingsPage() {
 
     return (
         <div className="h-full overflow-y-auto bg-gray-50 dark:bg-gray-950">
-            <div className="mx-auto max-w-4xl px-4 py-6 sm:px-6 lg:px-8">
+            <div className="mx-auto max-w-6xl px-4 py-6 sm:px-6 lg:px-8">
 
                 <PageHeader
                     title="Organization"
@@ -159,7 +158,7 @@ export default function OrganizationSettingsPage() {
                                         ) : (
                                             <div className="flex items-center gap-2">
                                                 <p className="text-sm font-semibold text-gray-800 dark:text-gray-200">{details?.name}</p>
-                                                {isAdmin && (
+                                                {isOwner && (
                                                     <button onClick={() => setEditing(true)}
                                                         className="text-xs text-violet-600 hover:underline underline-offset-2">
                                                         Edit
@@ -172,7 +171,7 @@ export default function OrganizationSettingsPage() {
                                     <Field label="Org ID"   value={details?.id}   mono />
                                     <Field label="Slug"     value={details?.slug} mono />
                                     <Field label="Created"  value={details?.createdAt ? new Date(details.createdAt).toLocaleDateString(undefined, { year: "numeric", month: "long", day: "numeric" }) : undefined} />
-                                    <Field label="Plan"     value={details?.plan ?? org?.plan ?? "SANDBOX"} />
+                                    <Field label="Plan"     value={details?.plan ?? "SANDBOX"} />
                                 </div>
                             )}
                         </SectionCard>
@@ -218,7 +217,7 @@ export default function OrganizationSettingsPage() {
                                     </p>
                                 </div>
                                 <span className="rounded-full border border-violet-200 dark:border-violet-800 bg-violet-50 dark:bg-violet-950 px-3 py-1 text-xs font-semibold text-violet-700 dark:text-violet-300">
-                                    {details?.plan ?? org?.plan ?? "SANDBOX"}
+                                    {details?.plan ?? "SANDBOX"}
                                 </span>
                             </div>
                         </div>

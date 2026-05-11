@@ -6,6 +6,7 @@ interface SessionResponse {
     user:    AuthUser;
     org:     AuthOrg | null;
     hasOrg:  boolean;
+    role:    string | null;
 }
 
 export async function apiLogin(privyToken: string): Promise<SessionResponse> {

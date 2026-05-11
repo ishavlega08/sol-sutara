@@ -37,7 +37,36 @@ interface AuthState {
     login:             () => void;
     logout:            () => Promise<void>;
     retryAuth:         () => Promise<void>;
-    setSession:        (user: AuthUser, hasOrg: boolean, org: AuthOrg | null) => void;
+    setSession:        (user: AuthUser, hasOrg: boolean, org: AuthOrg | null, role?: string | null) => void;
+}
+
+// ─── Session cache (localStorage) ────────────────────────────────────────────
+// Stores non-sensitive UI state so returning users see content immediately
+// without waiting for the backend refresh on every page load.
+
+const SESSION_KEY = "ss_session_v1";
+
+interface CachedSession {
+    user:   AuthUser;
+    org:    AuthOrg | null;
+    hasOrg: boolean;
+    role:   string | null;
+}
+
+function readCache(): CachedSession | null {
+    if (typeof window === "undefined") return null;
+    try {
+        const raw = localStorage.getItem(SESSION_KEY);
+        return raw ? (JSON.parse(raw) as CachedSession) : null;
+    } catch { return null; }
+}
+
+function writeCache(s: CachedSession) {
+    try { localStorage.setItem(SESSION_KEY, JSON.stringify(s)); } catch {}
+}
+
+function clearCache() {
+    try { localStorage.removeItem(SESSION_KEY); } catch {}
 }
 
 // ─── Context ──────────────────────────────────────────────────────────────────
@@ -66,17 +95,41 @@ export function useAuth() {
 export function AuthProvider({ children }: { children: ReactNode }) {
     const { ready, authenticated, user: privyUser, login: privyLogin, logout: privyLogout, getAccessToken } = usePrivy();
 
-    const [user,              setUser]              = useState<AuthUser | null>(null);
-    const [org,               setOrg]               = useState<AuthOrg  | null>(null);
-    const [role,              setRole]              = useState<string   | null>(null);
-    const [hasOrg,            setHasOrg]            = useState(false);
-    const [isLoading,         setIsLoading]         = useState(true);
+    // Restore from localStorage on the very first render (synchronous, client-only)
+    const [cachedSession] = useState<CachedSession | null>(() => readCache());
+
+    const [user,              setUser]              = useState<AuthUser | null>(cachedSession?.user   ?? null);
+    const [org,               setOrg]               = useState<AuthOrg  | null>(cachedSession?.org    ?? null);
+    const [role,              setRole]              = useState<string   | null>(cachedSession?.role   ?? null);
+    const [hasOrg,            setHasOrg]            = useState(cachedSession?.hasOrg ?? false);
+    // Only show loading state if we have nothing to show yet
+    const [isLoading,         setIsLoading]         = useState(!cachedSession);
     const [backendAuthFailed, setBackendAuthFailed] = useState(false);
 
     // Prevent double-processing the same Privy login event
-    const handledPrivyLogin = useRef(false);
+    const handledPrivyLogin  = useRef(false);
+    // Prevent double-running background verification
+    const verifyingSession   = useRef(false);
 
-    // ── Shared backend auth logic ─────────────────────────────────────────────
+    // ── Helpers ───────────────────────────────────────────────────────────────
+
+    function applySession(u: AuthUser, h: boolean, o: AuthOrg | null, r?: string | null) {
+        setUser(u);
+        setHasOrg(h);
+        setOrg(o);
+        if (r !== undefined) setRole(r);
+        writeCache({ user: u, hasOrg: h, org: o, role: r ?? null });
+    }
+
+    const setSession = useCallback(
+        (u: AuthUser, h: boolean, o: AuthOrg | null, r?: string | null) => {
+            applySession(u, h, o, r);
+        },
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+        []
+    );
+
+    // ── Backend auth with Privy token ─────────────────────────────────────────
 
     const runBackendAuth = useCallback(async () => {
         setIsLoading(true);
@@ -85,8 +138,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             const privyToken = await getAccessToken();
             if (!privyToken) throw new Error("No Privy access token");
 
-            const { user: u, org: o, hasOrg: h } = await apiLogin(privyToken);
-            applySession(u, h, o);
+            const { user: u, org: o, hasOrg: h, role: r } = await apiLogin(privyToken);
+            applySession(u, h, o, r);
         } catch (err) {
             console.error("Auth error:", err);
             setBackendAuthFailed(true);
@@ -96,23 +149,37 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [getAccessToken]);
 
-    // ── Restore session on mount via refresh cookie ───────────────────────────
+    // ── Restore/verify session on mount ──────────────────────────────────────
+    // If we have a cached session: verify silently in the background.
+    // If we don't: show loading state and wait for the refresh to complete.
     useEffect(() => {
+        if (!ready || authenticated || verifyingSession.current) return;
+        verifyingSession.current = true;
+
         async function restoreSession() {
+            // Only block the UI if we have no cached data to show
+            if (!cachedSession) setIsLoading(true);
             try {
-                const { user: u, org: o, hasOrg: h } = await apiRefresh();
-                applySession(u, h, o);
+                const { user: u, org: o, hasOrg: h, role: r } = await apiRefresh();
+                applySession(u, h, o, r);
             } catch {
-                // No valid session — stay logged out
+                if (cachedSession) {
+                    // Cached session is now stale — clear it and force re-auth
+                    clearCache();
+                    setUser(null);
+                    setOrg(null);
+                    setRole(null);
+                    setHasOrg(false);
+                }
+                // No valid session — AppShell will redirect to /login
             } finally {
                 setIsLoading(false);
+                verifyingSession.current = false;
             }
         }
-        // Only try once Privy is ready and not authenticated
-        // (if Privy is authenticated it will trigger the auth flow instead)
-        if (ready && !authenticated) {
-            restoreSession();
-        }
+
+        restoreSession();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [ready, authenticated]);
 
     // ── Handle Privy login completing ─────────────────────────────────────────
@@ -132,32 +199,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         }
     }, [authenticated]);
 
-    // ── Helpers ───────────────────────────────────────────────────────────────
-
-    function applySession(u: AuthUser, h: boolean, o: AuthOrg | null) {
-        setUser(u);
-        setHasOrg(h);
-        setOrg(o);
-    }
-
-    const setSession = useCallback(
-        (u: AuthUser, h: boolean, o: AuthOrg | null) => {
-            applySession(u, h, o);
-        },
-        []
-    );
-
-    // Retry backend auth without re-triggering Privy (Privy session already exists)
     const retryAuth = useCallback(async () => {
-        handledPrivyLogin.current = false; // allow re-run after retry
+        handledPrivyLogin.current = false;
         await runBackendAuth();
         handledPrivyLogin.current = true;
     }, [runBackendAuth]);
 
     const logout = useCallback(async () => {
-        try {
-            await apiLogout();
-        } catch { /* ignore */ }
+        clearCache();
+        try { await apiLogout(); } catch { /* ignore */ }
         await privyLogout();
         setUser(null);
         setOrg(null);
@@ -175,7 +225,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                 org,
                 role,
                 hasOrg,
-                isLoading: isLoading || !ready,
+                // If we have cached session data, don't gate on Privy readiness.
+                // Privy verifies in the background; content is visible immediately.
+                isLoading: cachedSession ? isLoading : (isLoading || !ready),
                 isAuthenticated,
                 privyAuthenticated: authenticated,
                 backendAuthFailed,

@@ -8,6 +8,7 @@ import {
     createOrgApiHandler,
     joinOrgHandler,
     getOrgApiHandler,
+    updateOrgHandler,
     getOrgMembersHandler,
     createInviteHandler,
     updateRoleHandler,
@@ -30,6 +31,13 @@ router.get("/:orgId",
     authenticateToken,
     requireOrgMembership,
     getOrgApiHandler
+);
+
+router.patch("/:orgId",
+    authenticateToken,
+    requireOrgMembership,
+    requireRole("OWNER"),
+    updateOrgHandler
 );
 
 router.get("/:orgId/members",

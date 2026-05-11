@@ -99,7 +99,7 @@ export default function AnalyticsPage() {
 
   return (
     <div className="h-full overflow-y-auto bg-white dark:bg-gray-950">
-      <div className="mx-auto max-w-6xl px-4 py-6 sm:px-6 lg:px-8">
+      <div className="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8">
 
         {/* Header */}
         <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">

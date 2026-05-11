@@ -69,3 +69,8 @@ export async function getOrgById(orgId: string) {
     const res = await client.get<{ success: boolean; org: OrgDetails }>(`/orgs/${orgId}`);
     return res.data;
 }
+
+export async function updateOrg(orgId: string, name: string) {
+    const res = await client.patch<{ success: boolean; org: OrgDetails }>(`/orgs/${orgId}`, { name });
+    return res.data;
+}

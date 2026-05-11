@@ -9,8 +9,8 @@ import { useAuth } from "@/context/AuthContext";
 import { useRole } from "@/hooks/useRole";
 import PageHeader from "@/components/ui/PageHeader";
 import {
-    getOrgPlan, getOrgUsage, getPlanCatalogue, updateOrgPlan,
-    type OrgPlan, type PlanLimits, type OrgUsage, type PlanCatalogue,
+    getOrgPlan, getOrgUsage, getPlanCatalogue, createCheckout,
+    type OrgPlan, type BillingInterval, type PlanLimits, type OrgUsage, type PlanCatalogue,
 } from "@/lib/api/billing";
 
 // ─── Plan metadata ─────────────────────────────────────────────────────────────
@@ -226,13 +226,21 @@ export default function PlansPage() {
             window.location.href = "mailto:mridul@solsutara.com?subject=Enterprise inquiry";
             return;
         }
+        if (plan === "SANDBOX") {
+            // Downgrade — handled via support contact
+            window.location.href = "mailto:mridul@solsutara.com?subject=Downgrade request";
+            return;
+        }
         setUpgrading(plan);
         try {
-            await updateOrgPlan(plan);
-            await load();
-        } catch {
-            setError("Failed to update plan. Please try again.");
-        } finally {
+            const billing = annual ? "annual" : "monthly";
+            const { payment_link } = await createCheckout(plan, billing as BillingInterval);
+            window.location.href = payment_link;
+        } catch (err: unknown) {
+            // Prefer the backend's descriptive error over the generic axios message
+            const axiosMsg = (err as any)?.response?.data?.error;
+            const msg = axiosMsg || (err instanceof Error ? err.message : "Failed to start checkout");
+            setError(msg);
             setUpgrading(null);
         }
     }
@@ -251,7 +259,7 @@ export default function PlansPage() {
 
     return (
         <div className="h-full overflow-y-auto bg-gray-50 dark:bg-gray-950">
-            <div className="mx-auto max-w-5xl px-4 py-6 sm:px-6 lg:px-8">
+            <div className="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8">
 
                 <PageHeader
                     title="Plans & billing"

@@ -127,7 +127,7 @@ export default function SupplierDetailPage() {
 
   return (
     <div className="h-full overflow-y-auto bg-white dark:bg-gray-950">
-      <div className="mx-auto max-w-4xl px-4 py-8 sm:px-6">
+      <div className="mx-auto max-w-6xl px-4 py-8 sm:px-6">
 
         {/* Header */}
         <div className="mb-6 flex items-start gap-3">

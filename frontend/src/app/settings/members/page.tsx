@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState, useCallback } from "react";
-import { Copy, Plus, Trash2, RefreshCw, X, ChevronDown } from "lucide-react";
+import { Copy, Plus, Trash2, RefreshCw, X, ChevronDown, Users, Shield, Eye } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 import { useRole } from "@/hooks/useRole";
 import { getOrgMembers, createInvite, updateMemberRole, removeMember } from "@/lib/api/orgs";
@@ -14,22 +14,25 @@ const ROLES     = ["ADMIN", "MEMBER", "VIEWER"] as const;
 const ALL_ROLES = ["OWNER", "ADMIN", "MEMBER", "VIEWER"] as const;
 type Role = typeof ALL_ROLES[number];
 
-const ROLE_LABEL: Record<Role, string>  = { OWNER: "Owner", ADMIN: "Admin", MEMBER: "Member", VIEWER: "Viewer" };
-const ROLE_COLOR: Record<Role, string>  = {
+const ROLE_LABEL: Record<Role, string> = { OWNER: "Owner", ADMIN: "Admin", MEMBER: "Member", VIEWER: "Viewer" };
+const ROLE_COLOR: Record<Role, string> = {
     OWNER:  "bg-violet-50 text-violet-700 dark:bg-violet-950 dark:text-violet-300",
     ADMIN:  "bg-blue-50   text-blue-700   dark:bg-blue-950   dark:text-blue-300",
     MEMBER: "bg-gray-100  text-gray-600   dark:bg-gray-800   dark:text-gray-400",
     VIEWER: "bg-gray-50   text-gray-500   dark:bg-gray-800   dark:text-gray-500",
 };
+const ROLE_ICON: Record<Role, React.ElementType> = {
+    OWNER: Shield, ADMIN: Shield, MEMBER: Users, VIEWER: Eye,
+};
 
 // ─── Invite modal ─────────────────────────────────────────────────────────────
 
 function InviteModal({ orgId, onClose }: { orgId: string; onClose: () => void }) {
-    const [email, setEmail]   = useState("");
-    const [role,  setRole]    = useState<typeof ROLES[number]>("MEMBER");
-    const [link,  setLink]    = useState("");
-    const [busy,  setBusy]    = useState(false);
-    const [error, setError]   = useState("");
+    const [email,  setEmail]  = useState("");
+    const [role,   setRole]   = useState<typeof ROLES[number]>("MEMBER");
+    const [link,   setLink]   = useState("");
+    const [busy,   setBusy]   = useState(false);
+    const [error,  setError]  = useState("");
     const [copied, setCopied] = useState(false);
 
     async function handleCreate(e: React.FormEvent) {
@@ -116,64 +119,153 @@ function InviteModal({ orgId, onClose }: { orgId: string; onClose: () => void })
     );
 }
 
+// ─── Read-only view for non-admin members ─────────────────────────────────────
+
+function ReadOnlyMembersView() {
+    const { org, user, role } = useAuth();
+    const r = (role ?? "MEMBER") as Role;
+    const Icon = ROLE_ICON[r] ?? Users;
+
+    return (
+        <div className="space-y-5">
+            {/* Your membership card */}
+            <div className="overflow-hidden rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900">
+                <div className="h-1 bg-gradient-to-r from-violet-500 to-violet-700" />
+                <div className="p-5">
+                    <div className="flex items-start gap-4">
+                        <div className="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-xl bg-violet-50 dark:bg-violet-950">
+                            <Icon className="h-5 w-5 text-violet-600 dark:text-violet-400" />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-2 flex-wrap mb-1">
+                                <p className="font-semibold text-gray-900 dark:text-gray-100 text-sm truncate">
+                                    {user?.email ?? "You"}
+                                </p>
+                                <span className={`rounded-full px-2.5 py-0.5 text-[11px] font-semibold ${ROLE_COLOR[r]}`}>
+                                    {ROLE_LABEL[r]}
+                                </span>
+                            </div>
+                            <p className="text-sm text-gray-500 dark:text-gray-400">
+                                Member of <span className="font-medium text-gray-700 dark:text-gray-300">{org?.name ?? "this organization"}</span>
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            {/* Role description */}
+            <div className="overflow-hidden rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 p-5">
+                <p className="mb-3 text-[10px] font-semibold uppercase tracking-widest text-gray-400">Your permissions</p>
+                <div className="space-y-2">
+                    {[
+                        { label: "View components, shipments, suppliers", allowed: true },
+                        { label: "Create and edit records", allowed: r === "MEMBER" },
+                        { label: "Manage team members",  allowed: false },
+                        { label: "Invite new members",   allowed: false },
+                        { label: "Manage webhooks",      allowed: false },
+                        { label: "Access billing",       allowed: false },
+                    ].map(({ label, allowed }) => (
+                        <div key={label} className="flex items-center gap-2.5 text-sm">
+                            <span className={`flex h-4 w-4 flex-shrink-0 items-center justify-center rounded-full text-[10px] font-bold ${
+                                allowed
+                                    ? "bg-emerald-100 text-emerald-600 dark:bg-emerald-950 dark:text-emerald-400"
+                                    : "bg-gray-100 text-gray-400 dark:bg-gray-800 dark:text-gray-600"
+                            }`}>
+                                {allowed ? "✓" : "✕"}
+                            </span>
+                            <span className={allowed ? "text-gray-700 dark:text-gray-300" : "text-gray-400 dark:text-gray-600"}>
+                                {label}
+                            </span>
+                        </div>
+                    ))}
+                </div>
+            </div>
+
+            {/* Contact admin card */}
+            <div className="overflow-hidden rounded-xl border border-amber-200 dark:border-amber-900 bg-amber-50 dark:bg-amber-950/40 p-5">
+                <div className="flex items-start gap-3">
+                    <Shield className="mt-0.5 h-4 w-4 flex-shrink-0 text-amber-600 dark:text-amber-400" />
+                    <div>
+                        <p className="text-sm font-semibold text-amber-800 dark:text-amber-300 mb-1">
+                            Admin access required
+                        </p>
+                        <p className="text-xs text-amber-700 dark:text-amber-400 leading-relaxed">
+                            Managing team members, inviting new people, and changing roles requires
+                            Admin or Owner access. Contact your organization owner to request elevated permissions.
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    );
+}
+
 // ─── Main page ────────────────────────────────────────────────────────────────
 
 export default function MembersPage() {
     const { org, user }          = useAuth();
     const { canManage, isOwner } = useRole();
 
-    const [members,     setMembers]     = useState<OrgMember[]>([]);
-    const [loading,     setLoading]     = useState(true);
-    const [showInvite,  setShowInvite]  = useState(false);
-    const [actionBusy,  setActionBusy]  = useState<string | null>(null);
+    const [members,    setMembers]    = useState<OrgMember[]>([]);
+    const [loading,    setLoading]    = useState(true);
+    const [showInvite, setShowInvite] = useState(false);
+    const [actionBusy, setActionBusy] = useState<string | null>(null);
 
     const load = useCallback(async () => {
-        if (!org?.id) return;
+        if (!org?.id || !canManage) return;
         setLoading(true);
         try {
             const { members: m } = await getOrgMembers(org.id);
             setMembers(m);
-        } catch { /* handled silently */ } finally {
+        } catch { /* silent */ } finally {
             setLoading(false);
         }
-    }, [org?.id]);
+    }, [org?.id, canManage]);
 
-    useEffect(() => { load(); }, [load]);
+    useEffect(() => {
+        if (!canManage) { setLoading(false); return; }
+        load();
+    }, [load, canManage]);
 
     async function handleRoleChange(userId: string, newRole: string) {
         if (!org?.id) return;
         setActionBusy(userId);
-        try {
-            await updateMemberRole(org.id, userId, newRole);
-            await load();
-        } catch { /* silent */ } finally {
-            setActionBusy(null);
-        }
+        try { await updateMemberRole(org.id, userId, newRole); await load(); }
+        catch { /* silent */ } finally { setActionBusy(null); }
     }
 
     async function handleRemove(userId: string) {
         if (!org?.id || !confirm("Remove this member?")) return;
         setActionBusy(userId);
-        try {
-            await removeMember(org.id, userId);
-            await load();
-        } catch { /* silent */ } finally {
-            setActionBusy(null);
-        }
+        try { await removeMember(org.id, userId); await load(); }
+        catch { /* silent */ } finally { setActionBusy(null); }
+    }
+
+    // Non-admin view
+    if (!canManage) {
+        return (
+            <div className="h-full overflow-y-auto bg-white dark:bg-gray-950">
+                <div className="mx-auto max-w-6xl px-4 py-6 sm:px-6 lg:px-8">
+                    <PageHeader
+                        title="Members"
+                        subtitle="Your membership and permissions in this organization"
+                    />
+                    <ReadOnlyMembersView />
+                </div>
+            </div>
+        );
     }
 
     return (
         <div className="h-full overflow-y-auto bg-white dark:bg-gray-950">
-            <div className="mx-auto max-w-4xl px-4 py-6 sm:px-6 lg:px-8">
+            <div className="mx-auto max-w-6xl px-4 py-6 sm:px-6 lg:px-8">
                 <PageHeader
                     title="Members"
                     subtitle={`${members.length} member${members.length !== 1 ? "s" : ""} in ${org?.name ?? "your organization"}`}
                     actions={
-                        canManage ? (
-                            <ActionButton variant="gradient" onClick={() => setShowInvite(true)}>
-                                <Plus className="h-3.5 w-3.5" /> Invite member
-                            </ActionButton>
-                        ) : undefined
+                        <ActionButton variant="gradient" onClick={() => setShowInvite(true)}>
+                            <Plus className="h-3.5 w-3.5" /> Invite member
+                        </ActionButton>
                     }
                 />
 
@@ -199,9 +291,9 @@ export default function MembersPage() {
                                 ))}
 
                                 {!loading && members.map((m) => {
-                                    const isMe   = m.userId === user?.id;
-                                    const r      = m.role as Role;
-                                    const busy   = actionBusy === m.userId;
+                                    const isMe    = m.userId === user?.id;
+                                    const r       = m.role as Role;
+                                    const busy    = actionBusy === m.userId;
                                     const canEdit = isOwner && !isMe && r !== "OWNER";
                                     const canDel  = (isOwner && !isMe) || (canManage && !isMe && r !== "OWNER");
 
@@ -250,8 +342,13 @@ export default function MembersPage() {
 
                                 {!loading && members.length === 0 && (
                                     <tr>
-                                        <td colSpan={4} className="py-12 text-center text-sm text-gray-400">
-                                            No members yet.
+                                        <td colSpan={4} className="py-14 text-center">
+                                            <div className="flex flex-col items-center gap-3">
+                                                <div className="flex h-10 w-10 items-center justify-center rounded-full border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800">
+                                                    <Users className="h-4 w-4 text-gray-300 dark:text-gray-600" />
+                                                </div>
+                                                <p className="text-sm text-gray-500 dark:text-gray-400">No members yet</p>
+                                            </div>
                                         </td>
                                     </tr>
                                 )}
@@ -260,7 +357,6 @@ export default function MembersPage() {
                     </div>
                 </SectionCard>
 
-                {/* Refresh */}
                 <div className="mt-3 flex justify-end">
                     <button
                         onClick={() => load()}

@@ -3,9 +3,10 @@ import axios from "axios";
 const BASE_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3001/api";
 
 const client = axios.create({
-    baseURL:     BASE_URL,
-    headers:     { "Content-Type": "application/json" },
-    withCredentials: true,  // send/receive httpOnly auth cookies automatically
+    baseURL:         BASE_URL,
+    timeout:         10_000, // 10s — prevents auth hanging the UI indefinitely
+    headers:         { "Content-Type": "application/json" },
+    withCredentials: true,
 });
 
 // ── 401 → refresh → retry (once) ─────────────────────────────────────────────

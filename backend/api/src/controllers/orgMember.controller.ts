@@ -88,6 +88,28 @@ export async function getOrgApiHandler(req: Request, res: Response) {
     }
 }
 
+// ─── PATCH /api/orgs/:orgId ───────────────────────────────────────────────────
+
+export async function updateOrgHandler(req: Request, res: Response) {
+    const orgId = req.params["orgId"] as string;
+    const { name } = req.body as { name?: string };
+
+    if (!name?.trim()) {
+        return res.status(400).json({ success: false, error: "name is required" });
+    }
+
+    try {
+        const org = await prisma.organization.update({
+            where: { id: orgId },
+            data:  { name: name.trim() },
+        });
+        return res.status(200).json({ success: true, org });
+    } catch (err) {
+        console.error(err);
+        return res.status(500).json({ success: false, error: "Internal server error" });
+    }
+}
+
 // ─── GET /api/orgs/:orgId/members ─────────────────────────────────────────────
 
 export async function getOrgMembersHandler(req: Request, res: Response) {

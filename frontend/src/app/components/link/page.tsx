@@ -128,7 +128,7 @@ export default function LinkComponentsPage() {
 
   return (
     <div className="h-full overflow-y-auto bg-white dark:bg-gray-950 dark:text-gray-100">
-      <div className="mx-auto max-w-5xl px-4 py-6 sm:px-6">
+      <div className="mx-auto max-w-7xl px-4 py-6 sm:px-6">
 
         <PageHeader title="Link Components" subtitle="Establish a supply chain relationship between two components on-chain." />
 
