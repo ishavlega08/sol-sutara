@@ -227,7 +227,6 @@ export default function OrganizationSettingsPage() {
                             <div className="space-y-1.5">
                                 {[
                                     { label: "Team members",    href: "/settings/members" },
-                                    { label: "Webhooks",        href: "/settings/webhooks" },
                                     { label: "Plans & billing", href: "/billing/plans" },
                                 ].map((link) => (
                                     <a key={link.href} href={link.href}
