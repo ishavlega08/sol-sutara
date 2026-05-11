@@ -6,6 +6,7 @@ import {
     updateShipmentStatus,
     updateShipment,
 } from "./shipment.service";
+import { notifyOrgMembers } from "../notification/notification.service";
 import type { ShipmentStatus, ShipmentPriority } from "@prisma/client";
 
 // ─── POST /shipments ──────────────────────────────────────────────────────────
@@ -30,6 +31,17 @@ export async function createShipmentHandler(req: Request, res: Response) {
 
     try {
         const shipment = await createShipment({ supplierId, origin, destination, carrier, trackingNumber, priority, estimatedDelivery, notes }, orgId, userId);
+
+        // Notify all members that a new shipment was created
+        notifyOrgMembers({
+            orgId,
+            title:    `New shipment created: ${shipment.shipment_number}`,
+            body:     `${origin} → ${destination}${carrier ? ` via ${carrier}` : ""}`,
+            type:     "shipment_created",
+            entityId: shipment.id,
+            roles:    ["OWNER", "ADMIN", "MEMBER"],
+        }).catch(console.error);
+
         return res.status(201).json({ success: true, shipment });
     } catch (err) {
         const msg = err instanceof Error ? err.message : "";

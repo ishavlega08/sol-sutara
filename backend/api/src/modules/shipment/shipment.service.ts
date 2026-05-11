@@ -5,18 +5,19 @@ import { dispatch } from "../webhook/webhook.dispatcher";
 
 // ─── Status transition matrix ─────────────────────────────────────────────────
 
-const VALID_TRANSITIONS: Record<ShipmentStatus, ShipmentStatus[]> = {
-    CREATED:      ["PICKED_UP", "CANCELLED"],
-    PICKED_UP:    ["IN_TRANSIT", "CANCELLED"],
-    IN_TRANSIT:   ["CUSTOMS_HOLD", "DELAYED", "DELIVERED", "CANCELLED"],
-    CUSTOMS_HOLD: ["IN_TRANSIT", "DELAYED", "CANCELLED"],
-    DELAYED:      ["IN_TRANSIT", "CANCELLED"],
-    DELIVERED:    [],
-    CANCELLED:    [],
-};
+// Terminal statuses cannot be changed further
+const TERMINAL: ShipmentStatus[] = ["DELIVERED", "CANCELLED"];
+const ALL_STATUSES: ShipmentStatus[] = ["CREATED", "PICKED_UP", "IN_TRANSIT", "CUSTOMS_HOLD", "DELAYED", "DELIVERED", "CANCELLED"];
 
 export function isValidTransition(from: ShipmentStatus, to: ShipmentStatus): boolean {
-    return VALID_TRANSITIONS[from]?.includes(to) ?? false;
+    if (TERMINAL.includes(from)) return false; // can't leave a terminal status
+    if (from === to) return false;              // no-op
+    return ALL_STATUSES.includes(to);          // any non-terminal → any valid status
+}
+
+export function validNextStatuses(from: ShipmentStatus): ShipmentStatus[] {
+    if (TERMINAL.includes(from)) return [];
+    return ALL_STATUSES.filter((s) => s !== from);
 }
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────

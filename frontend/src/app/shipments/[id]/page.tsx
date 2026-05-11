@@ -45,6 +45,13 @@ function StatusBadge({ status }: { status: ShipmentStatus }) {
 
 // ─── Update status modal ───────────────────────────────────────────────────────
 
+const TERMINAL_STATUSES: ShipmentStatus[] = ["DELIVERED", "CANCELLED"];
+
+function availableStatuses(current: ShipmentStatus): ShipmentStatus[] {
+    if (TERMINAL_STATUSES.includes(current)) return [];
+    return ALL_STATUSES.filter((s) => s !== current);
+}
+
 function UpdateStatusModal({
     current, onClose, onSave,
 }: {
@@ -52,7 +59,8 @@ function UpdateStatusModal({
     onClose: () => void;
     onSave: (status: ShipmentStatus, location: string, notes: string) => Promise<void>;
 }) {
-    const [status,   setStatus]   = useState<ShipmentStatus>(current);
+    const available = availableStatuses(current);
+    const [status,   setStatus]   = useState<ShipmentStatus>(available[0] ?? current);
     const [location, setLocation] = useState("");
     const [notes,    setNotes]    = useState("");
     const [busy,     setBusy]     = useState(false);
@@ -80,10 +88,14 @@ function UpdateStatusModal({
                     {err && <p className="text-sm text-red-500">{err}</p>}
                     <div>
                         <label className="mb-1.5 block text-xs font-semibold uppercase tracking-widest text-gray-400">New status</label>
-                        <select value={status} onChange={(e) => setStatus(e.target.value as ShipmentStatus)}
-                            className="w-full rounded-md border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 px-3 py-2 text-sm text-gray-900 dark:text-gray-100 outline-none focus:border-violet-400">
-                            {ALL_STATUSES.map((s) => <option key={s} value={s}>{STATUS_CFG[s].label}</option>)}
-                        </select>
+                        {available.length === 0 ? (
+                            <p className="text-sm text-gray-400">This shipment is in a terminal state and cannot be updated.</p>
+                        ) : (
+                            <select value={status} onChange={(e) => setStatus(e.target.value as ShipmentStatus)}
+                                className="w-full rounded-md border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 px-3 py-2 text-sm text-gray-900 dark:text-gray-100 outline-none focus:border-violet-400">
+                                {available.map((s) => <option key={s} value={s}>{STATUS_CFG[s].label}</option>)}
+                            </select>
+                        )}
                     </div>
                     <div>
                         <label className="mb-1.5 block text-xs font-semibold uppercase tracking-widest text-gray-400">Location (optional)</label>
@@ -99,7 +111,7 @@ function UpdateStatusModal({
                     </div>
                     <div className="flex items-center justify-end gap-3 pt-1">
                         <button type="button" onClick={onClose} className="text-sm text-gray-400 hover:text-gray-600">Cancel</button>
-                        <button type="submit" disabled={busy || status === current}
+                        <button type="submit" disabled={busy || available.length === 0}
                             className="inline-flex items-center gap-2 rounded-md bg-violet-600 px-4 py-2 text-sm font-semibold text-white hover:bg-violet-700 disabled:opacity-50">
                             {busy ? "Saving…" : "Save"}
                         </button>
@@ -237,10 +249,12 @@ export default function ShipmentDetailPage() {
                             <button onClick={load} className="rounded-md p-1.5 text-gray-400 hover:bg-white dark:hover:bg-gray-800">
                                 <RefreshCw className="h-4 w-4" />
                             </button>
-                            <button onClick={() => setShowUpdate(true)}
-                                className="inline-flex items-center gap-1.5 rounded-md bg-violet-600 px-3.5 py-2 text-sm font-semibold text-white hover:bg-violet-700">
-                                <ChevronDown className="h-4 w-4" /> Update status
-                            </button>
+                            {!TERMINAL_STATUSES.includes(shipment.status) && (
+                                <button onClick={() => setShowUpdate(true)}
+                                    className="inline-flex items-center gap-1.5 rounded-md bg-violet-600 px-3.5 py-2 text-sm font-semibold text-white hover:bg-violet-700">
+                                    <ChevronDown className="h-4 w-4" /> Update status
+                                </button>
+                            )}
                         </div>
                     }
                 />

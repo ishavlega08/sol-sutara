@@ -10,6 +10,7 @@ import {
     recallComponent,
 } from "../services/component.service";
 import { scoreComponent } from "../services/risk.service";
+import { notifyOrgMembers } from "../modules/notification/notification.service";
 import { prisma } from "../lib/prisma";
 
 // ─── GET /components/:id ─────────────────────────────────────────────────────
@@ -95,6 +96,19 @@ export async function createComponentHandler(req: Request, res: Response) {
 
     try {
         const component = await createComponent({ name, type, supplier, supplier_id: supplierId, metadata, org_id, batch_number, lot_number, quantity, unit, expiry_date });
+
+        // Notify all members that a new component was registered on-chain
+        if (org_id) {
+            notifyOrgMembers({
+                orgId:    org_id,
+                title:    `Component registered: ${component.name}`,
+                body:     `${component.type}${supplier ? ` · ${supplier}` : ""} was registered on Solana.`,
+                type:     "component_created",
+                entityId: component.id,
+                roles:    ["OWNER", "ADMIN", "MEMBER"],
+            }).catch(console.error);
+        }
+
         return res.status(201).json({
             success: true,
             component: {

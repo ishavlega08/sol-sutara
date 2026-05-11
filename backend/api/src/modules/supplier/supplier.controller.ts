@@ -7,7 +7,7 @@ import {
     updateSupplierStatus,
     deleteSupplier,
 } from "./supplier.service";
-import { notifySupplierStatusChange } from "../notification/notification.service";
+import { notifySupplierStatusChange, notifyOrgMembers } from "../notification/notification.service";
 import { dispatch } from "../webhook/webhook.dispatcher";
 import type { SupplierStatus, SupplierRisk } from "@prisma/client";
 
@@ -34,6 +34,17 @@ export async function createSupplierHandler(req: Request, res: Response) {
 
     try {
         const supplier = await createSupplier({ company_name, legal_name, contact_email, contact_phone, country, address, certifications, notes }, orgId, userId);
+
+        // Notify OWNER + ADMIN that a new supplier was registered
+        notifyOrgMembers({
+            orgId,
+            title:    `New supplier registered: ${supplier.company_name}`,
+            body:     `${supplier.supplier_code} has been added to your supplier network.`,
+            type:     "supplier_created",
+            entityId: supplier.id,
+            roles:    ["OWNER", "ADMIN"],
+        }).catch(console.error);
+
         return res.status(201).json({ success: true, supplier });
     } catch (err) {
         console.error(err);
