@@ -27,7 +27,6 @@ const corsOptions: cors.CorsOptions = {
     methods:        ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
     allowedHeaders: ["Content-Type", "Authorization", "Cookie"],
 };
-app.options("*", cors(corsOptions));   // handle preflight before rate limiter
 app.use(cors(corsOptions));
 
 // Global rate limit — 500 req / 15 min per IP across all endpoints
