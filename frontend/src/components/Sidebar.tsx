@@ -65,7 +65,11 @@ function NavLink({ item, active, onClick }: { item: NavItem; active: boolean; on
             <div className="flex cursor-not-allowed select-none items-center gap-2.5 rounded-md px-2.5 py-1.5 text-sm">
                 <Icon className="h-4 w-4 flex-shrink-0 text-gray-300 dark:text-gray-600" />
                 <span className="flex-1 leading-none text-gray-400 dark:text-gray-500">{item.label}</span>
-                <span className="rounded-sm bg-teal-50 px-1.5 py-0.5 text-[9px] font-bold uppercase text-teal-600 dark:bg-teal-950 dark:text-teal-400">
+                <span className="flex items-center gap-1 rounded-full border border-violet-200 bg-violet-50 px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wide text-violet-600 dark:border-violet-800/40 dark:bg-violet-950/50 dark:text-violet-400">
+                    <span className="relative flex h-1.5 w-1.5 flex-shrink-0">
+                        <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-violet-500 opacity-50 dark:bg-violet-400 dark:opacity-60" />
+                        <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-violet-600 dark:bg-violet-500" />
+                    </span>
                     Soon
                 </span>
             </div>

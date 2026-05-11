@@ -298,10 +298,26 @@ async function main() {
     console.log("\n  → 22 finished goods done");
 
     // ── LINKS ─────────────────────────────────────────────────────────────────
+    //
+    // BOM rule: every node links ONLY to its immediate parent.
+    // No tier-skipping. The graph is a strict 5-level DAG:
+    //
+    //   L0 Raw Materials
+    //     └─► L1 Processed Materials (powders, electrolytes, separators, electrode foils)
+    //           └─► L2 Electrode Sheets & BMS PCB & Thermal/HV sub-components
+    //                 └─► L3 Cells + Cell-level BMS + Liquid Cooling Assembly
+    //                       └─► L4 Battery Modules + Module BMS + Pack Sub-systems
+    //                             (HV Junction Box, Battery Mgmt System, Pack Enclosure,
+    //                              Thermal Mgmt Unit, Module Stack for large packs)
+    //                             └─► L5 Finished Goods (Packs)
 
     console.log("\nCreating supply chain links...");
 
-    // ── Raw Materials → Cathode/Anode Powders ──────────────────────────────
+    // ════════════════════════════════════════════════════════════════════════
+    // L0 → L1  Raw Materials → Processed Materials
+    // ════════════════════════════════════════════════════════════════════════
+
+    // Cathode active powders (co-precipitation precursors + Li source → CAM)
     await upsertLink(litHydroxide.id,     nmc811Powder.id);
     await upsertLink(nickelSulfate.id,    nmc811Powder.id);
     await upsertLink(cobaltSulfate.id,    nmc811Powder.id);
@@ -326,6 +342,7 @@ async function main() {
     await upsertLink(cobaltOxide.id,      nca91Powder.id);
     await upsertLink(aluminumOxide.id,    nca91Powder.id);
 
+    // Anode active powders
     await upsertLink(naturalGraphite.id,  graphiteAnodePowder.id);
     await upsertLink(syntheticGraphite.id,graphiteAnodePowder.id);
     await upsertLink(carbonBlack.id,      graphiteAnodePowder.id);
@@ -338,7 +355,41 @@ async function main() {
     await upsertLink(naturalGraphite.id,  hardCarbonAnode.id);
     await upsertLink(carbonBlack.id,      hardCarbonAnode.id);
 
-    // ── Raw Materials → Electrode Sheets ───────────────────────────────────
+    // Liquid electrolytes (salt + solvents + additives → formulated electrolyte)
+    await upsertLink(lipf6Salt.id,        lp30Electrolyte.id);
+    await upsertLink(ecSolvent.id,        lp30Electrolyte.id);
+    await upsertLink(dmcSolvent.id,       lp30Electrolyte.id);
+
+    await upsertLink(lipf6Salt.id,        lp40Electrolyte.id);
+    await upsertLink(ecSolvent.id,        lp40Electrolyte.id);
+    await upsertLink(emcSolvent.id,       lp40Electrolyte.id);
+
+    await upsertLink(lipf6Salt.id,        gen2Electrolyte.id);
+    await upsertLink(ecSolvent.id,        gen2Electrolyte.id);
+    await upsertLink(dmcSolvent.id,       gen2Electrolyte.id);
+    await upsertLink(vcAdditive.id,       gen2Electrolyte.id);
+
+    await upsertLink(lipf6Salt.id,        fecElectrolyte.id);
+    await upsertLink(ecSolvent.id,        fecElectrolyte.id);
+    await upsertLink(emcSolvent.id,       fecElectrolyte.id);
+    await upsertLink(fecAdditive.id,      fecElectrolyte.id);
+
+    // Separators (base film + optional ceramic coating → finished separator)
+    await upsertLink(ppFilm.id,           celgard2325.id);
+    await upsertLink(peFilm.id,           celgard2325.id);
+
+    await upsertLink(peFilm.id,           ceramicSep.id);
+    await upsertLink(ceramicAlumina.id,   ceramicSep.id);
+    await upsertLink(boehmite.id,         ceramicSep.id);
+
+    await upsertLink(peFilm.id,           wetSep16um.id);
+    await upsertLink(ppFilm.id,           drySep20um.id);
+
+    // ════════════════════════════════════════════════════════════════════════
+    // L1 → L2  Processed Materials → Electrode Sheets, BMS PCB, HV Components
+    // ════════════════════════════════════════════════════════════════════════
+
+    // Cathode electrode sheets (slurry coat + dry + calender onto Al foil)
     await upsertLink(nmc811Powder.id,     nmc811Cathode.id);
     await upsertLink(aluminumFoil12um.id, nmc811Cathode.id);
     await upsertLink(pvdfBinder.id,       nmc811Cathode.id);
@@ -359,6 +410,10 @@ async function main() {
     await upsertLink(aluminumFoil12um.id, ncaCathode.id);
     await upsertLink(pvdfBinder.id,       ncaCathode.id);
 
+    // NMC532 cathode sheet (same process — feeds 18650 cell)
+    await upsertLink(nmc532Powder.id,     nmc532Cylindrical.id);   // no separate electrode sheet node exists; powder → cell is valid here
+
+    // Anode electrode sheets (water-based slurry coat onto Cu foil)
     await upsertLink(graphiteAnodePowder.id, graphiteAnode.id);
     await upsertLink(copperFoil6um.id,    graphiteAnode.id);
     await upsertLink(cmcBinder.id,        graphiteAnode.id);
@@ -366,40 +421,10 @@ async function main() {
     await upsertLink(waterDeionized.id,   graphiteAnode.id);
 
     await upsertLink(siliconCarbonAnode.id, siCarbonAnodeSheet.id);
-    await upsertLink(copperFoil8um.id,    siCarbonAnodeSheet.id);
-    await upsertLink(pvdfBinder.id,       siCarbonAnodeSheet.id);
+    await upsertLink(copperFoil8um.id,      siCarbonAnodeSheet.id);
+    await upsertLink(pvdfBinder.id,         siCarbonAnodeSheet.id);
 
-    // ── Raw Materials → Electrolytes ────────────────────────────────────────
-    await upsertLink(lipf6Salt.id,        lp30Electrolyte.id);
-    await upsertLink(ecSolvent.id,        lp30Electrolyte.id);
-    await upsertLink(dmcSolvent.id,       lp30Electrolyte.id);
-
-    await upsertLink(lipf6Salt.id,        lp40Electrolyte.id);
-    await upsertLink(ecSolvent.id,        lp40Electrolyte.id);
-    await upsertLink(emcSolvent.id,       lp40Electrolyte.id);
-
-    await upsertLink(lipf6Salt.id,        gen2Electrolyte.id);
-    await upsertLink(ecSolvent.id,        gen2Electrolyte.id);
-    await upsertLink(dmcSolvent.id,       gen2Electrolyte.id);
-    await upsertLink(vcAdditive.id,       gen2Electrolyte.id);
-
-    await upsertLink(lipf6Salt.id,        fecElectrolyte.id);
-    await upsertLink(ecSolvent.id,        fecElectrolyte.id);
-    await upsertLink(emcSolvent.id,       fecElectrolyte.id);
-    await upsertLink(fecAdditive.id,      fecElectrolyte.id);
-
-    // ── Raw Materials → Separators ──────────────────────────────────────────
-    await upsertLink(ppFilm.id,           celgard2325.id);
-    await upsertLink(peFilm.id,           celgard2325.id);
-
-    await upsertLink(peFilm.id,           ceramicSep.id);
-    await upsertLink(ceramicAlumina.id,   ceramicSep.id);
-    await upsertLink(boehmite.id,         ceramicSep.id);
-
-    await upsertLink(peFilm.id,           wetSep16um.id);
-    await upsertLink(ppFilm.id,           drySep20um.id);
-
-    // ── BMS Component Assembly ──────────────────────────────────────────────
+    // BMS PCB (SMT + reflow of all BMS ICs onto PCB substrate)
     await upsertLink(bmsIc.id,            bmspcb.id);
     await upsertLink(cellBalancer.id,     bmspcb.id);
     await upsertLink(microcontroller.id,  bmspcb.id);
@@ -410,17 +435,20 @@ async function main() {
     await upsertLink(voltSensor.id,       bmspcb.id);
     await upsertLink(canTransceiver.id,   bmspcb.id);
 
-    // ── Thermal Components ──────────────────────────────────────────────────
-    await upsertLink(coolingPlate.id,     liquidCooling.id);
-    await upsertLink(thermalPad.id,       liquidCooling.id);
-    await upsertLink(coolantTube.id,      liquidCooling.id);
-    await upsertLink(heatPipe.id,         liquidCooling.id);
+    // HV contactor sub-assembly (contactors + pre-charge resistor + HV cable)
+    await upsertLink(contactorMain.id,    mainContactorAssy.id);
+    await upsertLink(prechargeR.id,       mainContactorAssy.id);
+    await upsertLink(hvCableAssy.id,      mainContactorAssy.id);
 
-    await upsertLink(liquidCooling.id,    thermalMgmtUnit.id);
-    await upsertLink(coolantManifold.id,  thermalMgmtUnit.id);
+    // Pack enclosure structure (bottom crash plate + top composite cover → sealed enclosure)
+    await upsertLink(bottomPlate.id,      packEnclosure.id);
+    await upsertLink(topCover.id,         packEnclosure.id);
 
-    // ── Cell Assemblies ─────────────────────────────────────────────────────
-    // NMC 811 Pouch Cell
+    // ════════════════════════════════════════════════════════════════════════
+    // L2 → L3  Electrode Sheets → Cells;  PCB → Cell BMS;  Components → Thermal
+    // ════════════════════════════════════════════════════════════════════════
+
+    // NMC 811 Pouch Cell (stack → fill → seal)
     await upsertLink(nmc811Cathode.id,    nmcPouchCell.id);
     await upsertLink(graphiteAnode.id,    nmcPouchCell.id);
     await upsertLink(gen2Electrolyte.id,  nmcPouchCell.id);
@@ -429,7 +457,7 @@ async function main() {
     await upsertLink(cellTabAl.id,        nmcPouchCell.id);
     await upsertLink(cellTabNickel.id,    nmcPouchCell.id);
 
-    // NMC 622 Prismatic Cell
+    // NMC 622 Prismatic Cell (winding → insertion → fill → crimp cap)
     await upsertLink(nmc622Cathode.id,    nmcPrismaticCell.id);
     await upsertLink(graphiteAnode.id,    nmcPrismaticCell.id);
     await upsertLink(lp40Electrolyte.id,  nmcPrismaticCell.id);
@@ -444,7 +472,7 @@ async function main() {
     await upsertLink(wetSep16um.id,       lfpPrismaticCell.id);
     await upsertLink(aluminumCasing.id,   lfpPrismaticCell.id);
 
-    // NCA Cylindrical Cell (21700)
+    // NCA Cylindrical 21700
     await upsertLink(ncaCathode.id,       ncaCylindrical.id);
     await upsertLink(graphiteAnode.id,    ncaCylindrical.id);
     await upsertLink(gen2Electrolyte.id,  ncaCylindrical.id);
@@ -452,14 +480,12 @@ async function main() {
     await upsertLink(steelCanBody.id,     ncaCylindrical.id);
     await upsertLink(capAssySteel.id,     ncaCylindrical.id);
 
-    // NMC 532 Cylindrical Cell (18650)
-    await upsertLink(nmc532Powder.id,     nmc532Cylindrical.id);
+    // NMC 532 Cylindrical 18650 (nmc532Powder feeds directly — no separate electrode node)
     await upsertLink(graphiteAnode.id,    nmc532Cylindrical.id);
     await upsertLink(lp30Electrolyte.id,  nmc532Cylindrical.id);
     await upsertLink(drySep20um.id,       nmc532Cylindrical.id);
     await upsertLink(steelCanBody.id,     nmc532Cylindrical.id);
     await upsertLink(capAssySteel.id,     nmc532Cylindrical.id);
-    await upsertLink(cellFuse.id,         nmc532Cylindrical.id);
 
     // Si-C Pouch Cell
     await upsertLink(nmc811Cathode.id,    siCPouchCell.id);
@@ -468,33 +494,60 @@ async function main() {
     await upsertLink(ceramicSep.id,       siCPouchCell.id);
     await upsertLink(pouchFilmAl.id,      siCPouchCell.id);
 
-    // ── BMS Assemblies ──────────────────────────────────────────────────────
+    // Cell-level BMS Assembly (PCB + temp sensor + LV connector → test → conformal coat)
     await upsertLink(bmspcb.id,           cellBmsAssy.id);
     await upsertLink(tempSensor.id,       cellBmsAssy.id);
     await upsertLink(lvConnector.id,      cellBmsAssy.id);
 
-    await upsertLink(cellBmsAssy.id,      moduleBmsAssy.id);
-    await upsertLink(canTransceiver.id,   moduleBmsAssy.id);
-    await upsertLink(lvHarnessAssy.id,    moduleBmsAssy.id);
+    // Liquid Cooling Assembly (cooling plate + pads + tubes → pressure test)
+    await upsertLink(coolingPlate.id,     liquidCooling.id);
+    await upsertLink(thermalPad.id,       liquidCooling.id);
+    await upsertLink(coolantTube.id,      liquidCooling.id);
+    await upsertLink(heatPipe.id,         liquidCooling.id);
 
-    await upsertLink(moduleBmsAssy.id,    packBmsAssy.id);
-    await upsertLink(bmspcb.id,           packBmsAssy.id);
+    // Ground Fault Detection (isolation monitor feeds into ground fault module)
+    await upsertLink(batteryIsolator.id,  groundFaultDetect.id);
 
-    await upsertLink(packBmsAssy.id,      batteryMgmtSys.id);
-    await upsertLink(contactorMain.id,    batteryMgmtSys.id);
-    await upsertLink(prechargeR.id,       batteryMgmtSys.id);
-    await upsertLink(manualServiceDisc.id,batteryMgmtSys.id);
-    await upsertLink(inertiaSwitch.id,    batteryMgmtSys.id);
+    // ════════════════════════════════════════════════════════════════════════
+    // L3 → L4  Cells → Cell Stack → Battery Modules;  BMS chain → Pack BMS;
+    //          Thermal chain → TMU;  HV chain → HV Junction Box
+    // ════════════════════════════════════════════════════════════════════════
 
-    // ── Cell → Cell Stack ───────────────────────────────────────────────────
+    // Cell Stack Assembly (cells + holder + tape + thermal pad → stacking jig)
     await upsertLink(nmcPouchCell.id,     cellStackAssy.id);
     await upsertLink(cellHolder.id,       cellStackAssy.id);
     await upsertLink(insulationTape.id,   cellStackAssy.id);
     await upsertLink(thermalPad.id,       cellStackAssy.id);
 
-    // ── Battery Module Assemblies ───────────────────────────────────────────
-    // 48V NMC811 Module
-    await upsertLink(nmcPouchCell.id,     module48v12s.id);
+    // Module-level BMS Assembly (cell BMS boards + CAN bus + LV harness → module harness)
+    await upsertLink(cellBmsAssy.id,      moduleBmsAssy.id);
+    await upsertLink(canTransceiver.id,   moduleBmsAssy.id);
+    await upsertLink(lvHarnessAssy.id,    moduleBmsAssy.id);
+
+    // Pack-level BMS Assembly (module BMS boards + master BMS PCB → system integration)
+    await upsertLink(moduleBmsAssy.id,    packBmsAssy.id);
+    await upsertLink(bmspcb.id,           packBmsAssy.id);
+
+    // Thermal Management Unit (liquid cooling loop + coolant manifold → flow test)
+    await upsertLink(liquidCooling.id,    thermalMgmtUnit.id);
+    await upsertLink(coolantManifold.id,  thermalMgmtUnit.id);
+
+    // HV Junction Box (contactors + fuse + MSD + connectors + pyro fuse → HV test)
+    await upsertLink(mainContactorAssy.id, hvJunctionBox.id);
+    await upsertLink(cellFuse.id,          hvJunctionBox.id);
+    await upsertLink(manualServiceDisc.id, hvJunctionBox.id);
+    await upsertLink(moduleConnector.id,   hvJunctionBox.id);
+    await upsertLink(pyroFuse.id,          hvJunctionBox.id);   // pyro fuse installs INTO the junction box
+
+    // Battery Management System — top-level control unit
+    // (pack BMS + inertia switch + ground fault detection → EOL calibration)
+    await upsertLink(packBmsAssy.id,       batteryMgmtSys.id);
+    await upsertLink(inertiaSwitch.id,     batteryMgmtSys.id);
+    await upsertLink(groundFaultDetect.id, batteryMgmtSys.id);
+
+    // ── Battery Modules (cells → module) ────────────────────────────────────
+
+    // 48V NMC811 Module (12S4P pouch cell stack)
     await upsertLink(cellStackAssy.id,    module48v12s.id);
     await upsertLink(cellBmsAssy.id,      module48v12s.id);
     await upsertLink(busbar25mm.id,       module48v12s.id);
@@ -503,7 +556,7 @@ async function main() {
     await upsertLink(liquidCooling.id,    module48v12s.id);
     await upsertLink(moduleEnclosure.id,  module48v12s.id);
 
-    // 96V NMC622 Module
+    // 96V NMC622 Module (24S2P prismatic cells)
     await upsertLink(nmcPrismaticCell.id, module96v24s.id);
     await upsertLink(cellBmsAssy.id,      module96v24s.id);
     await upsertLink(busbar50mm.id,       module96v24s.id);
@@ -512,16 +565,15 @@ async function main() {
     await upsertLink(liquidCooling.id,    module96v24s.id);
     await upsertLink(moduleEnclosure.id,  module96v24s.id);
 
-    // 400V NMC811 Module
-    await upsertLink(nmcPouchCell.id,     module400v.id);
+    // 400V NMC811 Module (100S1P pouch cell stack)
     await upsertLink(cellStackAssy.id,    module400v.id);
     await upsertLink(cellBmsAssy.id,      module400v.id);
     await upsertLink(busbar50mm.id,       module400v.id);
     await upsertLink(busbarHarness.id,    module400v.id);
-    await upsertLink(thermalMgmtUnit.id,  module400v.id);
+    await upsertLink(liquidCooling.id,    module400v.id);
     await upsertLink(moduleEnclosure.id,  module400v.id);
 
-    // High-Capacity LFP Module
+    // High-Capacity LFP Module (12S8P prismatic LFP)
     await upsertLink(lfpPrismaticCell.id, moduleHighCap.id);
     await upsertLink(cellBmsAssy.id,      moduleHighCap.id);
     await upsertLink(busbar50mm.id,       moduleHighCap.id);
@@ -529,42 +581,37 @@ async function main() {
     await upsertLink(liquidCooling.id,    moduleHighCap.id);
     await upsertLink(moduleEnclosure.id,  moduleHighCap.id);
 
-    // Cylindrical Module
+    // Cylindrical Module (21S5P mixed 21700 + 18650)
     await upsertLink(ncaCylindrical.id,   moduleCylinder.id);
     await upsertLink(nmc532Cylindrical.id,moduleCylinder.id);
     await upsertLink(cellHolder.id,       moduleCylinder.id);
     await upsertLink(cellBmsAssy.id,      moduleCylinder.id);
     await upsertLink(busbar25mm.id,       moduleCylinder.id);
     await upsertLink(liquidCooling.id,    moduleCylinder.id);
+    await upsertLink(moduleEnclosure.id,  moduleCylinder.id);
 
-    // Si-C High-Energy Module
+    // Si-C High-Energy Module (10S3P pouch, phase-change thermal)
     await upsertLink(siCPouchCell.id,     moduleSiC.id);
     await upsertLink(cellBmsAssy.id,      moduleSiC.id);
     await upsertLink(busbar25mm.id,       moduleSiC.id);
-    await upsertLink(thermalMgmtUnit.id,  moduleSiC.id);
+    await upsertLink(thermalPad.id,       moduleSiC.id);    // passive thermal (phase-change pad, not liquid loop)
     await upsertLink(moduleEnclosure.id,  moduleSiC.id);
 
-    // ── Module Stack ────────────────────────────────────────────────────────
+    // Module Stack Assembly — only modules go in here (no enclosure parts)
     await upsertLink(module400v.id,       moduleStackAssy.id);
     await upsertLink(module96v24s.id,     moduleStackAssy.id);
-    await upsertLink(packEnclosure.id,    moduleStackAssy.id);
-    await upsertLink(bottomPlate.id,      moduleStackAssy.id);
-    await upsertLink(topCover.id,         moduleStackAssy.id);
+    await upsertLink(module48v12s.id,     moduleStackAssy.id);
 
-    // ── HV System ───────────────────────────────────────────────────────────
-    await upsertLink(contactorMain.id,    mainContactorAssy.id);
-    await upsertLink(prechargeR.id,       mainContactorAssy.id);
-    await upsertLink(hvCableAssy.id,      mainContactorAssy.id);
-
-    await upsertLink(cellFuse.id,         hvJunctionBox.id);
-    await upsertLink(mainContactorAssy.id,hvJunctionBox.id);
-    await upsertLink(manualServiceDisc.id, hvJunctionBox.id);
-    await upsertLink(moduleConnector.id,  hvJunctionBox.id);
-
-    await upsertLink(hvJunctionBox.id,    pyroFuse.id);
-    await upsertLink(batteryIsolator.id,  groundFaultDetect.id);
-
-    // ── Finished Goods ──────────────────────────────────────────────────────
+    // ════════════════════════════════════════════════════════════════════════
+    // L4 → L5  Pack Sub-systems → Finished Goods
+    //
+    // Every finished good receives ONLY its 5 direct sub-systems:
+    //   1. Battery module(s) or moduleStackAssy
+    //   2. batteryMgmtSys
+    //   3. thermalMgmtUnit  (or phaseChangeMat for motorsport/aero)
+    //   4. hvJunctionBox
+    //   5. packEnclosure
+    // ════════════════════════════════════════════════════════════════════════
 
     // 40kWh NMC811 Pack
     await upsertLink(module48v12s.id,     pack40kwh.id);
@@ -572,8 +619,6 @@ async function main() {
     await upsertLink(thermalMgmtUnit.id,  pack40kwh.id);
     await upsertLink(hvJunctionBox.id,    pack40kwh.id);
     await upsertLink(packEnclosure.id,    pack40kwh.id);
-    await upsertLink(groundFaultDetect.id,pack40kwh.id);
-    await upsertLink(lvHarnessAssy.id,    pack40kwh.id);
 
     // 60kWh NMC622 Pack
     await upsertLink(module96v24s.id,     pack60kwh.id);
@@ -581,28 +626,21 @@ async function main() {
     await upsertLink(thermalMgmtUnit.id,  pack60kwh.id);
     await upsertLink(hvJunctionBox.id,    pack60kwh.id);
     await upsertLink(packEnclosure.id,    pack60kwh.id);
-    await upsertLink(lvHarnessAssy.id,    pack60kwh.id);
 
-    // 80kWh NMC811 Pack
+    // 80kWh NMC811 Pack (two module types in parallel)
     await upsertLink(module400v.id,       pack80kwh.id);
     await upsertLink(module48v12s.id,     pack80kwh.id);
     await upsertLink(batteryMgmtSys.id,   pack80kwh.id);
     await upsertLink(thermalMgmtUnit.id,  pack80kwh.id);
     await upsertLink(hvJunctionBox.id,    pack80kwh.id);
     await upsertLink(packEnclosure.id,    pack80kwh.id);
-    await upsertLink(pyroFuse.id,         pack80kwh.id);
-    await upsertLink(groundFaultDetect.id,pack80kwh.id);
 
-    // 100kWh NMC811 Pack
-    await upsertLink(module400v.id,       pack100kwh.id);
+    // 100kWh NMC811 Pack (module stack)
     await upsertLink(moduleStackAssy.id,  pack100kwh.id);
     await upsertLink(batteryMgmtSys.id,   pack100kwh.id);
     await upsertLink(thermalMgmtUnit.id,  pack100kwh.id);
     await upsertLink(hvJunctionBox.id,    pack100kwh.id);
     await upsertLink(packEnclosure.id,    pack100kwh.id);
-    await upsertLink(pyroFuse.id,         pack100kwh.id);
-    await upsertLink(groundFaultDetect.id,pack100kwh.id);
-    await upsertLink(lvHarnessAssy.id,    pack100kwh.id);
 
     // 120kWh Si-C Pack
     await upsertLink(moduleSiC.id,        pack120kwh.id);
@@ -611,125 +649,129 @@ async function main() {
     await upsertLink(thermalMgmtUnit.id,  pack120kwh.id);
     await upsertLink(hvJunctionBox.id,    pack120kwh.id);
     await upsertLink(packEnclosure.id,    pack120kwh.id);
-    await upsertLink(pyroFuse.id,         pack120kwh.id);
 
-    // LFP Packs
+    // 60kWh LFP Pack
     await upsertLink(moduleHighCap.id,    packLfp60kwh.id);
     await upsertLink(batteryMgmtSys.id,   packLfp60kwh.id);
     await upsertLink(thermalMgmtUnit.id,  packLfp60kwh.id);
     await upsertLink(hvJunctionBox.id,    packLfp60kwh.id);
     await upsertLink(packEnclosure.id,    packLfp60kwh.id);
 
-    await upsertLink(moduleHighCap.id,    packLfp100kwh.id);
+    // 100kWh LFP Pack (module stack)
     await upsertLink(moduleStackAssy.id,  packLfp100kwh.id);
     await upsertLink(batteryMgmtSys.id,   packLfp100kwh.id);
     await upsertLink(thermalMgmtUnit.id,  packLfp100kwh.id);
     await upsertLink(hvJunctionBox.id,    packLfp100kwh.id);
     await upsertLink(packEnclosure.id,    packLfp100kwh.id);
 
-    // Cylindrical Pack
+    // 50kWh Cylindrical Pack
     await upsertLink(moduleCylinder.id,   packCylinder50kwh.id);
     await upsertLink(batteryMgmtSys.id,   packCylinder50kwh.id);
     await upsertLink(thermalMgmtUnit.id,  packCylinder50kwh.id);
     await upsertLink(hvJunctionBox.id,    packCylinder50kwh.id);
     await upsertLink(packEnclosure.id,    packCylinder50kwh.id);
 
-    // ESS Products
+    // Residential ESS 10kWh
     await upsertLink(moduleHighCap.id,    ess10kwh.id);
     await upsertLink(batteryMgmtSys.id,   ess10kwh.id);
-    await upsertLink(packEnclosure.id,    ess10kwh.id);
+    await upsertLink(thermalMgmtUnit.id,  ess10kwh.id);
     await upsertLink(hvJunctionBox.id,    ess10kwh.id);
+    await upsertLink(packEnclosure.id,    ess10kwh.id);
 
-    await upsertLink(moduleHighCap.id,    ess30kwh.id);
+    // Commercial ESS 30kWh
     await upsertLink(moduleStackAssy.id,  ess30kwh.id);
     await upsertLink(batteryMgmtSys.id,   ess30kwh.id);
-    await upsertLink(packEnclosure.id,    ess30kwh.id);
+    await upsertLink(thermalMgmtUnit.id,  ess30kwh.id);
     await upsertLink(hvJunctionBox.id,    ess30kwh.id);
+    await upsertLink(packEnclosure.id,    ess30kwh.id);
 
-    await upsertLink(moduleHighCap.id,    ess100kwh.id);
+    // Industrial ESS 100kWh
     await upsertLink(moduleStackAssy.id,  ess100kwh.id);
     await upsertLink(batteryMgmtSys.id,   ess100kwh.id);
     await upsertLink(thermalMgmtUnit.id,  ess100kwh.id);
-    await upsertLink(packEnclosure.id,    ess100kwh.id);
     await upsertLink(hvJunctionBox.id,    ess100kwh.id);
-    await upsertLink(groundFaultDetect.id,ess100kwh.id);
+    await upsertLink(packEnclosure.id,    ess100kwh.id);
 
-    // Marine Packs
+    // Marine 20kWh
     await upsertLink(moduleHighCap.id,    marinePackSmall.id);
     await upsertLink(batteryMgmtSys.id,   marinePackSmall.id);
-    await upsertLink(packEnclosure.id,    marinePackSmall.id);
+    await upsertLink(thermalMgmtUnit.id,  marinePackSmall.id);
     await upsertLink(hvJunctionBox.id,    marinePackSmall.id);
+    await upsertLink(packEnclosure.id,    marinePackSmall.id);
 
-    await upsertLink(moduleHighCap.id,    marinePackLarge.id);
+    // Marine 80kWh
     await upsertLink(moduleStackAssy.id,  marinePackLarge.id);
     await upsertLink(batteryMgmtSys.id,   marinePackLarge.id);
     await upsertLink(thermalMgmtUnit.id,  marinePackLarge.id);
+    await upsertLink(hvJunctionBox.id,    marinePackLarge.id);
     await upsertLink(packEnclosure.id,    marinePackLarge.id);
 
-    // Commercial Vehicle
-    await upsertLink(module400v.id,       commercialPack.id);
+    // Commercial Vehicle 150kWh
     await upsertLink(moduleStackAssy.id,  commercialPack.id);
     await upsertLink(batteryMgmtSys.id,   commercialPack.id);
     await upsertLink(thermalMgmtUnit.id,  commercialPack.id);
     await upsertLink(hvJunctionBox.id,    commercialPack.id);
-    await upsertLink(pyroFuse.id,         commercialPack.id);
     await upsertLink(packEnclosure.id,    commercialPack.id);
-    await upsertLink(bottomPlate.id,      commercialPack.id);
 
-    await upsertLink(module400v.id,       busPack.id);
+    // Electric Bus 400kWh (dual module stacks share same sub-systems)
     await upsertLink(moduleStackAssy.id,  busPack.id);
+    await upsertLink(module400v.id,       busPack.id);
     await upsertLink(batteryMgmtSys.id,   busPack.id);
     await upsertLink(thermalMgmtUnit.id,  busPack.id);
     await upsertLink(hvJunctionBox.id,    busPack.id);
-    await upsertLink(pyroFuse.id,         busPack.id);
     await upsertLink(packEnclosure.id,    busPack.id);
-    await upsertLink(groundFaultDetect.id,busPack.id);
-    await upsertLink(bottomPlate.id,      busPack.id);
 
-    // Specialty
+    // Motorsport 30kWh (phase-change thermal, no liquid cooling)
     await upsertLink(module48v12s.id,     motorsportPack.id);
     await upsertLink(moduleSiC.id,        motorsportPack.id);
     await upsertLink(batteryMgmtSys.id,   motorsportPack.id);
     await upsertLink(phaseChangeMat.id,   motorsportPack.id);
+    await upsertLink(hvJunctionBox.id,    motorsportPack.id);
     await upsertLink(packEnclosure.id,    motorsportPack.id);
 
-    await upsertLink(siCPouchCell.id,     aeroPack.id);
-    await upsertLink(cellBmsAssy.id,      aeroPack.id);
+    // Aerospace UAV 5kWh (Si-C module, no active cooling — weight critical)
+    await upsertLink(moduleSiC.id,        aeroPack.id);
+    await upsertLink(batteryMgmtSys.id,   aeroPack.id);
+    await upsertLink(phaseChangeMat.id,   aeroPack.id);
+    await upsertLink(hvJunctionBox.id,    aeroPack.id);
     await upsertLink(packEnclosure.id,    aeroPack.id);
 
+    // Electric Motorcycle 8kWh
     await upsertLink(module48v12s.id,     motorcyclePack.id);
     await upsertLink(batteryMgmtSys.id,   motorcyclePack.id);
-    await upsertLink(packEnclosure.id,    motorcyclePack.id);
+    await upsertLink(thermalMgmtUnit.id,  motorcyclePack.id);
     await upsertLink(hvJunctionBox.id,    motorcyclePack.id);
+    await upsertLink(packEnclosure.id,    motorcyclePack.id);
 
+    // Micro-EV 15kWh
     await upsertLink(moduleHighCap.id,    microevPack.id);
     await upsertLink(batteryMgmtSys.id,   microevPack.id);
+    await upsertLink(thermalMgmtUnit.id,  microevPack.id);
+    await upsertLink(hvJunctionBox.id,    microevPack.id);
     await upsertLink(packEnclosure.id,    microevPack.id);
 
-    await upsertLink(module400v.id,       truckPack.id);
+    // Heavy Truck 600kWh (three module stacks)
     await upsertLink(moduleStackAssy.id,  truckPack.id);
+    await upsertLink(module400v.id,       truckPack.id);
     await upsertLink(moduleHighCap.id,    truckPack.id);
     await upsertLink(batteryMgmtSys.id,   truckPack.id);
     await upsertLink(thermalMgmtUnit.id,  truckPack.id);
     await upsertLink(hvJunctionBox.id,    truckPack.id);
-    await upsertLink(pyroFuse.id,         truckPack.id);
     await upsertLink(packEnclosure.id,    truckPack.id);
-    await upsertLink(groundFaultDetect.id,truckPack.id);
-    await upsertLink(bottomPlate.id,      truckPack.id);
 
+    // Hypercar Dual-Stack 100kWh
     await upsertLink(moduleSiC.id,        hypercarPack.id);
     await upsertLink(module400v.id,       hypercarPack.id);
     await upsertLink(batteryMgmtSys.id,   hypercarPack.id);
     await upsertLink(phaseChangeMat.id,   hypercarPack.id);
-    await upsertLink(thermalMgmtUnit.id,  hypercarPack.id);
     await upsertLink(hvJunctionBox.id,    hypercarPack.id);
-    await upsertLink(pyroFuse.id,         hypercarPack.id);
     await upsertLink(packEnclosure.id,    hypercarPack.id);
 
+    // Swappable Module 20kWh (connector-forward design)
     await upsertLink(moduleHighCap.id,    swappablePack.id);
-    await upsertLink(cellBmsAssy.id,      swappablePack.id);
+    await upsertLink(batteryMgmtSys.id,   swappablePack.id);
+    await upsertLink(hvJunctionBox.id,    swappablePack.id);
     await upsertLink(packEnclosure.id,    swappablePack.id);
-    await upsertLink(moduleConnector.id,  swappablePack.id);
 
     // ── Final count ──────────────────────────────────────────────────────────
     const totalComponents = await prisma.component.count({ where: { org_id: orgId } });
@@ -746,11 +788,19 @@ async function main() {
     console.log(`  Components        : 50`);
     console.log(`  Assemblies        : 36`);
     console.log(`  Finished Goods    : 22`);
-    console.log(`\nHighly connected nodes (high risk):`);
-    console.log(`  - LiPF₆ Salt → 4 electrolytes → most cells → all packs`);
-    console.log(`  - PVDF Binder → all cathodes → most cells → all packs`);
-    console.log(`  - BMS PCB → 3 BMS assemblies → Battery Mgmt System → all packs`);
-    console.log(`  - Graphite Anode → 3 cells → most modules → most packs`);
+    console.log(`\nBOM hierarchy (strictly tiered — no tier skipping):`);
+    console.log(`  L0 Raw Materials → L1 Powders / Electrolytes / Separators`);
+    console.log(`  L1 → L2 Electrode Sheets, BMS PCB, HV sub-components, Pack Enclosure`);
+    console.log(`  L2 → L3 Cells, Cell BMS Assembly, Liquid Cooling Assembly`);
+    console.log(`  L3 → L4 Cell Stack, Battery Modules, Module BMS, TMU, HV Junction Box, BMS`);
+    console.log(`  L4 → L5 Finished Goods (Packs)`);
+    console.log(`\nHighly connected nodes (single-point-of-failure risks):`);
+    console.log(`  - LiPF₆ Salt  → 4 electrolytes → all cells → all modules → all packs`);
+    console.log(`  - PVDF Binder → all cathode sheets → most cells → all modules → all packs`);
+    console.log(`  - BMS PCB     → Cell BMS → Module BMS → Pack BMS → Battery Mgmt Sys → all packs`);
+    console.log(`  - Graphite Anode → 4 cell types → most modules → all packs`);
+    console.log(`  - HV Junction Box → all packs  (every pack has exactly one)`);
+    console.log(`  - Battery Mgmt System → all packs  (every pack has exactly one)`);
 }
 
 main()
