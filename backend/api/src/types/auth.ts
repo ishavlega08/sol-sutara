@@ -1,8 +1,12 @@
 export interface JwtPayload {
-    userId:   string;
-    privyDid: string;
-    orgId?:   string;
-    role?:    string;
+    userId:        string;
+    privyDid:      string;
+    orgId?:        string;
+    role?:         string;
+    // Stored in token so /auth/me can return full session without a DB query
+    email?:        string | null;
+    walletAddress?: string | null;
+    orgName?:      string | null;
 }
 
 export interface PrivyUserInfo {

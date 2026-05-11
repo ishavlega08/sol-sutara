@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
 import { PlusCircle, RefreshCw, ChevronLeft, ChevronRight, ChevronDown, Truck, Search } from "lucide-react";
 import { getShipments } from "@/lib/api/shipments";
+import { cacheGet, cacheSet, TTL } from "@/lib/apiCache";
 import type { Shipment, ShipmentStatus } from "@/types/shipment";
 import { StatusBadge } from "@/components/ui/Badge";
 import PageHeader from "@/components/ui/PageHeader";
@@ -49,9 +50,10 @@ const PER_PAGE = 20;
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
 export default function ShipmentsPage() {
-  const [shipments, setShipments]   = useState<Shipment[]>([]);
+  const CACHE_KEY = "shipments:p1";
+  const [shipments, setShipments]   = useState<Shipment[]>(() => cacheGet<Shipment[]>(CACHE_KEY, TTL.medium) ?? []);
   const [total, setTotal]           = useState(0);
-  const [loading, setLoading]       = useState(true);
+  const [loading, setLoading]       = useState(() => !cacheGet(CACHE_KEY, TTL.medium));
   const [refreshing, setRefreshing] = useState(false);
   const [search, setSearch]         = useState("");
   const [statusFilter, setStatus]   = useState("");
@@ -59,9 +61,12 @@ export default function ShipmentsPage() {
   const { canCreate }               = useRole();
 
   const load = useCallback(async (isRefresh = false) => {
-    if (isRefresh) setRefreshing(true); else setLoading(true);
+    const isDefault = !search && !statusFilter && page === 1;
+    if (isRefresh) setRefreshing(true);
+    else if (!cacheGet(CACHE_KEY, TTL.medium) || !isDefault) setLoading(true);
     try {
       const res = await getShipments({ search: search || undefined, status: statusFilter || undefined, page, limit: PER_PAGE });
+      if (isDefault) cacheSet(CACHE_KEY, res.shipments);
       setShipments(res.shipments);
       setTotal(res.total);
     } catch (err) {

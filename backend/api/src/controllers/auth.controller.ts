@@ -75,6 +75,26 @@ export async function refreshHandler(req: Request, res: Response) {
     }
 }
 
+// ─── GET /api/auth/me — zero-DB session check ────────────────────────────────
+// Reads the access JWT (already verified by authenticateToken middleware) and
+// returns the full session without hitting the database. Used on every page
+// load by the frontend to restore session state instantly.
+
+export function meHandler(req: Request, res: Response) {
+    const u = req.user!;
+    return res.json({
+        success: true,
+        user: {
+            id:            u.userId,
+            email:         u.email         ?? null,
+            walletAddress: u.walletAddress  ?? null,
+        },
+        hasOrg: !!u.orgId,
+        org:    u.orgId ? { id: u.orgId, name: u.orgName ?? "" } : null,
+        role:   u.role ?? null,
+    });
+}
+
 // ─── POST /api/auth/logout ────────────────────────────────────────────────────
 
 export async function logoutHandler(req: Request, res: Response) {

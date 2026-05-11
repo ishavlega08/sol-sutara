@@ -14,6 +14,12 @@ export async function apiLogin(privyToken: string): Promise<SessionResponse> {
     return res.data;
 }
 
+// Fast session read — reads the access JWT (no DB). Throws on 401.
+export async function apiMe(): Promise<SessionResponse> {
+    const res = await client.get<SessionResponse>("/auth/me");
+    return res.data;
+}
+
 export async function apiRefresh(): Promise<SessionResponse> {
     const res = await client.post<SessionResponse>("/auth/refresh", {});
     return res.data;

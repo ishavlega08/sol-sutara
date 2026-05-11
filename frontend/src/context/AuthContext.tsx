@@ -10,7 +10,7 @@ import {
     type ReactNode,
 } from "react";
 import { usePrivy } from "@privy-io/react-auth";
-import { apiLogin, apiRefresh, apiLogout } from "@/lib/api/auth";
+import { apiLogin, apiMe, apiRefresh, apiLogout } from "@/lib/api/auth";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -40,17 +40,21 @@ interface AuthState {
     setSession:        (user: AuthUser, hasOrg: boolean, org: AuthOrg | null, role?: string | null) => void;
 }
 
-// ─── Session cache (localStorage) ────────────────────────────────────────────
-// Stores non-sensitive UI state so returning users see content immediately
-// without waiting for the backend refresh on every page load.
+// ─── Session cache ────────────────────────────────────────────────────────────
+// Stores non-sensitive UI state + token expiry so returning users see content
+// immediately without a backend call on every page load.
+// The access JWT lasts 15 minutes; we cache for 14 to allow a small buffer.
 
-const SESSION_KEY = "ss_session_v1";
+const SESSION_KEY     = "ss_session_v2";
+const TOKEN_TTL_MS    = 14 * 60 * 1000;  // 14 min — slightly under the 15min JWT TTL
+const REFRESH_BUFFER  = 60 * 1000;       // refresh when < 60s left
 
 interface CachedSession {
-    user:   AuthUser;
-    org:    AuthOrg | null;
-    hasOrg: boolean;
-    role:   string | null;
+    user:      AuthUser;
+    org:       AuthOrg | null;
+    hasOrg:    boolean;
+    role:      string | null;
+    expiresAt: number;  // timestamp when the access JWT expires
 }
 
 function readCache(): CachedSession | null {
@@ -61,12 +65,21 @@ function readCache(): CachedSession | null {
     } catch { return null; }
 }
 
-function writeCache(s: CachedSession) {
-    try { localStorage.setItem(SESSION_KEY, JSON.stringify(s)); } catch {}
+function writeCache(s: Omit<CachedSession, "expiresAt">) {
+    try {
+        localStorage.setItem(SESSION_KEY, JSON.stringify({
+            ...s,
+            expiresAt: Date.now() + TOKEN_TTL_MS,
+        }));
+    } catch {}
 }
 
 function clearCache() {
     try { localStorage.removeItem(SESSION_KEY); } catch {}
+}
+
+function isCacheFresh(cache: CachedSession): boolean {
+    return cache.expiresAt > Date.now() + REFRESH_BUFFER;
 }
 
 // ─── Context ──────────────────────────────────────────────────────────────────
@@ -95,21 +108,18 @@ export function useAuth() {
 export function AuthProvider({ children }: { children: ReactNode }) {
     const { ready, authenticated, user: privyUser, login: privyLogin, logout: privyLogout, getAccessToken } = usePrivy();
 
-    // Restore from localStorage on the very first render (synchronous, client-only)
+    // Restore from localStorage synchronously on first render (client-only; ssr: false)
     const [cachedSession] = useState<CachedSession | null>(() => readCache());
 
     const [user,              setUser]              = useState<AuthUser | null>(cachedSession?.user   ?? null);
     const [org,               setOrg]               = useState<AuthOrg  | null>(cachedSession?.org    ?? null);
     const [role,              setRole]              = useState<string   | null>(cachedSession?.role   ?? null);
     const [hasOrg,            setHasOrg]            = useState(cachedSession?.hasOrg ?? false);
-    // Only show loading state if we have nothing to show yet
     const [isLoading,         setIsLoading]         = useState(!cachedSession);
     const [backendAuthFailed, setBackendAuthFailed] = useState(false);
 
-    // Prevent double-processing the same Privy login event
-    const handledPrivyLogin  = useRef(false);
-    // Prevent double-running background verification
-    const verifyingSession   = useRef(false);
+    const handledPrivyLogin = useRef(false);
+    const verifying         = useRef(false);
 
     // ── Helpers ───────────────────────────────────────────────────────────────
 
@@ -122,14 +132,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
 
     const setSession = useCallback(
-        (u: AuthUser, h: boolean, o: AuthOrg | null, r?: string | null) => {
-            applySession(u, h, o, r);
-        },
+        (u: AuthUser, h: boolean, o: AuthOrg | null, r?: string | null) => applySession(u, h, o, r),
         // eslint-disable-next-line react-hooks/exhaustive-deps
         []
     );
 
-    // ── Backend auth with Privy token ─────────────────────────────────────────
+    // ── Backend auth via Privy token ──────────────────────────────────────────
 
     const runBackendAuth = useCallback(async () => {
         setIsLoading(true);
@@ -137,7 +145,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         try {
             const privyToken = await getAccessToken();
             if (!privyToken) throw new Error("No Privy access token");
-
             const { user: u, org: o, hasOrg: h, role: r } = await apiLogin(privyToken);
             applySession(u, h, o, r);
         } catch (err) {
@@ -149,32 +156,45 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [getAccessToken]);
 
-    // ── Restore/verify session on mount ──────────────────────────────────────
-    // If we have a cached session: verify silently in the background.
-    // If we don't: show loading state and wait for the refresh to complete.
+    // ── Session restore on mount ──────────────────────────────────────────────
+    // Priority:
+    //   1. Fresh cache + valid token → skip backend entirely (instant)
+    //   2. Cache exists but token expiring soon → /auth/me fast path (0 DB queries)
+    //   3. No cache or /me fails → /auth/refresh (full DB rotation)
     useEffect(() => {
-        if (!ready || authenticated || verifyingSession.current) return;
-        verifyingSession.current = true;
+        if (!ready || authenticated || verifying.current) return;
+        verifying.current = true;
 
         async function restoreSession() {
-            // Only block the UI if we have no cached data to show
+            // FAST PATH: token still fresh — serve from cache, verify in background
+            if (cachedSession && isCacheFresh(cachedSession)) {
+                setIsLoading(false);
+                // Silently verify in background to catch revoked tokens
+                apiMe().catch(() => {
+                    clearCache();
+                    setUser(null); setOrg(null); setRole(null); setHasOrg(false);
+                }).finally(() => { verifying.current = false; });
+                return;
+            }
+
+            // MEDIUM PATH: cache exists but token near expiry → try /me first (0 DB)
             if (!cachedSession) setIsLoading(true);
             try {
-                const { user: u, org: o, hasOrg: h, role: r } = await apiRefresh();
+                const { user: u, org: o, hasOrg: h, role: r } = await apiMe();
                 applySession(u, h, o, r);
             } catch {
-                if (cachedSession) {
-                    // Cached session is now stale — clear it and force re-auth
+                // /me failed (401) — access token expired, try full refresh
+                try {
+                    const { user: u, org: o, hasOrg: h, role: r } = await apiRefresh();
+                    applySession(u, h, o, r);
+                } catch {
+                    // Both failed — session is fully expired
                     clearCache();
-                    setUser(null);
-                    setOrg(null);
-                    setRole(null);
-                    setHasOrg(false);
+                    setUser(null); setOrg(null); setRole(null); setHasOrg(false);
                 }
-                // No valid session — AppShell will redirect to /login
             } finally {
                 setIsLoading(false);
-                verifyingSession.current = false;
+                verifying.current = false;
             }
         }
 
@@ -182,16 +202,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [ready, authenticated]);
 
-    // ── Handle Privy login completing ─────────────────────────────────────────
+    // ── Privy login completing ─────────────────────────────────────────────────
     useEffect(() => {
         if (!ready || !authenticated || !privyUser) return;
         if (handledPrivyLogin.current) return;
         handledPrivyLogin.current = true;
-
         runBackendAuth();
     }, [ready, authenticated, privyUser, runBackendAuth]);
 
-    // Reset the flag when Privy logs out
     useEffect(() => {
         if (!authenticated) {
             handledPrivyLogin.current = false;
@@ -209,32 +227,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         clearCache();
         try { await apiLogout(); } catch { /* ignore */ }
         await privyLogout();
-        setUser(null);
-        setOrg(null);
-        setRole(null);
-        setHasOrg(false);
-        setBackendAuthFailed(false);
+        setUser(null); setOrg(null); setRole(null);
+        setHasOrg(false); setBackendAuthFailed(false);
     }, [privyLogout]);
-
-    const isAuthenticated = !!user;
 
     return (
         <AuthContext.Provider
             value={{
-                user,
-                org,
-                role,
-                hasOrg,
-                // If we have cached session data, don't gate on Privy readiness.
-                // Privy verifies in the background; content is visible immediately.
+                user, org, role, hasOrg,
                 isLoading: cachedSession ? isLoading : (isLoading || !ready),
-                isAuthenticated,
+                isAuthenticated: !!user,
                 privyAuthenticated: authenticated,
                 backendAuthFailed,
-                login:      privyLogin,
-                logout,
-                retryAuth,
-                setSession,
+                login: privyLogin,
+                logout, retryAuth, setSession,
             }}
         >
             {children}

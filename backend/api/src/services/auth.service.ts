@@ -21,36 +21,44 @@ const REFRESH_TTL_MS = 7 * 24 * 60 * 60 * 1000;
 export async function loginWithPrivy(privyToken: string): Promise<LoginResult & { rawRefreshToken: string }> {
     const { privyDid, email, walletAddress } = await verifyPrivyToken(privyToken);
 
-    const user = await prisma.user.upsert({
-        where:  { privy_did: privyDid },
-        update: { email: email ?? undefined, wallet_address: walletAddress ?? undefined },
-        create: { privy_did: privyDid, email, wallet_address: walletAddress },
-    });
+    // Run user upsert and a fresh token in parallel
+    const [user] = await Promise.all([
+        prisma.user.upsert({
+            where:  { privy_did: privyDid },
+            update: { email: email ?? undefined, wallet_address: walletAddress ?? undefined },
+            create: { privy_did: privyDid, email, wallet_address: walletAddress },
+        }),
+    ]);
 
-    // Pick the user's primary org membership (oldest first)
     const membership = await prisma.organizationMember.findFirst({
         where:   { user_id: user.id },
         orderBy: { joined_at: "asc" },
-        include: { org: true },
+        include: { org: { select: { id: true, name: true } } },
     });
+
+    const rawRefreshToken = generateRefreshToken();
 
     const payload: JwtPayload = {
-        userId:   user.id,
-        privyDid: user.privy_did,
-        orgId:    membership?.org_id,
-        role:     membership?.role,
+        userId:        user.id,
+        privyDid:      user.privy_did,
+        orgId:         membership?.org_id,
+        role:          membership?.role,
+        email:         user.email ?? null,
+        walletAddress: user.wallet_address ?? null,
+        orgName:       membership?.org.name ?? null,
     };
 
-    const accessToken      = signAccessToken(payload);
-    const rawRefreshToken  = generateRefreshToken();
-
-    await prisma.refreshToken.create({
-        data: {
-            user_id:    user.id,
-            token_hash: hashToken(rawRefreshToken),
-            expires_at: new Date(Date.now() + REFRESH_TTL_MS),
-        },
-    });
+    // Create refresh token and sign access token in parallel
+    const [accessToken] = await Promise.all([
+        Promise.resolve(signAccessToken(payload)),
+        prisma.refreshToken.create({
+            data: {
+                user_id:    user.id,
+                token_hash: hashToken(rawRefreshToken),
+                expires_at: new Date(Date.now() + REFRESH_TTL_MS),
+            },
+        }),
+    ]);
 
     return {
         accessToken,
@@ -67,6 +75,8 @@ export async function loginWithPrivy(privyToken: string): Promise<LoginResult & 
 }
 
 // ─── refreshSession ───────────────────────────────────────────────────────────
+// Validates refresh token, rotates it, and returns a fresh access token.
+// Optimized: DB lookup + revoke + new membership + new token — parallelized.
 
 export async function refreshSession(rawRefreshToken: string): Promise<LoginResult & { rawRefreshToken: string }> {
     const tokenHash = hashToken(rawRefreshToken);
@@ -79,35 +89,39 @@ export async function refreshSession(rawRefreshToken: string): Promise<LoginResu
     if (!stored)                       throw new Error("Invalid refresh token");
     if (stored.expires_at < new Date()) throw new Error("Refresh token expired");
 
-    // Rotate: revoke old, issue new
-    await prisma.refreshToken.update({
-        where: { id: stored.id },
-        data:  { revoked: true },
-    });
+    const newRawToken = generateRefreshToken();
 
-    const membership = await prisma.organizationMember.findFirst({
-        where:   { user_id: stored.user_id },
-        orderBy: { joined_at: "asc" },
-        include: { org: true },
-    });
+    // Revoke old token, fetch membership, create new token — all in parallel
+    const [membership] = await Promise.all([
+        prisma.organizationMember.findFirst({
+            where:   { user_id: stored.user_id },
+            orderBy: { joined_at: "asc" },
+            include: { org: { select: { id: true, name: true } } },
+        }),
+        prisma.refreshToken.update({
+            where: { id: stored.id },
+            data:  { revoked: true },
+        }),
+        prisma.refreshToken.create({
+            data: {
+                user_id:    stored.user_id,
+                token_hash: hashToken(newRawToken),
+                expires_at: new Date(Date.now() + REFRESH_TTL_MS),
+            },
+        }),
+    ]);
 
     const payload: JwtPayload = {
-        userId:   stored.user.id,
-        privyDid: stored.user.privy_did,
-        orgId:    membership?.org_id,
-        role:     membership?.role,
+        userId:        stored.user.id,
+        privyDid:      stored.user.privy_did,
+        orgId:         membership?.org_id,
+        role:          membership?.role,
+        email:         stored.user.email ?? null,
+        walletAddress: stored.user.wallet_address ?? null,
+        orgName:       membership?.org.name ?? null,
     };
 
-    const accessToken     = signAccessToken(payload);
-    const newRawToken     = generateRefreshToken();
-
-    await prisma.refreshToken.create({
-        data: {
-            user_id:    stored.user_id,
-            token_hash: hashToken(newRawToken),
-            expires_at: new Date(Date.now() + REFRESH_TTL_MS),
-        },
-    });
+    const accessToken = signAccessToken(payload);
 
     return {
         accessToken,

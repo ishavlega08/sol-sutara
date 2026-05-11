@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
 import { PlusCircle, RefreshCw, ChevronLeft, ChevronRight, ChevronDown, Building2, Search } from "lucide-react";
 import { getSuppliers } from "@/lib/api/suppliers";
+import { cacheGet, cacheSet, TTL } from "@/lib/apiCache";
 import type { Supplier, SupplierStatus, SupplierRisk } from "@/types/supplier";
 import { StatusBadge } from "@/components/ui/Badge";
 import PageHeader from "@/components/ui/PageHeader";
@@ -45,9 +46,10 @@ const PER_PAGE = 20;
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
 export default function SuppliersPage() {
-  const [suppliers, setSuppliers]   = useState<Supplier[]>([]);
+  const CACHE_KEY = "suppliers:p1";
+  const [suppliers, setSuppliers]   = useState<Supplier[]>(() => cacheGet<Supplier[]>(CACHE_KEY, TTL.medium) ?? []);
   const [total, setTotal]           = useState(0);
-  const [loading, setLoading]       = useState(true);
+  const [loading, setLoading]       = useState(() => !cacheGet(CACHE_KEY, TTL.medium));
   const [refreshing, setRefreshing] = useState(false);
   const [search, setSearch]         = useState("");
   const [statusFilter, setStatus]   = useState("");
@@ -56,9 +58,12 @@ export default function SuppliersPage() {
   const { canCreate }               = useRole();
 
   const load = useCallback(async (isRefresh = false) => {
-    if (isRefresh) setRefreshing(true); else setLoading(true);
+    const isDefault = !search && !statusFilter && !riskFilter && page === 1;
+    if (isRefresh) setRefreshing(true);
+    else if (!cacheGet(CACHE_KEY, TTL.medium) || !isDefault) setLoading(true);
     try {
       const res = await getSuppliers({ search: search || undefined, status: statusFilter || undefined, risk_level: riskFilter || undefined, page, limit: PER_PAGE });
+      if (isDefault) cacheSet(CACHE_KEY, res.suppliers);
       setSuppliers(res.suppliers);
       setTotal(res.total);
     } catch (err) {

@@ -10,6 +10,7 @@ import { useAuth } from "@/context/AuthContext";
 import PageHeader from "@/components/ui/PageHeader";
 import { getDashboardStats, getRecentLinks } from "@/lib/api";
 import type { DashboardStats, RecentLink } from "@/types/component";
+import { cacheGet, cacheSet, TTL } from "@/lib/apiCache";
 
 // ─── Skeleton ─────────────────────────────────────────────────────────────────
 
@@ -67,19 +68,21 @@ function StatCard({
 export default function DashboardPage() {
     const { user, org } = useAuth();
 
-    const [stats,       setStats]      = useState<DashboardStats | null>(null);
-    const [recentLinks, setRecentLinks] = useState<RecentLink[]>([]);
-    const [loading,     setLoading]    = useState(true);
+    const [stats,       setStats]      = useState<DashboardStats | null>(() => cacheGet("dashboard:stats", TTL.long));
+    const [recentLinks, setRecentLinks] = useState<RecentLink[]>(() => cacheGet("dashboard:links", TTL.long) ?? []);
+    const [loading,     setLoading]    = useState(() => !cacheGet("dashboard:stats", TTL.long));
     const [error,       setError]      = useState<string | null>(null);
 
     const load = useCallback(async () => {
-        setLoading(true);
+        if (!cacheGet("dashboard:stats", TTL.long)) setLoading(true);
         setError(null);
         try {
             const [s, l] = await Promise.all([
                 getDashboardStats(),
                 getRecentLinks(),
             ]);
+            cacheSet("dashboard:stats", s.stats);
+            cacheSet("dashboard:links", l.links ?? []);
             setStats(s.stats);
             setRecentLinks(l.links ?? []);
         } catch {
