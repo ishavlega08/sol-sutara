@@ -1,3 +1,4 @@
+import { Prisma } from "@prisma/client";
 import { prisma } from "../lib/prisma";
 import { buildMetadata } from "./metadata.service";
 import { uploadMetadata } from "./storage.service";
@@ -9,6 +10,7 @@ export interface CreateComponentInput {
     name:         string;
     type:         string;
     supplier?:    string;
+    supplier_id?: string;
     metadata?:    Record<string, unknown>;
     org_id?:      string;
     batch_number?: string;
@@ -43,20 +45,20 @@ export async function getComponentChildren(componentDbId: string) {
 }
 
 export async function createComponent(input: CreateComponentInput) {
-    const component = await prisma.component.create({
-        data: {
-            name:         input.name,
-            type:         input.type,
-            supplier:     input.supplier,
-            metadata_uri: "",
-            org_id:       input.org_id,
-            batch_number: input.batch_number,
-            lot_number:   input.lot_number,
-            quantity:     input.quantity,
-            unit:         input.unit,
-            expiry_date:  input.expiry_date ? new Date(input.expiry_date) : undefined,
-        },
-    });
+    const createData: Prisma.ComponentUncheckedCreateInput = {
+        name:         input.name,
+        type:         input.type,
+        supplier:     input.supplier,
+        supplier_id:  input.supplier_id ?? null,
+        metadata_uri: "",
+        org_id:       input.org_id,
+        batch_number: input.batch_number,
+        lot_number:   input.lot_number,
+        quantity:     input.quantity,
+        unit:         input.unit,
+        expiry_date:  input.expiry_date ? new Date(input.expiry_date) : undefined,
+    };
+    const component = await prisma.component.create({ data: createData });
 
     const metadata    = buildMetadata(input.name, input.type, input.supplier, input.metadata ?? {});
     const metadataUri = await uploadMetadata(component.id, metadata);

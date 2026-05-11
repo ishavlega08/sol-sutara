@@ -37,6 +37,15 @@ export interface SupplierDetail extends Supplier {
     file_url:   string;
     created_at: string;
   }>;
+  components: Array<{
+    id:           string;
+    name:         string;
+    type:         string;
+    supplier:     string | null;
+    status:       string;
+    batch_number: string | null;
+    created_at:   string;
+  }>;
 }
 
 export interface CreateSupplierPayload {

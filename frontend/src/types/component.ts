@@ -4,6 +4,7 @@ export interface CreateComponentPayload {
   name:          string;
   type:          string;
   supplier:      string;
+  supplierId?:   string;
   metadata:      Record<string, string>;
   batch_number?: string;
   lot_number?:   string;

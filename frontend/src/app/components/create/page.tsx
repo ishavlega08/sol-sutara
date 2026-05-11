@@ -1,10 +1,12 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { ArrowLeft, CheckCircle, AlertCircle, ExternalLink, PlusCircle, Trash2 } from "lucide-react";
 import { createComponent } from "@/lib/api";
+import { getSuppliers } from "@/lib/api/suppliers";
 import type { CreatedComponent } from "@/types/component";
+import type { Supplier } from "@/types/supplier";
 import PageHeader from "@/components/ui/PageHeader";
 import SectionCard from "@/components/ui/SectionCard";
 import ActionButton from "@/components/ui/ActionButton";
@@ -24,6 +26,8 @@ export default function CreateComponentPage() {
   const [name, setName]               = useState("");
   const [type, setType]               = useState("");
   const [supplier, setSupplier]       = useState("");
+  const [supplierId, setSupplierId]   = useState("");
+  const [suppliers, setSuppliers]     = useState<Supplier[]>([]);
   const [meta, setMeta]               = useState<MetaPair[]>([]);
   const [batchNumber, setBatchNumber] = useState("");
   const [lotNumber, setLotNumber]     = useState("");
@@ -34,6 +38,10 @@ export default function CreateComponentPage() {
   const [status, setStatus]           = useState<Status>("idle");
   const [result, setResult]           = useState<CreatedComponent | null>(null);
   const [errorMsg, setErrorMsg]       = useState("");
+
+  useEffect(() => {
+    getSuppliers({ limit: 100 }).then((res) => setSuppliers(res.suppliers)).catch(() => {});
+  }, []);
 
   function validate() {
     const e: Record<string, string> = {};
@@ -55,7 +63,8 @@ export default function CreateComponentPage() {
     }, {});
     try {
       const res = await createComponent({
-        name: name.trim(), type, supplier: supplier.trim(), metadata: metadataObj,
+        name: name.trim(), type, supplier: supplier.trim(), supplierId: supplierId || undefined,
+        metadata: metadataObj,
         batch_number: batchNumber.trim() || undefined,
         lot_number: lotNumber.trim() || undefined,
         quantity: quantity ? Number(quantity) : undefined,
@@ -71,7 +80,7 @@ export default function CreateComponentPage() {
   }
 
   function reset() {
-    setName(""); setType(""); setSupplier(""); setMeta([]);
+    setName(""); setType(""); setSupplier(""); setSupplierId(""); setMeta([]);
     setBatchNumber(""); setLotNumber(""); setQuantity(""); setUnit("units"); setExpiryDate("");
     setErrors({}); setResult(null); setStatus("idle"); setErrorMsg("");
   }
@@ -170,9 +179,25 @@ export default function CreateComponentPage() {
             {/* Supplier */}
             <div className="border-b border-gray-100 dark:border-gray-800 px-5 py-4">
               <label className="mb-1.5 block text-xs font-semibold uppercase tracking-widest text-gray-400 dark:text-gray-500">Supplier / org</label>
+              {suppliers.length > 0 && (
+                <select
+                  value={supplierId}
+                  onChange={(e) => {
+                    setSupplierId(e.target.value);
+                    const s = suppliers.find((s) => s.id === e.target.value);
+                    if (s) { setSupplier(s.company_name); if (errors.supplier) setErrors((p) => ({ ...p, supplier: "" })); }
+                    else if (!e.target.value) setSupplier("");
+                  }}
+                  disabled={status === "loading"}
+                  className="mb-2 w-full rounded-md border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 px-3 py-2 text-sm text-gray-900 dark:text-gray-100 outline-none focus:border-violet-400">
+                  <option value="">Select a registered supplier…</option>
+                  {suppliers.map((s) => <option key={s.id} value={s.id}>{s.company_name}</option>)}
+                </select>
+              )}
               <input type="text" value={supplier}
                 onChange={(e) => { setSupplier(e.target.value); if (errors.supplier) setErrors((p) => ({ ...p, supplier: "" })); }}
                 placeholder="e.g. org:kaldera" disabled={status === "loading"} className={inputCls(errors.supplier)} />
+              <p className="mt-1 text-[11px] text-gray-400">Select from your registered suppliers above, or type a custom name.</p>
               {errors.supplier && <p className="mt-1 text-xs text-red-500">{errors.supplier}</p>}
             </div>
 

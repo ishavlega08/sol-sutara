@@ -127,6 +127,14 @@ export async function getSupplierById(id: string, orgId: string) {
                     file_url: true, created_at: true,
                 },
             },
+            components: {
+                orderBy: { created_at: "desc" },
+                take:    20,
+                select: {
+                    id: true, name: true, type: true, supplier: true,
+                    status: true, batch_number: true, created_at: true,
+                },
+            },
             _count: { select: { shipments: true, components: true, documents: true } },
         },
     });

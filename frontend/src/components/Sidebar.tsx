@@ -27,9 +27,9 @@ const WORKSPACE: NavItem[] = [
     { label: "Trace",      href: "/trace",           icon: GitMerge,        match: (p) => p === "/trace" },
     { label: "Recall",     href: "/recall",          icon: AlertOctagon,    match: (p) => p === "/recall",},
     { label: "Analytics",  href: "/analytics",       icon: BarChart2,       match: (p) => p === "/analytics" },
-    { label: "Suppliers",  href: "/suppliers",       icon: Building2,       match: (p) => p.startsWith("/suppliers"), comingSoon: true },
-    { label: "Shipments",  href: "/shipments",       icon: Truck,           match: (p) => p.startsWith("/shipments"), comingSoon: true },
-    { label: "Notifications", href: "/notifications", icon: Bell,           match: (p) => p.startsWith("/notifications"), comingSoon: true },
+    { label: "Suppliers",  href: "/suppliers",       icon: Building2,       match: (p) => p.startsWith("/suppliers") },
+    { label: "Shipments",  href: "/shipments",       icon: Truck,           match: (p) => p.startsWith("/shipments") },
+    { label: "Notifications", href: "/notifications", icon: Bell,           match: (p) => p.startsWith("/notifications") },
 ];
 
 const BILLING: NavItem[] = [

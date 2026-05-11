@@ -70,10 +70,11 @@ export async function getComponentsHandler(req: Request, res: Response) {
 // ─── POST /components ─────────────────────────────────────────────────────────
 
 export async function createComponentHandler(req: Request, res: Response) {
-    const { name, type, supplier, metadata, batch_number, lot_number, quantity, unit, expiry_date } = req.body as {
+    const { name, type, supplier, supplierId, metadata, batch_number, lot_number, quantity, unit, expiry_date } = req.body as {
         name?:         string;
         type?:         string;
         supplier?:     string;
+        supplierId?:   string;
         metadata?:     Record<string, unknown>;
         batch_number?: string;
         lot_number?:   string;
@@ -93,7 +94,7 @@ export async function createComponentHandler(req: Request, res: Response) {
     }
 
     try {
-        const component = await createComponent({ name, type, supplier, metadata, org_id, batch_number, lot_number, quantity, unit, expiry_date });
+        const component = await createComponent({ name, type, supplier, supplier_id: supplierId, metadata, org_id, batch_number, lot_number, quantity, unit, expiry_date });
         return res.status(201).json({
             success: true,
             component: {
