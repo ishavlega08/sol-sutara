@@ -87,16 +87,16 @@ export default function CreateComponentPage() {
       <div className="h-full overflow-y-auto bg-white dark:bg-gray-950">
         <div className="mx-auto max-w-xl px-4 py-6 sm:px-6">
           {backLink}
-          <div className="mt-4 mb-4 flex items-center gap-2.5 rounded-md border border-emerald-200 bg-emerald-50 px-4 py-3">
+          <div className="mt-4 mb-4 flex items-center gap-2.5 rounded-md border border-emerald-200 dark:border-emerald-800 bg-emerald-50 dark:bg-emerald-950/40 px-4 py-3">
             <CheckCircle className="h-4 w-4 flex-shrink-0 text-emerald-500" />
-            <p className="text-sm font-medium text-emerald-800">Component registered on-chain</p>
+            <p className="text-sm font-medium text-emerald-800 dark:text-emerald-300">Component registered on-chain</p>
           </div>
           <SectionCard noPadding>
-            <div className="border-b border-gray-100 px-5 py-4">
-              <h2 className="text-base font-semibold text-gray-900">{result.name}</h2>
+            <div className="border-b border-gray-100 dark:border-gray-800 px-5 py-4">
+              <h2 className="text-base font-semibold text-gray-900 dark:text-gray-100">{result.name}</h2>
               {type && <div className="mt-1"><TypeBadge type={type} /></div>}
             </div>
-            <div className="divide-y divide-gray-50">
+            <div className="divide-y divide-gray-100 dark:divide-gray-800">
               {[
                 { label: "Component ID",     value: result.id },
                 { label: "Transaction Hash", value: result.txHash },
@@ -104,17 +104,17 @@ export default function CreateComponentPage() {
                 { label: "Metadata URI",     value: result.metadataURI },
               ].map(({ label, value }) => (
                 <div key={label} className="grid grid-cols-[140px_1fr] gap-3 px-5 py-3 text-sm">
-                  <span className="text-gray-400">{label}</span>
-                  <span className="break-all font-mono text-xs text-gray-800">{value}</span>
+                  <span className="font-medium text-gray-500 dark:text-gray-400">{label}</span>
+                  <span className="break-all font-mono text-xs text-gray-900 dark:text-gray-100">{value}</span>
                 </div>
               ))}
             </div>
-            <div className="flex flex-wrap items-center gap-3 border-t border-gray-100 px-5 py-4">
+            <div className="flex flex-wrap items-center gap-3 border-t border-gray-100 dark:border-gray-800 px-5 py-4">
               <ActionButton variant="gradient" onClick={reset}>Create another</ActionButton>
               <a
                 href={`https://explorer.solana.com/tx/${result.txHash}?cluster=devnet`}
                 target="_blank" rel="noopener noreferrer"
-                className="flex items-center gap-1 text-sm text-gray-400 transition hover:text-gray-700"
+                className="flex items-center gap-1 text-sm text-gray-400 dark:text-gray-500 transition hover:text-gray-700 dark:hover:text-gray-300"
               >
                 View on explorer <ExternalLink className="h-3.5 w-3.5" />
               </a>

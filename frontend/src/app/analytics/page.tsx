@@ -71,9 +71,10 @@ export default function AnalyticsPage() {
   useEffect(() => {
     setLoading(true);
     setError(null);
-    const apiPeriod  = period === "All" ? "all" : period.toLowerCase();
-    const tsWeeks    = period === "7d" ? 8 : period === "30d" ? 16 : period === "90d" ? 20 : 52;
-    Promise.allSettled([getAnalytics(apiPeriod), getTimeSeries(tsWeeks)]).then(([analyticsRes, tsRes]) => {
+    const apiPeriod = period === "All" ? "all" : period.toLowerCase();
+    // Always fetch 2 years for the growth chart so historical data is never clipped.
+    // The stat cards use the period selector; the chart shows the full picture.
+    Promise.allSettled([getAnalytics(apiPeriod), getTimeSeries(104)]).then(([analyticsRes, tsRes]) => {
       if (analyticsRes.status === "fulfilled") setData(analyticsRes.value.analytics);
       else setError("Failed to load analytics");
       if (tsRes.status === "fulfilled") setTimeSeries(tsRes.value.timeSeries);
@@ -148,19 +149,26 @@ export default function AnalyticsPage() {
           <SectionCard title="Growth · components created">
             {loading || !timeSeries ? (
               <div className="h-44 animate-pulse rounded bg-gray-100 dark:bg-gray-800" />
-            ) : timeSeries.components.every((v) => v === 0) ? (
-              <div className="flex h-44 items-center justify-center">
-                <p className="text-sm text-gray-400 dark:text-gray-500">No components created in this period.</p>
-              </div>
-            ) : (
-              <BarChart
-                bars={timeSeries.components}
-                colorFrom="#10b981"
-                colorTo="#7c3aed"
-                xLabels={timeSeries.weeks.map((w, i) => i === timeSeries.weeks.length - 1 ? "now" : w.slice(5))}
-                height={176}
-              />
-            )}
+            ) : (() => {
+              // Strip leading weeks where nothing was created so the chart
+              // starts from when the first component actually appeared.
+              const firstIdx = timeSeries.components.findIndex((v) => v > 0);
+              const bars   = firstIdx >= 0 ? timeSeries.components.slice(firstIdx) : timeSeries.components;
+              const labels = firstIdx >= 0 ? timeSeries.weeks.slice(firstIdx)      : timeSeries.weeks;
+              return bars.every((v) => v === 0) ? (
+                <div className="flex h-44 items-center justify-center">
+                  <p className="text-sm text-gray-400 dark:text-gray-500">No components created yet.</p>
+                </div>
+              ) : (
+                <BarChart
+                  bars={bars}
+                  colorFrom="#10b981"
+                  colorTo="#7c3aed"
+                  xLabels={labels.map((w, i) => i === labels.length - 1 ? "now" : w.slice(5))}
+                  height={176}
+                />
+              );
+            })()}
           </SectionCard>
 
           <SectionCard title="Most reused components" noPadding>
