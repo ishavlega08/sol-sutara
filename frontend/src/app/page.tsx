@@ -3,6 +3,7 @@
 import Link from "next/link";
 import Logo from "@/components/Logo";
 import { useState } from "react";
+import { useAuth } from "@/context/AuthContext";
 
 const FAQ_ITEMS = [
   {
@@ -33,6 +34,7 @@ const FAQ_ITEMS = [
 
 export default function LandingPage() {
   const [openFaq, setOpenFaq] = useState<number | null>(0);
+  const { isAuthenticated } = useAuth();
 
   return (
     <div className="lp">
@@ -41,7 +43,7 @@ export default function LandingPage() {
       <header className="nav">
         <div className="wrap nav-inner">
           <Link className="brand" href="/">
-            <Logo size={22} />
+            <Logo size={24} />
             <span>Sol Sutara</span>
             <em>· devnet</em>
           </Link>
@@ -53,8 +55,14 @@ export default function LandingPage() {
             <a href="#faq">FAQ</a>
           </nav>
           <div className="nav-cta">
-            <Link className="btn btn-ghost" href="/login">Sign in</Link>
-            <Link className="btn btn-primary" href="/devnet-access">Get devnet access →</Link>
+            {isAuthenticated ? (
+              <Link className="btn btn-primary" href="/dashboard">Dashboard →</Link>
+            ) : (
+              <>
+                <Link className="btn btn-ghost nav-signin" href="/login">Sign in</Link>
+                <Link className="btn btn-primary" href="/devnet-access">Get devnet access →</Link>
+              </>
+            )}
           </div>
         </div>
       </header>
@@ -72,7 +80,11 @@ export default function LandingPage() {
             <div>
               <h1>The supply chain,<br /><em>set in type.</em></h1>
               <div className="hero-cta">
-                <Link className="btn btn-primary" href="/login">Open the sandbox →</Link>
+                {isAuthenticated ? (
+                  <Link className="btn btn-primary" href="/dashboard">Go to dashboard →</Link>
+                ) : (
+                  <Link className="btn btn-primary" href="/login">Open the sandbox →</Link>
+                )}
                 <a className="btn" href="#how">Read how it works</a>
               </div>
             </div>
@@ -150,8 +162,8 @@ export default function LandingPage() {
                 {/* live trace */}
                 <g className="gedge live">
                   <path d="M520 252 C 520 232, 360 232, 360 208" />
-                  <path d="M360 208 C 360 156, 260 156, 260 134" />
-                  <path d="M260 134 C 260 80, 160 80, 160 52" />
+                  <path d="M360 180 C 360 156, 260 156, 260 134" />
+                  <path d="M260 106 C 260 80, 160 80, 160 52" />
                 </g>
                 {/* annotation */}
                 <g>
@@ -263,7 +275,7 @@ export default function LandingPage() {
                 </g>
                 <g className="gedge live">
                   <path d="M240 280 C 240 256, 160 256, 160 234" />
-                  <path d="M160 234 C 160 175, 100 175, 100 144" />
+                  <path d="M160 206 C 160 175, 100 175, 100 144" />
                   <path d="M100 116 C 100 80, 100 80, 100 46" />
                 </g>
                 <g>
@@ -477,7 +489,11 @@ export default function LandingPage() {
             </div>
             <div className="cta-actions">
               <div className="row">
-                <Link className="btn btn-primary" href="/login">Open the sandbox →</Link>
+                {isAuthenticated ? (
+                  <Link className="btn btn-primary" href="/dashboard">Go to dashboard →</Link>
+                ) : (
+                  <Link className="btn btn-primary" href="/login">Open the sandbox →</Link>
+                )}
                 <a className="btn" href="#">Talk to a builder</a>
               </div>
               <div className="meta">No card · 14-day workspace · We&apos;ll match you with a design-partner engineer</div>

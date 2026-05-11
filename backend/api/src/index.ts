@@ -4,6 +4,7 @@ import express from "express";
 import cors from "cors";
 import cookieParser from "cookie-parser";
 import compression from "compression";
+import { globalLimiter } from "./middleware/rateLimit";
 import routes from "./routes";
 
 const PORT    = process.env.PORT || 3001;
@@ -11,8 +12,14 @@ const ORIGINS = (process.env.ALLOWED_ORIGINS ?? "http://localhost:3000").split("
 
 const app = express();
 
+// Trust proxy headers (X-Forwarded-For) when behind AWS ALB / Nginx
+app.set("trust proxy", 1);
+
 // Gzip compression — shrinks JSON responses by ~70%, zero risk for API usage
 app.use(compression());
+
+// Global rate limit — 500 req / 15 min per IP across all endpoints
+app.use(globalLimiter);
 
 app.use(cors({
     origin:      ORIGINS,
@@ -21,7 +28,8 @@ app.use(cors({
 app.use(express.json());
 app.use(cookieParser());
 
-// Health check — used by uptime monitors to keep the server warm (no auth, no data)
+// Health check — exempt from rate limiting (placed after global limiter intentionally;
+// health checks are low-volume and the global window is generous enough)
 app.get("/health", (_req, res) => res.json({ ok: true, ts: Date.now() }));
 
 app.use("/api", routes);

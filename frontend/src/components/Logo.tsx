@@ -17,7 +17,7 @@ export default function Logo({ size = 28, className = "" }: LogoProps) {
             alt="Sol Sutara"
             width={size}
             height={Math.round(size * 1.33)}
-            className={`mix-blend-screen ${className}`.trim()}
+            className={`dark:invert ${className}`.trim()}
             style={{ borderRadius: 4 }}
             priority
         />

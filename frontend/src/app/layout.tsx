@@ -6,7 +6,7 @@ import "@/styles/globals.css";
 const ClientShell = dynamic(() => import("@/components/ClientShell"), { ssr: false });
 
 export const metadata: Metadata = {
-  title: "SolSutara",
+  title: "Sol Sutara",
   description: "Decentralized supply chain traceability on Solana",
 };
 

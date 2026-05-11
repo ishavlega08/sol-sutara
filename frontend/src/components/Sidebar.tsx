@@ -5,7 +5,7 @@ import { useRouter, usePathname } from "next/navigation";
 import {
     LayoutDashboard, Boxes, Link2, GitMerge, AlertOctagon,
     BarChart2, CreditCard, FileText, Building2, Users, Key,
-    ChevronDown, Moon, Sun, X, LogOut, Truck, Package, Bell, Webhook,
+    ChevronDown, Moon, Sun, X, LogOut, Truck, Bell, Webhook, Lock,
 } from "lucide-react";
 import { useTheme } from "@/context/ThemeContext";
 import { useAuth } from "@/context/AuthContext";
@@ -16,6 +16,8 @@ type NavItem = {
     icon: React.ElementType;
     match: (p: string) => boolean;
     badge?: string;
+    comingSoon?: boolean;
+    paidOnly?: boolean;
 };
 
 const WORKSPACE: NavItem[] = [
@@ -23,27 +25,53 @@ const WORKSPACE: NavItem[] = [
     { label: "Components", href: "/components",      icon: Boxes,           match: (p) => p.startsWith("/components") && !p.startsWith("/components/link") },
     { label: "Link",       href: "/components/link", icon: Link2,           match: (p) => p === "/components/link" },
     { label: "Trace",      href: "/trace",           icon: GitMerge,        match: (p) => p === "/trace" },
-    { label: "Recall",     href: "/recall",          icon: AlertOctagon,    match: (p) => p === "/recall", badge: "NEW" },
+    { label: "Recall",     href: "/recall",          icon: AlertOctagon,    match: (p) => p === "/recall",},
     { label: "Analytics",  href: "/analytics",       icon: BarChart2,       match: (p) => p === "/analytics" },
-    { label: "Suppliers",  href: "/suppliers",       icon: Building2,       match: (p) => p.startsWith("/suppliers") },
-    { label: "Shipments",  href: "/shipments",       icon: Truck,           match: (p) => p.startsWith("/shipments") },
-    { label: "Notifications", href: "/notifications", icon: Bell,           match: (p) => p.startsWith("/notifications") },
+    { label: "Suppliers",  href: "/suppliers",       icon: Building2,       match: (p) => p.startsWith("/suppliers"), comingSoon: true },
+    { label: "Shipments",  href: "/shipments",       icon: Truck,           match: (p) => p.startsWith("/shipments"), comingSoon: true },
+    { label: "Notifications", href: "/notifications", icon: Bell,           match: (p) => p.startsWith("/notifications"), comingSoon: true },
 ];
 
 const BILLING: NavItem[] = [
     { label: "Plans & usage", href: "/billing/plans",    icon: CreditCard, match: (p) => p.startsWith("/billing/plans") },
-    { label: "Invoices",      href: "/billing/invoices", icon: FileText,   match: (p) => p.startsWith("/billing/invoices") },
+    { label: "Invoices",      href: "/billing/invoices", icon: FileText,   match: (p) => p.startsWith("/billing/invoices"), comingSoon: true },
 ];
 
 const SETTINGS: NavItem[] = [
     { label: "Organization", href: "/settings/organization", icon: Building2, match: (p) => p.startsWith("/settings/organization") },
     { label: "Members",      href: "/settings/members",      icon: Users,     match: (p) => p.startsWith("/settings/members") },
-    { label: "API keys",     href: "/settings/api-keys",     icon: Key,       match: (p) => p.startsWith("/settings/api-keys") },
-    { label: "Webhooks",    href: "/settings/webhooks",     icon: Webhook,   match: (p) => p.startsWith("/settings/webhooks") },
+    { label: "API keys",     href: "/settings/api-keys",     icon: Key,       match: (p) => p.startsWith("/settings/api-keys"), paidOnly: true },
+    { label: "Webhooks",    href: "/settings/webhooks",     icon: Webhook,   match: (p) => p.startsWith("/settings/webhooks"), paidOnly: true },
 ];
 
 function NavLink({ item, active, onClick }: { item: NavItem; active: boolean; onClick?: () => void }) {
     const Icon = item.icon;
+
+    if (item.paidOnly) {
+        return (
+            <div className="flex cursor-not-allowed select-none items-center gap-2.5 rounded-md px-2.5 py-1.5 text-sm">
+                <Icon className="h-4 w-4 flex-shrink-0 text-gray-300 dark:text-gray-600" />
+                <span className="flex-1 leading-none text-gray-400 dark:text-gray-500">{item.label}</span>
+                <span className="flex items-center gap-1 rounded-sm bg-amber-50 px-1.5 py-0.5 text-[9px] font-bold uppercase text-amber-600 dark:bg-amber-950/60 dark:text-amber-400">
+                    <Lock className="h-2 w-2" />
+                    Pro
+                </span>
+            </div>
+        );
+    }
+
+    if (item.comingSoon) {
+        return (
+            <div className="flex cursor-not-allowed select-none items-center gap-2.5 rounded-md px-2.5 py-1.5 text-sm">
+                <Icon className="h-4 w-4 flex-shrink-0 text-gray-300 dark:text-gray-600" />
+                <span className="flex-1 leading-none text-gray-400 dark:text-gray-500">{item.label}</span>
+                <span className="rounded-sm bg-teal-50 px-1.5 py-0.5 text-[9px] font-bold uppercase text-teal-600 dark:bg-teal-950 dark:text-teal-400">
+                    Soon
+                </span>
+            </div>
+        );
+    }
+
     return (
         <Link
             href={item.href}

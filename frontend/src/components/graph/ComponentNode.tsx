@@ -23,7 +23,7 @@ export default function ComponentNode({ data, selected }: NodeProps<ComponentLis
         ${selected ? "shadow-lg ring-2 ring-gray-900 ring-offset-2" : "hover:shadow-md"}`}
     >
       <Handle
-        type="target"
+        type="source"
         position={Position.Top}
         className="!h-3 !w-3 !border-2 !border-white !bg-gray-400"
       />
@@ -39,7 +39,7 @@ export default function ComponentNode({ data, selected }: NodeProps<ComponentLis
       <p className="mt-0.5 text-xs text-gray-500">{data.supplier}</p>
 
       <Handle
-        type="source"
+        type="target"
         position={Position.Bottom}
         className="!h-3 !w-3 !border-2 !border-white !bg-gray-400"
       />

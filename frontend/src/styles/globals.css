@@ -63,10 +63,10 @@
   border-bottom: 1px solid var(--line);
 }
 .lp .nav-inner { display: flex; align-items: center; justify-content: space-between; height: 64px; }
-.lp .brand { display: flex; align-items: baseline; gap: 10px; font-family: var(--serif); font-size: 20px; font-weight: 500; letter-spacing: -0.02em; }
+.lp .brand { display: flex; align-items: center; gap: 10px; font-family: var(--serif); font-size: 23px; font-weight: 500; letter-spacing: -0.02em; }
 .lp .brand-mark { width: 11px; height: 11px; border-radius: 50%; background: var(--teal); box-shadow: 0 0 0 3px color-mix(in oklab, var(--teal) 18%, transparent); transform: translateY(-2px); }
-.lp .brand em { font-style: italic; color: var(--fg-2); font-weight: 400; font-size: 14px; }
-.lp .nav-links { display: flex; align-items: center; gap: 28px; font-size: 13.5px; color: var(--fg-2); }
+.lp .brand em { font-style: italic; color: var(--fg-2); font-weight: 400; align-items: center; font-size: 17px; }
+.lp .nav-links { display: flex; align-items: center; gap: 28px; font-size: 15.5px; color: var(--fg-2); }
 .lp .nav-links a:hover { color: var(--fg); }
 .lp .nav-cta { display: flex; align-items: center; gap: 10px; }
 .lp .btn {
@@ -273,3 +273,66 @@
 .lp .foot-col a:hover { color: var(--fg); }
 .lp .foot-bot { display: flex; justify-content: space-between; align-items: center; padding-top: 22px; font: 500 11px/1 var(--mono); color: var(--fg-3); letter-spacing: 0.08em; text-transform: uppercase; }
 @media (max-width: 900px) { .lp .foot-top { grid-template-columns: 1fr 1fr; } .lp .foot-bot { flex-direction: column; gap: 12px; align-items: flex-start; } }
+
+/* ── EXTRA MOBILE (≤ 640px) ─────────────────────────────────────────────── */
+@media (max-width: 640px) {
+  .lp .wrap { padding: 0 16px; }
+
+  /* Nav: hide "Sign in" ghost button, keep primary only */
+  .lp .nav-signin { display: none; }
+  .lp .nav-cta { gap: 8px; }
+
+  /* Hero band: hide the middle editorial label */
+  .lp .hero-band .center { display: none; }
+  .lp .hero-band { font-size: 10px; }
+
+  /* Hero stats: 2×2 */
+  .lp .hero-foot { grid-template-columns: repeat(2, 1fr); row-gap: 16px; }
+  .lp .hero-foot .item:nth-child(3) { border-left: 0; padding-left: 0; }
+
+  /* Hero CTA: stack buttons */
+  .lp .hero-cta { flex-direction: column; align-items: flex-start; }
+
+  /* Sections */
+  .lp .sec { padding: 48px 0; }
+  .lp .sec-head h2 { font-size: clamp(30px, 8vw, 42px); }
+
+  /* Why stats: single column inside the grid */
+  .lp .why-stats { grid-template-columns: 1fr; }
+  .lp .why-stat { border-left: 0 !important; border-bottom: 1px solid var(--line); }
+  .lp .why-stat:last-child { border-bottom: 0; }
+  .lp .why-stat .v { font-size: 36px; }
+
+  /* CTA: stack buttons */
+  .lp .cta { padding: 60px 0; }
+  .lp .cta-actions .row { flex-direction: column; align-items: flex-start; gap: 10px; }
+  .lp .cta-actions .btn { width: 100%; justify-content: center; }
+
+  /* Footer */
+  .lp .foot-top { grid-template-columns: 1fr 1fr; gap: 28px; }
+}
+
+/* ── SMALL PHONES (≤ 480px) ─────────────────────────────────────────────── */
+@media (max-width: 480px) {
+  /* Nav: tighter */
+  .lp .nav-inner { height: 56px; }
+  .lp .btn { padding: 7px 12px; font-size: 12px; }
+
+  /* Hero stats: single column */
+  .lp .hero-foot { grid-template-columns: 1fr; row-gap: 0; }
+  .lp .hero-foot .item { border-left: 0; padding-left: 0; border-top: 1px solid var(--line); padding-top: 14px; padding-bottom: 14px; }
+  .lp .hero-foot .item:first-child { border-top: 0; padding-top: 0; }
+
+  /* Footer: full single column */
+  .lp .foot-top { grid-template-columns: 1fr; }
+  .lp .foot-bot { font-size: 10px; }
+
+  /* Tiles: reduce padding */
+  .lp .tile { padding: 20px; min-height: auto; }
+
+  /* Roadmap: tighten */
+  .lp .road-col { padding: 20px 0; }
+
+  /* Steps: smaller number */
+  .lp .step .n { font-size: 32px; }
+}
