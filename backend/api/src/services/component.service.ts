@@ -130,6 +130,7 @@ export interface AffectedComponent {
     on_chain_id:  string | null;
     tx_hash:      string | null;
     depth:        number;       // hops from the defective root
+    parentId:     string;       // direct parent in the BFS traversal
 }
 
 export async function recallComponent(rootId: string): Promise<{
@@ -147,7 +148,6 @@ export async function recallComponent(rootId: string): Promise<{
     while (queue.length > 0) {
         const { id: currentId, depth } = queue.shift()!;
 
-        // fetch all children where current is the parent
         const childLinks = await prisma.componentLink.findMany({
             where:   { parent_id: currentId },
             include: { child: true },
@@ -165,6 +165,7 @@ export async function recallComponent(rootId: string): Promise<{
                 on_chain_id: link.child.on_chain_id?.toString() ?? null,
                 tx_hash:     link.child.tx_hash,
                 depth:       depth + 1,
+                parentId:    currentId,
             });
 
             queue.push({ id: link.child_id, depth: depth + 1 });
@@ -194,7 +195,9 @@ export interface TraceNode {
 
 export async function traceComponent(
     componentDbId: string,
-    visited = new Set<string>()
+    visited     = new Set<string>(),
+    maxDepth    = 10,
+    currentDepth = 0,
 ): Promise<TraceNode> {
     if (visited.has(componentDbId)) {
         throw new Error(`Cycle detected at component: ${componentDbId}`);
@@ -204,13 +207,28 @@ export async function traceComponent(
     const component = await prisma.component.findUnique({ where: { id: componentDbId } });
     if (!component) throw new Error(`Component not found: ${componentDbId}`);
 
+    // Stop recursing at max depth — return node with no parents shown
+    if (currentDepth >= maxDepth) {
+        return {
+            id:           component.id,
+            name:         component.name,
+            type:         component.type,
+            supplier:     component.supplier,
+            on_chain_id:  component.on_chain_id?.toString() ?? null,
+            metadata_uri: component.metadata_uri,
+            tx_hash:      component.tx_hash,
+            created_at:   component.created_at,
+            parents:      [],
+        };
+    }
+
     const parentLinks = await prisma.componentLink.findMany({
         where:   { child_id: componentDbId },
         include: { parent: true },
     });
 
     const parents = await Promise.all(
-        parentLinks.map((link) => traceComponent(link.parent_id, new Set(visited)))
+        parentLinks.map((link) => traceComponent(link.parent_id, new Set(visited), maxDepth, currentDepth + 1))
     );
 
     return {

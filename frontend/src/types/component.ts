@@ -111,6 +111,7 @@ export interface AffectedComponent {
   on_chain_id: string | null;
   tx_hash: string | null;
   depth: number;
+  parentId: string;
 }
 
 export interface GetAffectedResponse {

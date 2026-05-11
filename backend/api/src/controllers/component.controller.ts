@@ -179,11 +179,12 @@ export async function getRiskHandler(req: Request, res: Response) {
 // ─── GET /components/:id/trace ───────────────────────────────────────────────
 
 export async function getTraceHandler(req: Request, res: Response) {
-    const id     = req.params["id"] as string;
-    const userId = req.user?.userId;
+    const id       = req.params["id"] as string;
+    const userId   = req.user?.userId;
+    const maxDepth = Math.min(Math.max(Number(req.query["depth"] ?? 10), 1), 15);
 
     try {
-        const tree = await traceComponent(id);
+        const tree = await traceComponent(id, new Set(), maxDepth);
 
         // Log trace operation as a ComponentEvent so it counts toward
         // traces_this_month in the usage dashboard.

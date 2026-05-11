@@ -44,8 +44,10 @@ export async function getComponentChildren(id: string): Promise<GetChildrenRespo
   return res.data;
 }
 
-export async function getComponentTrace(id: string): Promise<GetTraceResponse> {
-  const res = await client.get<GetTraceResponse>(`/components/${id}/trace`);
+export async function getComponentTrace(id: string, depth?: number): Promise<GetTraceResponse> {
+  const res = await client.get<GetTraceResponse>(`/components/${id}/trace`, {
+    params: depth !== undefined ? { depth } : {},
+  });
   return res.data;
 }
 

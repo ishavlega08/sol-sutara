@@ -106,67 +106,66 @@ export default function DashboardPage() {
     ];
 
     return (
-        <div className="h-full overflow-y-auto bg-gray-50 dark:bg-gray-950">
-            <div className="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8">
+        <div className="h-full overflow-hidden bg-gray-50 dark:bg-gray-950 flex flex-col">
+            <div className="flex flex-1 min-h-0 flex-col mx-auto w-full max-w-7xl px-4 pt-6 pb-4 sm:px-6 lg:px-8">
 
-                <PageHeader
-                    title={`${greeting}`}
-                    subtitle={
-                        <span>
-                            {org?.name && <strong className="text-gray-800 dark:text-gray-200">{org.name}</strong>}
+                {/* Header row */}
+                <div className="flex-shrink-0 mb-1 flex items-center justify-between">
+                    <div>
+                        <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">{greeting}</h1>
+                        <p className="mt-0.5 text-sm text-gray-400 dark:text-gray-500">
+                            {org?.name && <strong className="text-gray-700 dark:text-gray-300">{org.name}</strong>}
                             {org?.name && " · "}
                             {firstName}
-                        </span>
-                    }
-                    actions={
-                        <button onClick={load} disabled={loading}
-                            className="rounded-md p-1.5 text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 transition">
-                            <RefreshCw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} />
-                        </button>
-                    }
-                />
+                        </p>
+                    </div>
+                    <button onClick={load} disabled={loading}
+                        className="rounded-md p-1.5 text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 transition">
+                        <RefreshCw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} />
+                    </button>
+                </div>
 
                 {error && (
-                    <div className="mb-4 rounded-lg border border-red-200 dark:border-red-900 bg-red-50 dark:bg-red-950 px-4 py-3 text-sm text-red-600 dark:text-red-400">
+                    <div className="flex-shrink-0 mt-2 rounded-lg border border-red-200 dark:border-red-900 bg-red-50 dark:bg-red-950 px-4 py-3 text-sm text-red-600 dark:text-red-400">
                         {error} —{" "}
                         <button onClick={load} className="underline underline-offset-2">Retry</button>
                     </div>
                 )}
 
                 {/* ── Stat cards ── */}
-                <div className="mb-8 grid grid-cols-2 gap-4 lg:grid-cols-4">
+                <div className="flex-shrink-0 mt-4 mb-4 grid grid-cols-2 gap-3 lg:grid-cols-4">
                     {statCards.map((card) => (
                         <StatCard key={card.label} {...card} loading={loading} />
                     ))}
                 </div>
 
-                <div className="grid grid-cols-1 gap-6 lg:grid-cols-5">
+                {/* ── Main content — fills remaining height, no scroll ── */}
+                <div className="flex-1 min-h-0 grid grid-cols-1 gap-4 lg:grid-cols-5">
 
-                    {/* ── Recent activity ── */}
-                    <div className="lg:col-span-3">
-                        <div className="rounded-xl border border-gray-100 dark:border-gray-800 bg-white dark:bg-gray-900 overflow-hidden">
-                            <div className="flex items-center justify-between border-b border-gray-100 dark:border-gray-800 px-4 py-3">
+                    {/* Recent activity — takes full remaining height, clips overflow */}
+                    <div className="lg:col-span-3 flex flex-col min-h-0">
+                        <div className="flex flex-col h-full rounded-xl border border-gray-100 dark:border-gray-800 bg-white dark:bg-gray-900 overflow-hidden">
+                            <div className="flex-shrink-0 flex items-center justify-between border-b border-gray-100 dark:border-gray-800 px-4 py-3">
                                 <div className="flex items-center gap-2">
                                     <Activity className="h-3.5 w-3.5 text-gray-400" />
                                     <span className="text-xs font-semibold uppercase tracking-widest text-gray-400">Recent activity</span>
                                 </div>
                             </div>
 
-                            {loading ? (
-                                <div className="divide-y divide-gray-50 dark:divide-gray-800">
-                                    {Array.from({ length: 5 }).map((_, i) => (
+                            {/* Items fill available height — overflow hidden so they clip, never scroll */}
+                            <div className="flex-1 min-h-0 overflow-hidden divide-y divide-gray-50 dark:divide-gray-800">
+                                {loading ? (
+                                    Array.from({ length: 6 }).map((_, i) => (
                                         <div key={i} className="flex items-center gap-3 px-4 py-3">
                                             <Skeleton className="h-7 w-7 rounded-lg flex-shrink-0" />
                                             <div className="flex-1 space-y-1.5">
                                                 <Skeleton className="h-3 w-48" />
-                                                <Skeleton className="h-2.5 w-16" />
                                             </div>
+                                            <Skeleton className="h-2.5 w-10 flex-shrink-0" />
                                         </div>
-                                    ))}
-                                </div>
-                            ) : stats?.recentActivity?.length ? (
-                                <div className="divide-y divide-gray-50 dark:divide-gray-800">
-                                    {stats.recentActivity.map((item) => (
+                                    ))
+                                ) : stats?.recentActivity?.length ? (
+                                    stats.recentActivity.map((item) => (
                                         <div key={item.id} className="flex items-center gap-3 px-4 py-3 hover:bg-gray-50 dark:hover:bg-gray-800/50 transition">
                                             <span className={`flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-lg ${
                                                 item.type === "CREATE"
@@ -175,36 +174,34 @@ export default function DashboardPage() {
                                             }`}>
                                                 {item.type === "CREATE"
                                                     ? <Package className="h-3.5 w-3.5 text-violet-500" />
-                                                    : <Link2  className="h-3.5 w-3.5 text-blue-500" />
+                                                    : <Link2   className="h-3.5 w-3.5 text-blue-500"   />
                                                 }
                                             </span>
-                                            <div className="flex-1 min-w-0">
-                                                <p className="text-sm text-gray-700 dark:text-gray-300 truncate">{item.label}</p>
-                                            </div>
+                                            <p className="flex-1 min-w-0 text-sm text-gray-700 dark:text-gray-300 truncate">{item.label}</p>
                                             <span className="flex-shrink-0 text-[11px] tabular-nums text-gray-400">{item.time}</span>
                                         </div>
-                                    ))}
-                                </div>
-                            ) : (
-                                <div className="flex flex-col items-center justify-center py-12 text-center">
-                                    <Activity className="mb-3 h-8 w-8 text-gray-200 dark:text-gray-700" />
-                                    <p className="text-sm font-medium text-gray-400">No activity yet</p>
-                                    <p className="mt-1 text-xs text-gray-300 dark:text-gray-600">Create your first component to get started</p>
-                                    <Link href="/components/create"
-                                        className="mt-4 rounded-lg bg-violet-600 px-3.5 py-2 text-xs font-semibold text-white hover:bg-violet-700 transition">
-                                        Create component →
-                                    </Link>
-                                </div>
-                            )}
+                                    ))
+                                ) : (
+                                    <div className="flex h-full flex-col items-center justify-center py-8 text-center">
+                                        <Activity className="mb-3 h-8 w-8 text-gray-200 dark:text-gray-700" />
+                                        <p className="text-sm font-medium text-gray-400">No activity yet</p>
+                                        <p className="mt-1 text-xs text-gray-300 dark:text-gray-600">Create your first component to get started</p>
+                                        <Link href="/components/create"
+                                            className="mt-4 rounded-lg bg-violet-600 px-3.5 py-2 text-xs font-semibold text-white hover:bg-violet-700 transition">
+                                            Create component →
+                                        </Link>
+                                    </div>
+                                )}
+                            </div>
                         </div>
                     </div>
 
-                    {/* ── Right column ── */}
-                    <div className="lg:col-span-2 space-y-6">
+                    {/* ── Right column — flex so each section shares height ── */}
+                    <div className="lg:col-span-2 flex flex-col gap-4 min-h-0">
 
-                        {/* Recent links */}
-                        <div className="rounded-xl border border-gray-100 dark:border-gray-800 bg-white dark:bg-gray-900 overflow-hidden">
-                            <div className="flex items-center justify-between border-b border-gray-100 dark:border-gray-800 px-4 py-3">
+                        {/* Recent links — grows to fill available space, clips overflow */}
+                        <div className="flex flex-col flex-1 min-h-0 rounded-xl border border-gray-100 dark:border-gray-800 bg-white dark:bg-gray-900 overflow-hidden">
+                            <div className="flex-shrink-0 flex items-center justify-between border-b border-gray-100 dark:border-gray-800 px-4 py-3">
                                 <div className="flex items-center gap-2">
                                     <Link2 className="h-3.5 w-3.5 text-gray-400" />
                                     <span className="text-xs font-semibold uppercase tracking-widest text-gray-400">Recent links</span>
@@ -214,18 +211,16 @@ export default function DashboardPage() {
                                 </Link>
                             </div>
 
-                            {loading ? (
-                                <div className="divide-y divide-gray-50 dark:divide-gray-800">
-                                    {Array.from({ length: 4 }).map((_, i) => (
+                            <div className="flex-1 min-h-0 overflow-hidden divide-y divide-gray-50 dark:divide-gray-800">
+                                {loading ? (
+                                    Array.from({ length: 4 }).map((_, i) => (
                                         <div key={i} className="px-4 py-3 space-y-1.5">
                                             <Skeleton className="h-3 w-full" />
                                             <Skeleton className="h-2.5 w-20" />
                                         </div>
-                                    ))}
-                                </div>
-                            ) : recentLinks.length ? (
-                                <div className="divide-y divide-gray-50 dark:divide-gray-800">
-                                    {recentLinks.slice(0, 5).map((link) => (
+                                    ))
+                                ) : recentLinks.length ? (
+                                    recentLinks.map((link) => (
                                         <div key={link.id} className="px-4 py-3 hover:bg-gray-50 dark:hover:bg-gray-800/50 transition">
                                             <p className="text-xs text-gray-700 dark:text-gray-300 truncate">
                                                 <span className="font-medium">{link.parentName}</span>
@@ -234,17 +229,17 @@ export default function DashboardPage() {
                                             </p>
                                             <p className="mt-0.5 text-[10px] text-gray-400 tabular-nums">{link.when}</p>
                                         </div>
-                                    ))}
-                                </div>
-                            ) : (
-                                <div className="px-4 py-8 text-center">
-                                    <p className="text-xs text-gray-400">No links yet</p>
-                                </div>
-                            )}
+                                    ))
+                                ) : (
+                                    <div className="px-4 py-8 text-center">
+                                        <p className="text-xs text-gray-400">No links yet</p>
+                                    </div>
+                                )}
+                            </div>
                         </div>
 
-                        {/* Quick actions */}
-                        <div className="rounded-xl border border-gray-100 dark:border-gray-800 bg-white dark:bg-gray-900 overflow-hidden">
+                        {/* Quick actions — fixed height at bottom */}
+                        <div className="flex-shrink-0 rounded-xl border border-gray-100 dark:border-gray-800 bg-white dark:bg-gray-900 overflow-hidden">
                             <div className="border-b border-gray-100 dark:border-gray-800 px-4 py-3">
                                 <div className="flex items-center gap-2">
                                     <TrendingUp className="h-3.5 w-3.5 text-gray-400" />

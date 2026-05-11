@@ -158,7 +158,7 @@ export default function TracePage() {
       let count = 0;
 
       if (direction === "Upstream") {
-        const traceRes = await getComponentTrace(id);
+        const traceRes = await getComponentTrace(id, depth);
         const flat = flattenTrace(traceRes.trace);
         n = flat.nodes; e = flat.edges; count = flat.count;
 
@@ -170,7 +170,7 @@ export default function TracePage() {
       } else {
         // Both: run upstream + downstream in parallel, merge
         const [traceRes, affRes] = await Promise.all([
-          getComponentTrace(id),
+          getComponentTrace(id, depth),
           getComponentAffected(id),
         ]);
         const upFlat   = flattenTrace(traceRes.trace);
@@ -227,6 +227,25 @@ export default function TracePage() {
   const onNodeClick = useCallback((id: string) => setSelectedId(id), []);
   const selected = selectedId ? nodeInfo[selectedId] : null;
 
+  function handleExport() {
+    if (!ran) return;
+    const payload = {
+      root:      traceRoot,
+      direction,
+      depth,
+      exportedAt: new Date().toISOString(),
+      nodes: nodes.map((n) => ({ id: n.id, label: n.label, type: n.sublabel, tier: n.tier, risk: n.risk })),
+      edges: edges.map((e) => ({ from: e.from, to: e.to })),
+    };
+    const blob = new Blob([JSON.stringify(payload, null, 2)], { type: "application/json" });
+    const url  = URL.createObjectURL(blob);
+    const a    = document.createElement("a");
+    a.href     = url;
+    a.download = `trace-${(traceRoot ?? "export").replace(/\s+/g, "-")}-${Date.now()}.json`;
+    a.click();
+    URL.revokeObjectURL(url);
+  }
+
   return (
     <div className="flex h-full flex-col overflow-hidden bg-white dark:bg-gray-950 lg:flex-row">
 
@@ -250,7 +269,7 @@ export default function TracePage() {
                   </button>
                 ))}
               </div>
-              <ActionButton variant="ghost">
+              <ActionButton variant="ghost" onClick={handleExport} disabled={!ran}>
                 <Download className="h-3.5 w-3.5" />
                 Export
               </ActionButton>
