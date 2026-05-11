@@ -150,23 +150,49 @@ export default function AnalyticsPage() {
             {loading || !timeSeries ? (
               <div className="h-44 animate-pulse rounded bg-gray-100 dark:bg-gray-800" />
             ) : (() => {
-              // Strip leading weeks where nothing was created so the chart
-              // starts from when the first component actually appeared.
               const firstIdx = timeSeries.components.findIndex((v) => v > 0);
               const bars   = firstIdx >= 0 ? timeSeries.components.slice(firstIdx) : timeSeries.components;
               const labels = firstIdx >= 0 ? timeSeries.weeks.slice(firstIdx)      : timeSeries.weeks;
-              return bars.every((v) => v === 0) ? (
+              const total  = bars.reduce((s, v) => s + v, 0);
+              const peak   = Math.max(...bars);
+
+              if (bars.every((v) => v === 0)) return (
                 <div className="flex h-44 items-center justify-center">
                   <p className="text-sm text-gray-400 dark:text-gray-500">No components created yet.</p>
                 </div>
-              ) : (
-                <BarChart
-                  bars={bars}
-                  colorFrom="#10b981"
-                  colorTo="#7c3aed"
-                  xLabels={labels.map((w, i) => i === labels.length - 1 ? "now" : w.slice(5))}
-                  height={176}
-                />
+              );
+
+              // Build x-axis labels: show first, middle, and last only to avoid clutter
+              const xLabels = labels.map((w, i) => {
+                if (i === labels.length - 1) return "now";
+                if (i === 0 || (labels.length > 6 && i === Math.floor(labels.length / 2))) return w.slice(5);
+                return "";
+              });
+
+              return (
+                <div className="space-y-3">
+                  {/* Summary row */}
+                  <div className="flex items-center gap-4 text-xs">
+                    <span className="text-gray-400 dark:text-gray-500">
+                      <span className="font-semibold text-gray-700 dark:text-gray-200 tabular-nums">{total.toLocaleString()}</span>
+                      {" "}total
+                    </span>
+                    <span className="text-gray-400 dark:text-gray-500">
+                      <span className="font-semibold text-gray-700 dark:text-gray-200 tabular-nums">{peak.toLocaleString()}</span>
+                      {" "}peak week
+                    </span>
+                    <span className="text-gray-400 dark:text-gray-500">
+                      {labels[0]} → now
+                    </span>
+                  </div>
+                  <BarChart
+                    bars={bars}
+                    colorFrom="#10b981"
+                    colorTo="#7c3aed"
+                    xLabels={xLabels}
+                    height={152}
+                  />
+                </div>
               );
             })()}
           </SectionCard>

@@ -20,7 +20,7 @@ export async function getAnalyticsHandler(req: Request, res: Response) {
 export async function getTimeSeriesHandler(req: Request, res: Response) {
     try {
         const orgId = req.user?.orgId;
-        const weeks = Math.min(Number(req.query["weeks"] ?? 14), 52);
+        const weeks = Math.min(Number(req.query["weeks"] ?? 14), 156);
         const timeSeries = await getTimeSeries(orgId, weeks);
         return res.status(200).json({ success: true, timeSeries });
     } catch (err) {

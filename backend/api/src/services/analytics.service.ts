@@ -22,7 +22,8 @@ export async function getTimeSeries(orgId?: string, weeks = 14): Promise<TimeSer
     for (let i = 0; i < weeks; i++) {
         const start = new Date(cursor);
         cursor.setDate(cursor.getDate() + 7);
-        const end = new Date(cursor);
+        // Last bucket: extend end to now so components created this week are included
+        const end = i === weeks - 1 ? new Date() : new Date(cursor);
         buckets.push({ start, end, label: start.toISOString().slice(0, 10) });
     }
 
