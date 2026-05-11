@@ -5,7 +5,7 @@ import { useRouter, usePathname } from "next/navigation";
 import {
     LayoutDashboard, Boxes, Link2, GitMerge, AlertOctagon,
     BarChart2, CreditCard, FileText, Building2, Users, Key,
-    ChevronDown, Moon, Sun, X, LogOut, Truck, Bell, Webhook, Lock,
+    Moon, Sun, X, LogOut, Truck, Bell, Webhook, Lock,
 } from "lucide-react";
 import { useTheme } from "@/context/ThemeContext";
 import { useAuth } from "@/context/AuthContext";
@@ -140,7 +140,6 @@ function SidebarContent({ pathname, onClose }: { pathname: string; onClose?: () 
                         {org ? `org:${org.id.slice(0, 8)}…` : "Set up in settings →"}
                     </p>
                 </div>
-                <ChevronDown className="h-3.5 w-3.5 flex-shrink-0 text-gray-400 dark:text-gray-600" />
                 {onClose && (
                     <button onClick={onClose} className="ml-1 rounded-md p-1 text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800">
                         <X className="h-4 w-4" />

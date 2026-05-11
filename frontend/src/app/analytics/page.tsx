@@ -71,8 +71,9 @@ export default function AnalyticsPage() {
   useEffect(() => {
     setLoading(true);
     setError(null);
-    const apiPeriod = period === "All" ? "all" : period.toLowerCase();
-    Promise.allSettled([getAnalytics(apiPeriod), getTimeSeries(14)]).then(([analyticsRes, tsRes]) => {
+    const apiPeriod  = period === "All" ? "all" : period.toLowerCase();
+    const tsWeeks    = period === "7d" ? 8 : period === "30d" ? 16 : period === "90d" ? 20 : 52;
+    Promise.allSettled([getAnalytics(apiPeriod), getTimeSeries(tsWeeks)]).then(([analyticsRes, tsRes]) => {
       if (analyticsRes.status === "fulfilled") setData(analyticsRes.value.analytics);
       else setError("Failed to load analytics");
       if (tsRes.status === "fulfilled") setTimeSeries(tsRes.value.timeSeries);
@@ -147,6 +148,10 @@ export default function AnalyticsPage() {
           <SectionCard title="Growth · components created">
             {loading || !timeSeries ? (
               <div className="h-44 animate-pulse rounded bg-gray-100 dark:bg-gray-800" />
+            ) : timeSeries.components.every((v) => v === 0) ? (
+              <div className="flex h-44 items-center justify-center">
+                <p className="text-sm text-gray-400 dark:text-gray-500">No components created in this period.</p>
+              </div>
             ) : (
               <BarChart
                 bars={timeSeries.components}

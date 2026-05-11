@@ -184,13 +184,13 @@ export default function RecallPage() {
   const onNodeClick = useCallback(() => {}, []);
 
   return (
-    <div className="flex h-full flex-col overflow-hidden lg:flex-row">
+    <div className="flex h-full flex-col overflow-hidden bg-white dark:bg-gray-950 lg:flex-row">
 
       {/* Graph area */}
       <div className="flex flex-1 flex-col overflow-hidden">
 
         {/* Header */}
-        <div className="flex-shrink-0 border-b border-gray-100 dark:border-gray-800 px-4 py-4 sm:px-6">
+        <div className="flex-shrink-0 border-b border-gray-100 dark:border-gray-800 bg-white dark:bg-gray-950 px-4 py-4 sm:px-6">
           <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
             <div>
               <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">Recall simulation</h1>
@@ -256,15 +256,15 @@ export default function RecallPage() {
         </div>
 
         {/* Graph */}
-        <div className="relative flex-1">
+        <div className="relative flex-1 bg-white dark:bg-gray-950">
           {!active && !loading && (
             <div className="flex h-full items-center justify-center">
-              <p className="text-sm text-gray-400">Search a component and click &quot;Trigger recall&quot; to see its blast radius.</p>
+              <p className="text-sm text-gray-400 dark:text-gray-500">Search a component and click &quot;Trigger recall&quot; to see its blast radius.</p>
             </div>
           )}
           {loading && (
             <div className="flex h-full items-center justify-center">
-              <p className="animate-pulse text-sm text-gray-400">Computing blast radius…</p>
+              <p className="animate-pulse text-sm text-gray-400 dark:text-gray-500">Computing blast radius…</p>
             </div>
           )}
           {active && !loading && (

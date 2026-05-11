@@ -228,13 +228,13 @@ export default function TracePage() {
   const selected = selectedId ? nodeInfo[selectedId] : null;
 
   return (
-    <div className="flex h-full flex-col overflow-hidden lg:flex-row">
+    <div className="flex h-full flex-col overflow-hidden bg-white dark:bg-gray-950 lg:flex-row">
 
       {/* Graph area */}
       <div className="flex flex-1 flex-col overflow-hidden">
 
         {/* Header */}
-        <div className="flex-shrink-0 border-b border-gray-100 dark:border-gray-800 px-4 py-4 sm:px-6">
+        <div className="flex-shrink-0 border-b border-gray-100 dark:border-gray-800 bg-white dark:bg-gray-950 px-4 py-4 sm:px-6">
           <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
             <div>
               <h1 className="text-xl font-semibold text-gray-900 dark:text-gray-100">Trace</h1>
@@ -305,15 +305,15 @@ export default function TracePage() {
         </div>
 
         {/* Graph */}
-        <div className="relative flex-1">
+        <div className="relative flex-1 bg-white dark:bg-gray-950">
           {!ran && !loading && (
             <div className="flex h-full items-center justify-center">
-              <p className="text-sm text-gray-400">Search a component and click &quot;Run trace&quot; to visualize its lineage.</p>
+              <p className="text-sm text-gray-400 dark:text-gray-500">Search a component and click &quot;Run trace&quot; to visualize its lineage.</p>
             </div>
           )}
           {loading && (
             <div className="flex h-full items-center justify-center">
-              <p className="text-sm text-gray-400 animate-pulse">Tracing lineage…</p>
+              <p className="text-sm text-gray-400 dark:text-gray-500 animate-pulse">Tracing lineage…</p>
             </div>
           )}
           {ran && !loading && (

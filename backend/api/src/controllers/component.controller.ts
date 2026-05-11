@@ -10,6 +10,7 @@ import {
     recallComponent,
 } from "../services/component.service";
 import { scoreComponent } from "../services/risk.service";
+import { prisma } from "../lib/prisma";
 
 // ─── GET /components/:id ─────────────────────────────────────────────────────
 
@@ -178,10 +179,25 @@ export async function getRiskHandler(req: Request, res: Response) {
 // ─── GET /components/:id/trace ───────────────────────────────────────────────
 
 export async function getTraceHandler(req: Request, res: Response) {
-    const id = req.params["id"] as string;
+    const id     = req.params["id"] as string;
+    const userId = req.user?.userId;
 
     try {
         const tree = await traceComponent(id);
+
+        // Log trace operation as a ComponentEvent so it counts toward
+        // traces_this_month in the usage dashboard.
+        if (userId) {
+            prisma.componentEvent.create({
+                data: {
+                    component_id: id,
+                    to_status:    "CREATED",  // no status change — just logging the read
+                    changed_by:   userId,
+                    notes:        "trace_run",
+                },
+            }).catch(() => { /* non-fatal */ });
+        }
+
         return res.status(200).json({ success: true, trace: tree });
     } catch (err: unknown) {
         console.error(err);

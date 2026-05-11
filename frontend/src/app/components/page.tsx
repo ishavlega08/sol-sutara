@@ -28,6 +28,9 @@ import {
   GitBranch,
   X,
   ExternalLink,
+  AlertTriangle,
+  TrendingUp,
+  Layers,
 } from "lucide-react";
 import { getComponents, getBatchRisk, getAllLinks } from "@/lib/api";
 import type { ComponentListItem, ComponentRiskSummary, OrgLink } from "@/types/component";
@@ -367,6 +370,94 @@ export default function ComponentsPage() {
           </div>
         </div>
 
+        {/* Summary bar — shown when there are enough components to need a quick overview */}
+        {!loading && apiComponents.length >= 10 && (() => {
+          const typeCounts = apiComponents.reduce<Record<string, number>>((acc, c) => {
+            acc[c.type] = (acc[c.type] ?? 0) + 1; return acc;
+          }, {});
+          const riskCounts = { HIGH: 0, MEDIUM: 0, LOW: 0 };
+          Object.values(riskMap).forEach((r) => {
+            const lvl = r.level?.toUpperCase() as keyof typeof riskCounts;
+            if (lvl in riskCounts) riskCounts[lvl]++;
+          });
+          const highRisk = riskCounts.HIGH;
+          const recentCount = apiComponents.filter((c) => {
+            const d = new Date(c.created_at);
+            return Date.now() - d.getTime() < 7 * 24 * 60 * 60 * 1000;
+          }).length;
+
+          return (
+            <div className="mb-4 overflow-hidden rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900">
+              <div className="flex flex-wrap items-stretch divide-x divide-gray-100 dark:divide-gray-800">
+
+                {/* Type breakdown */}
+                <div className="flex-1 min-w-[180px] px-4 py-3">
+                  <div className="mb-2 flex items-center gap-1.5">
+                    <Layers className="h-3.5 w-3.5 text-gray-400" />
+                    <p className="text-[10px] font-semibold uppercase tracking-widest text-gray-400">By type</p>
+                  </div>
+                  <div className="flex flex-wrap gap-1.5">
+                    {TYPE_ORDER.filter((t) => typeCounts[t]).map((t) => {
+                      const s = TYPE_STYLE[t] ?? DEFAULT_STYLE;
+                      return (
+                        <span key={t} className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-semibold"
+                          style={{ color: s.dot, background: s.bg, border: `1px solid ${s.border}` }}>
+                          {typeCounts[t]} {t}
+                        </span>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                {/* Risk breakdown */}
+                <div className="flex-shrink-0 px-4 py-3">
+                  <div className="mb-2 flex items-center gap-1.5">
+                    <AlertTriangle className="h-3.5 w-3.5 text-gray-400" />
+                    <p className="text-[10px] font-semibold uppercase tracking-widest text-gray-400">Risk</p>
+                  </div>
+                  <div className="flex items-end gap-3">
+                    {[
+                      { label: "High",   count: riskCounts.HIGH,   color: "text-red-600 dark:text-red-400",    bg: "bg-red-50 dark:bg-red-950/40" },
+                      { label: "Medium", count: riskCounts.MEDIUM, color: "text-amber-600 dark:text-amber-400", bg: "bg-amber-50 dark:bg-amber-950/40" },
+                      { label: "Low",    count: riskCounts.LOW,    color: "text-emerald-600 dark:text-emerald-400", bg: "bg-emerald-50 dark:bg-emerald-950/40" },
+                    ].map(({ label, count, color, bg }) => (
+                      <div key={label} className={`flex flex-col items-center rounded-lg px-3 py-1.5 ${bg}`}>
+                        <span className={`text-lg font-bold tabular-nums leading-none ${color}`}>{count}</span>
+                        <span className="mt-0.5 text-[10px] text-gray-400">{label}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Activity */}
+                <div className="flex-shrink-0 px-4 py-3">
+                  <div className="mb-2 flex items-center gap-1.5">
+                    <TrendingUp className="h-3.5 w-3.5 text-gray-400" />
+                    <p className="text-[10px] font-semibold uppercase tracking-widest text-gray-400">Activity</p>
+                  </div>
+                  <div className="flex flex-col gap-1">
+                    <div className="flex items-baseline gap-1.5">
+                      <span className="text-2xl font-bold tabular-nums text-gray-900 dark:text-gray-100">{apiComponents.length}</span>
+                      <span className="text-xs text-gray-400">total</span>
+                    </div>
+                    {recentCount > 0 && (
+                      <span className="text-[11px] text-emerald-600 dark:text-emerald-400 font-medium">
+                        +{recentCount} this week
+                      </span>
+                    )}
+                    {highRisk > 0 && (
+                      <span className="text-[11px] text-red-500 font-medium">
+                        {highRisk} high-risk
+                      </span>
+                    )}
+                  </div>
+                </div>
+
+              </div>
+            </div>
+          );
+        })()}
+
         {/* Graph view */}
         {viewMode === "graph" && (
           <div className="relative h-[600px] overflow-hidden rounded-lg border border-gray-200 dark:border-gray-700">
@@ -394,12 +485,12 @@ export default function ComponentsPage() {
             {!graphLoading && !graphError && apiComponents.length === 0 && (
               <div className="absolute inset-0 z-20 flex items-center justify-center bg-gray-50 dark:bg-gray-900">
                 <div className="flex flex-col items-center gap-3 text-center">
-                  <div className="flex h-10 w-10 items-center justify-center rounded-full border border-gray-200 bg-gray-50">
+                  <div className="flex h-10 w-10 items-center justify-center rounded-full border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800">
                     <GitBranch className="h-5 w-5 text-gray-400" />
                   </div>
-                  <p className="text-sm font-medium text-gray-700">No components yet</p>
+                  <p className="text-sm font-medium text-gray-700 dark:text-gray-300">No components yet</p>
                   <Link href="/components/create"
-                    className="text-sm font-medium text-gray-500 underline underline-offset-2 hover:text-gray-800">
+                    className="text-sm font-medium text-gray-500 dark:text-gray-400 underline underline-offset-2 hover:text-gray-800 dark:hover:text-gray-200">
                     Create your first component
                   </Link>
                 </div>
@@ -434,17 +525,17 @@ export default function ComponentsPage() {
             </ReactFlow>
 
             {/* Info bar */}
-            <div className="absolute bottom-3 left-3 z-10 rounded-md border border-gray-200 bg-white/90 px-3 py-1.5 text-xs text-gray-500 shadow-sm backdrop-blur-sm">
+            <div className="absolute bottom-3 left-3 z-10 rounded-md border border-gray-200 dark:border-gray-700 bg-white/90 dark:bg-gray-900/90 px-3 py-1.5 text-xs text-gray-500 dark:text-gray-400 shadow-sm backdrop-blur-sm">
               {apiComponents.length} components · {orgLinks.length} link{orgLinks.length !== 1 ? "s" : ""}
             </div>
 
             {/* Selected node detail panel */}
             {selected && (
-              <div className="absolute right-0 top-0 z-10 flex h-full w-64 flex-col border-l border-gray-200 bg-white shadow-lg">
-                <div className="flex items-center justify-between border-b border-gray-100 px-4 py-3">
+              <div className="absolute right-0 top-0 z-10 flex h-full w-64 flex-col border-l border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 shadow-lg">
+                <div className="flex items-center justify-between border-b border-gray-100 dark:border-gray-800 px-4 py-3">
                   <span className="text-xs font-semibold uppercase tracking-wide text-gray-400">Details</span>
                   <button onClick={() => setSelected(null)}
-                    className="rounded-md p-1 text-gray-400 transition hover:bg-gray-100 hover:text-gray-600">
+                    className="rounded-md p-1 text-gray-400 transition hover:bg-gray-100 dark:hover:bg-gray-800 hover:text-gray-600 dark:hover:text-gray-300">
                     <X className="h-4 w-4" />
                   </button>
                 </div>
@@ -457,29 +548,29 @@ export default function ComponentsPage() {
                           style={{ color: s.dot, backgroundColor: s.bg, borderColor: s.border }}>
                           {selected.type}
                         </span>
-                        <h2 className="mt-2 text-sm font-semibold leading-snug text-gray-900">{selected.name}</h2>
-                        <p className="mt-0.5 text-xs text-gray-500">{selected.supplier}</p>
-                        <div className="mt-4 flex flex-col gap-3 border-t border-gray-100 pt-4 text-xs">
+                        <h2 className="mt-2 text-sm font-semibold leading-snug text-gray-900 dark:text-gray-100">{selected.name}</h2>
+                        <p className="mt-0.5 text-xs text-gray-500 dark:text-gray-400">{selected.supplier}</p>
+                        <div className="mt-4 flex flex-col gap-3 border-t border-gray-100 dark:border-gray-800 pt-4 text-xs">
                           {selected.on_chain_address && (
                             <div>
                               <p className="font-semibold uppercase tracking-wide text-gray-400">On-Chain</p>
-                              <p className="mt-0.5 break-all font-mono text-gray-700">{selected.on_chain_address.slice(0, 12)}…</p>
+                              <p className="mt-0.5 break-all font-mono text-gray-700 dark:text-gray-300">{selected.on_chain_address.slice(0, 12)}…</p>
                             </div>
                           )}
                           <div>
                             <p className="font-semibold uppercase tracking-wide text-gray-400">Created</p>
-                            <p className="mt-0.5 text-gray-700">{selected.created_at.slice(0, 10)}</p>
+                            <p className="mt-0.5 text-gray-700 dark:text-gray-300">{selected.created_at.slice(0, 10)}</p>
                           </div>
                         </div>
-                        <div className="mt-4 flex flex-col gap-2 border-t border-gray-100 pt-4">
+                        <div className="mt-4 flex flex-col gap-2 border-t border-gray-100 dark:border-gray-800 pt-4">
                           <a href={`https://explorer.solana.com/tx/${selected.tx_hash}?cluster=devnet`}
                             target="_blank" rel="noopener noreferrer"
-                            className="inline-flex items-center gap-1.5 text-xs text-gray-500 hover:text-gray-800">
+                            className="inline-flex items-center gap-1.5 text-xs text-gray-500 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200">
                             <ExternalLink className="h-3 w-3" />
                             Solana Explorer
                           </a>
                           <Link href={`/components/${selected.id}`}
-                            className="inline-flex items-center gap-1.5 text-xs text-gray-500 hover:text-gray-800">
+                            className="inline-flex items-center gap-1.5 text-xs text-gray-500 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200">
                             <GitBranch className="h-3 w-3" />
                             View component details
                           </Link>

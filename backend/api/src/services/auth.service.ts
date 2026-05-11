@@ -21,14 +21,31 @@ const REFRESH_TTL_MS = 7 * 24 * 60 * 60 * 1000;
 export async function loginWithPrivy(privyToken: string): Promise<LoginResult & { rawRefreshToken: string }> {
     const { privyDid, email, walletAddress } = await verifyPrivyToken(privyToken);
 
-    // Run user upsert and a fresh token in parallel
-    const [user] = await Promise.all([
-        prisma.user.upsert({
+    // If an account with this email already exists under a different privy_did
+    // (e.g. user switched auth method), reuse that record rather than creating
+    // a duplicate. Otherwise upsert by privy_did as normal.
+    let user: Awaited<ReturnType<typeof prisma.user.upsert>>;
+    if (email) {
+        const existing = await prisma.user.findFirst({ where: { email } });
+        if (existing && existing.privy_did !== privyDid) {
+            user = await prisma.user.update({
+                where: { id: existing.id },
+                data:  { privy_did: privyDid, wallet_address: walletAddress ?? undefined },
+            });
+        } else {
+            user = await prisma.user.upsert({
+                where:  { privy_did: privyDid },
+                update: { email, wallet_address: walletAddress ?? undefined },
+                create: { privy_did: privyDid, email, wallet_address: walletAddress },
+            });
+        }
+    } else {
+        user = await prisma.user.upsert({
             where:  { privy_did: privyDid },
-            update: { email: email ?? undefined, wallet_address: walletAddress ?? undefined },
+            update: { wallet_address: walletAddress ?? undefined },
             create: { privy_did: privyDid, email, wallet_address: walletAddress },
-        }),
-    ]);
+        });
+    }
 
     const membership = await prisma.organizationMember.findFirst({
         where:   { user_id: user.id },
