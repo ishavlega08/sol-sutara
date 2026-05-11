@@ -6,14 +6,23 @@ function json429(message: string) {
     };
 }
 
-// Auth endpoints — strictest: 15 attempts per 15 minutes per IP
-// Prevents credential brute-force and token-spray attacks.
+// Login — strict: 10 attempts per 15 min per IP (brute-force / token-spray)
 export const authLimiter = rateLimit({
     windowMs:         15 * 60 * 1000,
-    limit:            15,
+    limit:            10,
     standardHeaders:  "draft-7",
     legacyHeaders:    false,
-    handler:          json429("Too many authentication attempts. Please wait 15 minutes and try again."),
+    handler:          json429("Too many login attempts. Please wait 15 minutes and try again."),
+});
+
+// Refresh — lenient: each page load can legitimately trigger a refresh.
+// 60 per 15 min gives enough headroom for normal navigation without opening brute-force.
+export const refreshLimiter = rateLimit({
+    windowMs:         15 * 60 * 1000,
+    limit:            60,
+    standardHeaders:  "draft-7",
+    legacyHeaders:    false,
+    handler:          json429("Too many session refresh attempts. Please wait and try again."),
 });
 
 // Write endpoints (POST/PATCH/PUT/DELETE on data) — 60 per minute per IP

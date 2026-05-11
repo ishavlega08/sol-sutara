@@ -182,15 +182,25 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             try {
                 const { user: u, org: o, hasOrg: h, role: r } = await apiMe();
                 applySession(u, h, o, r);
-            } catch {
-                // /me failed (401) — access token expired, try full refresh
-                try {
-                    const { user: u, org: o, hasOrg: h, role: r } = await apiRefresh();
-                    applySession(u, h, o, r);
-                } catch {
-                    // Both failed — session is fully expired
-                    clearCache();
-                    setUser(null); setOrg(null); setRole(null); setHasOrg(false);
+            } catch (err: unknown) {
+                // Only try refresh on a real 401 — not on network errors or backend failures.
+                // A network error means the backend is unreachable; calling refresh would just
+                // burn the rate limit and add no value.
+                const status = (err as { response?: { status?: number } })?.response?.status;
+                if (status === 401) {
+                    try {
+                        const { user: u, org: o, hasOrg: h, role: r } = await apiRefresh();
+                        applySession(u, h, o, r);
+                    } catch {
+                        clearCache();
+                        setUser(null); setOrg(null); setRole(null); setHasOrg(false);
+                    }
+                } else {
+                    // Network error or 5xx — don't clear the cache, just stop loading.
+                    // The user may still be authenticated once the backend is reachable.
+                    if (!cachedSession) {
+                        setUser(null); setOrg(null); setRole(null); setHasOrg(false);
+                    }
                 }
             } finally {
                 setIsLoading(false);
