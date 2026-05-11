@@ -1,0 +1,869 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Sol Sutara — Pitch Deck</title>
+  <style>
+    /* === DESIGN TOKENS — Sol Sutara Brand === */
+    :root {
+      --c-bg: #09090b;
+      --c-bg-alt: #111113;
+      --c-bg-card: #18181b;
+      --c-surface: #1c1c22;
+      --c-border: rgba(255,255,255,0.07);
+
+      --c-primary: #7c3aed;
+      --c-primary-light: #8b5cf6;
+      --c-primary-dim: rgba(124,58,237,0.12);
+      --c-accent: #a78bfa;
+      --c-accent-dim: rgba(167,139,250,0.1);
+      --c-danger: #ef4444;
+      --c-danger-dim: rgba(239,68,68,0.1);
+      --c-warning: #f59e0b;
+
+      --c-text: #fafaf9;
+      --c-text-secondary: rgba(250,250,249,0.62);
+      --c-text-muted: rgba(250,250,249,0.35);
+
+      --f-hero: 88px;
+      --f-h1: 56px;
+      --f-h2: 42px;
+      --f-h3: 30px;
+      --f-body: 24px;
+      --f-small: 20px;
+      --f-caption: 12px;
+
+      --font-display: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      --font-mono: 'JetBrains Mono', 'SF Mono', 'Consolas', monospace;
+
+      --s-xs: 8px;
+      --s-sm: 16px;
+      --s-md: 28px;
+      --s-lg: 44px;
+
+      --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+      --duration-enter: 0.55s;
+      --radius: 13px;
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body { height: 100%; overflow: hidden; background: var(--c-bg); color: var(--c-text); font-family: var(--font-display); -webkit-font-smoothing: antialiased; }
+
+    .deck { width: 100vw; height: 100vh; position: relative; overflow: hidden; }
+
+    .slide {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      padding: 68px 92px;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.42s var(--ease-out);
+      background: var(--c-bg);
+    }
+    .slide.bg-alt { background: var(--c-bg-alt); }
+    .slide.active { opacity: 1; pointer-events: auto; }
+
+    .slide.active .animate-in {
+      animation: enterUp var(--duration-enter) var(--ease-out) both;
+    }
+    .slide.active .animate-in:nth-child(1) { animation-delay: 0s; }
+    .slide.active .animate-in:nth-child(2) { animation-delay: 0.07s; }
+    .slide.active .animate-in:nth-child(3) { animation-delay: 0.14s; }
+    .slide.active .animate-in:nth-child(4) { animation-delay: 0.21s; }
+    .slide.active .animate-in:nth-child(5) { animation-delay: 0.28s; }
+    .slide.active .animate-in:nth-child(6) { animation-delay: 0.35s; }
+    .slide.active .animate-in:nth-child(7) { animation-delay: 0.42s; }
+
+    @keyframes enterUp {
+      from { opacity: 0; transform: translateY(18px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    /* === TYPOGRAPHY === */
+    .hero  { font-size: var(--f-hero); font-weight: 900; letter-spacing: -3px; line-height: 1.0; }
+    .h1    { font-size: var(--f-h1);   font-weight: 800; letter-spacing: -1.5px; line-height: 1.1; }
+    .h2    { font-size: var(--f-h2);   font-weight: 700; letter-spacing: -1px;   line-height: 1.2; }
+    .h3    { font-size: var(--f-h3);   font-weight: 600; line-height: 1.3; }
+    .body  { font-size: var(--f-body); font-weight: 400; line-height: 1.55; color: var(--c-text-secondary); }
+    .small { font-size: var(--f-small); font-weight: 400; line-height: 1.5; color: var(--c-text-secondary); }
+    .caption { font-size: var(--f-caption); font-weight: 600; color: var(--c-text-muted); letter-spacing: 2.5px; text-transform: uppercase; }
+    .mono  { font-family: var(--font-mono); }
+
+    .text-primary   { color: var(--c-primary); }
+    .text-accent    { color: var(--c-accent); }
+    .text-muted     { color: var(--c-text-muted); }
+    .text-danger    { color: var(--c-danger); }
+    .text-emphasis  { color: var(--c-primary-light); }
+
+    /* === LAYOUT === */
+    .flex            { display: flex; }
+    .flex-col        { flex-direction: column; }
+    .items-center    { align-items: center; }
+    .items-start     { align-items: flex-start; }
+    .justify-center  { justify-content: center; }
+    .justify-between { justify-content: space-between; }
+    .gap-xs { gap: var(--s-xs); }
+    .gap-sm { gap: var(--s-sm); }
+    .gap-md { gap: var(--s-md); }
+    .gap-lg { gap: var(--s-lg); }
+    .flex-1 { flex: 1; }
+    .w-full { width: 100%; }
+    .text-center { text-align: center; }
+
+    .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+    .grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 18px; }
+
+    /* === COMPONENTS === */
+    .card {
+      background: var(--c-bg-card);
+      border: 1px solid var(--c-border);
+      border-radius: var(--radius);
+      padding: 26px;
+    }
+    .card-glow {
+      background: var(--c-bg-card);
+      border: 1px solid rgba(124,58,237,0.28);
+      border-radius: var(--radius);
+      padding: 26px;
+      box-shadow: 0 0 28px rgba(124,58,237,0.06);
+    }
+    .card-danger {
+      background: var(--c-bg-card);
+      border: 1px solid rgba(239,68,68,0.22);
+      border-radius: var(--radius);
+      padding: 26px;
+    }
+
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      padding: 5px 13px;
+      border-radius: 100px;
+      font-size: 13px;
+      font-weight: 600;
+      letter-spacing: 0.4px;
+    }
+    .badge-primary { background: var(--c-primary-dim); color: var(--c-accent); border: 1px solid rgba(124,58,237,0.22); }
+    .badge-outline { border: 1px solid var(--c-border); color: var(--c-text-secondary); }
+
+    .divider {
+      width: 44px; height: 2px; border-radius: 2px;
+      background: var(--c-primary);
+      opacity: 0.55;
+      margin: 18px 0;
+    }
+
+    .check-row {
+      display: flex;
+      align-items: flex-start;
+      gap: 13px;
+      padding: 11px 0;
+      border-bottom: 1px solid var(--c-border);
+    }
+    .check-row:last-child { border-bottom: none; }
+    .check-icon { color: var(--c-accent); font-size: 17px; flex-shrink: 0; padding-top: 2px; }
+    .cross-icon { color: var(--c-danger); font-size: 17px; flex-shrink: 0; padding-top: 2px; }
+    .check-text { font-size: var(--f-body); color: var(--c-text-secondary); line-height: 1.4; }
+
+    .tag {
+      display: inline-flex;
+      align-items: center;
+      padding: 3px 9px;
+      border-radius: 5px;
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.8px;
+      flex-shrink: 0;
+    }
+    .tag-built   { background: rgba(167,139,250,0.1); color: var(--c-accent); }
+    .tag-planned { background: rgba(255,255,255,0.05); color: var(--c-text-muted); }
+
+    .comparison-table { width: 100%; border-collapse: collapse; }
+    .comparison-table th {
+      text-align: left; padding: 9px 16px;
+      font-size: var(--f-small); color: var(--c-text-muted);
+      border-bottom: 1px solid var(--c-border);
+      font-weight: 600; letter-spacing: 0.4px;
+    }
+    .comparison-table td {
+      padding: 9px 16px;
+      font-size: var(--f-body);
+      border-bottom: 1px solid var(--c-border);
+      color: var(--c-text-secondary);
+    }
+    .comparison-table tr.highlight td {
+      color: var(--c-text);
+      background: var(--c-primary-dim);
+      font-weight: 600;
+    }
+    .comparison-table th:last-child,
+    .comparison-table td:last-child { color: var(--c-accent); }
+    .check  { color: var(--c-accent);     font-weight: 700; }
+    .cross  { color: var(--c-text-muted); opacity: 0.5; }
+    .partial { color: var(--c-warning); }
+
+    /* Slide number indicator */
+    .slide-num {
+      position: absolute;
+      top: 28px; right: 36px;
+      font-size: 12px; color: var(--c-text-muted);
+      font-family: var(--font-mono); letter-spacing: 1px;
+    }
+
+    /* === NAVIGATION === */
+    .nav-bar {
+      position: fixed; bottom: 0; left: 0; right: 0;
+      display: flex; justify-content: space-between; align-items: center;
+      padding: 13px 36px;
+      background: linear-gradient(0deg, rgba(9,9,11,0.97) 0%, transparent 100%);
+      z-index: 100;
+      opacity: 0;
+      transition: opacity 0.28s;
+    }
+    .deck:hover .nav-bar { opacity: 1; }
+    .nav-counter { font-size: 12px; color: var(--c-text-muted); font-family: var(--font-mono); }
+    .nav-progress { flex: 1; max-width: 140px; height: 2px; border-radius: 2px; background: rgba(255,255,255,0.07); margin: 0 18px; }
+    .nav-progress-fill { height: 100%; border-radius: 2px; background: var(--c-primary); transition: width 0.3s var(--ease-out); }
+    .nav-btn {
+      background: none; border: 1px solid var(--c-border); color: var(--c-text-secondary);
+      padding: 6px 13px; border-radius: 7px; cursor: pointer; font-size: 13px;
+      font-family: var(--font-display); transition: border-color 0.18s, color 0.18s;
+    }
+    .nav-btn:hover { border-color: var(--c-primary); color: var(--c-text); }
+
+    /* === PRESENTER NOTES (press N) === */
+    .notes {
+      display: none;
+      position: fixed; bottom: 56px; left: 32px; right: 32px;
+      background: rgba(9,9,11,0.97); border: 1px solid rgba(124,58,237,0.2);
+      border-radius: 10px; padding: 15px 20px;
+      font-size: 14px; color: var(--c-text-secondary); line-height: 1.65;
+      z-index: 200; max-height: 190px; overflow-y: auto;
+    }
+    .notes.visible { display: block; }
+    .notes-label { font-size: 11px; color: var(--c-primary); text-transform: uppercase; letter-spacing: 2px; margin-bottom: 7px; font-weight: 600; }
+
+    /* === PRINT === */
+    @media print {
+      .deck { overflow: visible; }
+      .slide { position: relative; opacity: 1; pointer-events: auto; page-break-after: always; height: 100vh; break-inside: avoid; }
+      .nav-bar, .notes { display: none !important; }
+      .animate-in { animation: none !important; opacity: 1 !important; transform: none !important; }
+    }
+  </style>
+</head>
+<body>
+<div class="deck" id="deck">
+
+  <!-- ══════════════════════════════════════════════
+       SLIDE 01 — TITLE
+  ══════════════════════════════════════════════ -->
+  <div class="slide bg-alt" style="justify-content: center; align-items: flex-start;">
+    <div class="slide-num">01 / 10</div>
+
+    <div class="animate-in" style="margin-bottom: 18px;">
+      <span class="caption" style="color: var(--c-primary); letter-spacing: 3px;">SOL SUTARA</span>
+    </div>
+
+    <h1 class="hero animate-in" style="max-width: 940px; line-height: 1.02;">
+      Supply chain recalls<br>
+      <span class="text-emphasis">take weeks.</span><br>
+      Ours take seconds.
+    </h1>
+
+    <p class="body animate-in" style="margin-top: 28px; max-width: 680px; font-size: 25px; line-height: 1.6;">
+      A shared, verifiable component graph on Solana — so manufacturers
+      can trace a defective part across every org, every tier, in real time.
+    </p>
+
+    <div class="animate-in" style="margin-top: 40px; display: flex; gap: 11px; align-items: center; flex-wrap: wrap;">
+      <span class="badge badge-primary">Supply Chain Infrastructure</span>
+      <span class="badge badge-outline">Colosseum Frontier 2026</span>
+      <span class="badge badge-outline" style="font-family: var(--font-mono); font-size: 11px; letter-spacing: 0.3px;">Solana Devnet</span>
+    </div>
+
+    <div class="notes">
+      <div class="notes-label">Speaking Notes — Slide 01</div>
+      Open with the bar test: "A car company finds out a battery component is defective. Today, figuring out which cars are affected takes weeks — data is scattered across suppliers, spreadsheets, different systems. Sol Sutara turns the entire supply chain into a live connected map. Trace the blast radius in seconds, not weeks." Don't over-explain. Hook them with the image, move immediately to the problem.
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════════════
+       SLIDE 02 — PROBLEM
+  ══════════════════════════════════════════════ -->
+  <div class="slide">
+    <div class="slide-num">02 / 10</div>
+    <span class="caption animate-in">THE PROBLEM</span>
+
+    <h1 class="h1 animate-in" style="margin-top: 14px; max-width: 880px;">
+      A defective part ships. Nobody knows<br>
+      <span class="text-emphasis">how far it spread.</span>
+    </h1>
+
+    <div class="divider animate-in"></div>
+
+    <div class="grid-3 animate-in" style="margin-top: 10px;">
+      <div class="card-danger">
+        <p class="caption" style="color: var(--c-danger);">FRAGMENTED DATA</p>
+        <p class="h3" style="margin-top: 14px; line-height: 1.3;">Supplier records locked in ERPs, spreadsheets, email chains</p>
+        <p class="small" style="margin-top: 11px;">No single source of truth across org boundaries. Nobody sees the full picture. Nobody owns the shared map.</p>
+      </div>
+      <div class="card-danger">
+        <p class="caption" style="color: var(--c-danger);">SLOW &amp; EXPENSIVE</p>
+        <p class="h3" style="margin-top: 14px; line-height: 1.3;">Manual tracing takes weeks — recalls average $400M+ per incident</p>
+        <p class="small" style="margin-top: 11px;">The Takata airbag recall: 100M+ vehicles, 12 years to resolve. The data existed — locked in 40 supplier systems.</p>
+      </div>
+      <div class="card-danger">
+        <p class="caption" style="color: var(--c-danger);">ZERO TRUST</p>
+        <p class="h3" style="margin-top: 14px; line-height: 1.3;">Competitors won't share supply chain data on a system one of them controls</p>
+        <p class="small" style="margin-top: 11px;">Mahindra and Tata both need the shared map. Neither will give the other control of it. This is a coordination problem, not a software problem.</p>
+      </div>
+    </div>
+
+    <div class="notes">
+      <div class="notes-label">Speaking Notes — Slide 02</div>
+      Let this breathe — it's your most important slide after the title. Use the Takata example. "One supplier's defective inflator. 100 million vehicles. 12 years to resolve. Not because the data didn't exist — but because it was locked in 40 different supplier systems with no shared map." The third card (Zero Trust) sets up the blockchain necessity slide perfectly. Pause before advancing.
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════════════
+       SLIDE 03 — WHY NOW
+  ══════════════════════════════════════════════ -->
+  <div class="slide bg-alt">
+    <div class="slide-num">03 / 10</div>
+    <span class="caption animate-in">WHY NOW</span>
+
+    <h1 class="h1 animate-in" style="margin-top: 14px; max-width: 880px;">
+      Compliance became mandatory.<br>
+      <span class="text-emphasis">The last attempt failed.</span>
+    </h1>
+
+    <div class="divider animate-in"></div>
+
+    <div class="grid-3 animate-in" style="margin-top: 12px;">
+      <div class="card">
+        <p class="caption" style="color: var(--c-primary);">REGULATORY MANDATE</p>
+        <p class="h3" style="margin-top: 14px; line-height: 1.3;">EU CBAM · UFLPA · FDA DSCSA</p>
+        <p class="small" style="margin-top: 10px;">Companies must now prove supply chain provenance by law. Compliance budgets are unlocking. The regulator is the forcing function — buyers are demanding proof before regulators catch up.</p>
+      </div>
+      <div class="card">
+        <p class="caption" style="color: var(--c-primary);">THE TRADELEN S LESSON</p>
+        <p class="h3" style="margin-top: 14px; line-height: 1.3;">IBM + Maersk. $500M spent. Shut down 2023.</p>
+        <p class="small" style="margin-top: 10px;">Competitors refused to share data on a Maersk-controlled ledger. Sol Sutara is the same idea — rebuilt on a neutral foundation that no participant controls.</p>
+      </div>
+      <div class="card">
+        <p class="caption" style="color: var(--c-primary);">TECH UNLOCK</p>
+        <p class="h3" style="margin-top: 14px; line-height: 1.3;">Solana · 400ms · $0.0001/tx</p>
+        <p class="small" style="margin-top: 10px;">Per-component on-chain tracking is now economically viable at manufacturing scale. ZK compression makes it even cheaper. A year ago, the unit economics didn't work.</p>
+      </div>
+    </div>
+
+    <div class="notes">
+      <div class="notes-label">Speaking Notes — Slide 03</div>
+      "Three things converged in the last 18 months. First: regulators now require provenance proof. Second: TradeLens proved the demand exists — $500M, Microsoft and Oracle integrations — but one company controlled the ledger, so competitors didn't trust it. Third: Solana now makes per-component on-chain tracking economically viable. These three things created a window." This is Sequoia's most overlooked slide. Don't rush it.
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════════════
+       SLIDE 04 — SOLUTION
+  ══════════════════════════════════════════════ -->
+  <div class="slide">
+    <div class="slide-num">04 / 10</div>
+    <span class="caption animate-in">THE SOLUTION</span>
+
+    <h1 class="h1 animate-in" style="margin-top: 14px; max-width: 880px;">
+      A live component graph across every org.<br>
+      <span class="text-emphasis">Owned by no one.</span>
+    </h1>
+
+    <div class="divider animate-in"></div>
+
+    <div class="grid-3 animate-in" style="margin-top: 12px;">
+      <div class="card-glow">
+        <div style="font-size: 34px; margin-bottom: 14px;">🔗</div>
+        <p class="h3">On-chain Component Graph</p>
+        <p class="small" style="margin-top: 10px;">Every component is a Solana PDA. Every link is an on-chain instruction with a real txHash. Metadata is SHA-256 hashed and pinned to IPFS before the transaction is submitted — so the chain anchors what no one can edit.</p>
+      </div>
+      <div class="card-glow">
+        <div style="font-size: 34px; margin-bottom: 14px;">⚡</div>
+        <p class="h3">Recall Blast Radius</p>
+        <p class="small" style="margin-top: 10px;">Inject a defect. BFS traversal surfaces every downstream component affected — across every org, every tier — in real time. Weeks compressed to seconds.</p>
+      </div>
+      <div class="card-glow">
+        <div style="font-size: 34px; margin-bottom: 14px;">🔐</div>
+        <p class="h3">Tamper-Proof Audit Trail</p>
+        <p class="small" style="margin-top: 10px;">Metadata SHA-256 hashed, pinned to IPFS via Pinata, URI stored on-chain. Nobody can edit history. Any buyer or regulator can verify independently.</p>
+      </div>
+    </div>
+
+    <div class="notes">
+      <div class="notes-label">Speaking Notes — Slide 04</div>
+      Keep this high level. Map each capability back to a problem from slide 2: "Fragmented data → on-chain graph. Slow recall → blast radius in seconds. Zero trust → no admin key." Then pivot: "Let me show you why this only works on a blockchain — and then show you the working product."
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════════════
+       SLIDE 05 — WHY SOLANA (BLOCKCHAIN NECESSITY)
+  ══════════════════════════════════════════════ -->
+  <div class="slide bg-alt">
+    <div class="slide-num">05 / 10</div>
+    <span class="caption animate-in">WHY SOLANA</span>
+
+    <h1 class="h1 animate-in" style="margin-top: 14px; max-width: 900px;">
+      Remove the blockchain. The txHash<br>
+      <span class="text-emphasis">becomes your word against theirs.</span>
+    </h1>
+
+    <div class="divider animate-in"></div>
+
+    <div class="grid-2 animate-in" style="margin-top: 14px;">
+      <div class="card-danger">
+        <p class="caption" style="color: var(--c-danger); margin-bottom: 14px;">WITHOUT BLOCKCHAIN</p>
+        <div class="check-row">
+          <span class="cross-icon">✗</span>
+          <span class="check-text">One company controls the database → competitors refuse to join (TradeLens, 2023)</span>
+        </div>
+        <div class="check-row">
+          <span class="cross-icon">✗</span>
+          <span class="check-text">Audit trail can be altered → buyer and regulator trust breaks entirely</span>
+        </div>
+        <div class="check-row">
+          <span class="cross-icon">✗</span>
+          <span class="check-text">Cross-org writes need bilateral integration contracts → 12-month sales cycle before a single component is tracked</span>
+        </div>
+      </div>
+      <div class="card-glow">
+        <p class="caption" style="color: var(--c-accent); margin-bottom: 14px;">WITH SOLANA</p>
+        <div class="check-row">
+          <span class="check-icon">✓</span>
+          <span class="check-text">Anchor program on Solana Devnet — every component creation and link is a real on-chain transaction, permanently immutable</span>
+        </div>
+        <div class="check-row">
+          <span class="check-icon">✓</span>
+          <span class="check-text">Any participant can verify independently — paste the txHash into Solana Explorer, no intermediary, no API call to us</span>
+        </div>
+        <div class="check-row">
+          <span class="check-icon">✓</span>
+          <span class="check-text">400ms finality · ~$0.0001/tx → per-component tracking at manufacturing scale, economically viable today</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="notes">
+      <div class="notes-label">Speaking Notes — Slide 05</div>
+      Be direct. "If you rip out the blockchain, one company controls the ledger. TradeLens proved that doesn't work. With Solana, the record of what was registered and when lives on a public ledger — no one can edit it after the fact, including us. The txHash is the proof. Anyone can verify it on Solana Explorer right now." If a judge pushes "but does the blockchain matter at the moment of actual recall?" — your honest answer: "The blockchain matters to the buyer downstream demanding provenance proof before they pay. We're building for that buyer first. The regulator audit trail follows."
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════════════
+       SLIDE 06 — PRODUCT / LIVE DEMO
+  ══════════════════════════════════════════════ -->
+  <div class="slide">
+    <div class="slide-num">06 / 10</div>
+    <span class="caption animate-in">LIVE DEMO</span>
+
+    <h1 class="h1 animate-in" style="margin-top: 14px; max-width: 880px;">
+      Real on-chain transactions.<br>
+      <span class="text-emphasis">Real supply chain graph.</span>
+    </h1>
+
+    <div class="divider animate-in"></div>
+
+    <div class="grid-2 animate-in" style="margin-top: 14px; align-items: start;">
+      <!-- Demo flow steps -->
+      <div class="card" style="padding: 26px;">
+        <p class="caption" style="color: var(--c-primary); margin-bottom: 14px;">DEMO FLOW</p>
+        <div class="check-row">
+          <span style="color: var(--c-primary); font-weight: 800; font-size: 15px; width: 22px; flex-shrink: 0; padding-top: 3px;">01</span>
+          <span class="check-text">Org A creates battery component → real <span class="mono" style="font-size: 18px; color: var(--c-accent);">create_component</span> tx on devnet, live txHash</span>
+        </div>
+        <div class="check-row">
+          <span style="color: var(--c-primary); font-weight: 800; font-size: 15px; width: 22px; flex-shrink: 0; padding-top: 3px;">02</span>
+          <span class="check-text">Link to a second component → real <span class="mono" style="font-size: 18px; color: var(--c-accent);">link_components</span> tx on devnet, live txHash</span>
+        </div>
+        <div class="check-row">
+          <span style="color: var(--c-primary); font-weight: 800; font-size: 15px; width: 22px; flex-shrink: 0; padding-top: 3px;">03</span>
+          <span class="check-text">Defect injected at root component</span>
+        </div>
+        <div class="check-row" style="border-bottom: none;">
+          <span style="color: var(--c-primary); font-weight: 800; font-size: 15px; width: 22px; flex-shrink: 0; padding-top: 3px;">04</span>
+          <span class="check-text">Recall blast radius: <span style="color: var(--c-accent); font-weight: 600;">every affected component surfaces in real time</span></span>
+        </div>
+      </div>
+
+      <!-- On-chain proof -->
+      <div style="display: flex; flex-direction: column; gap: 16px;">
+        <div class="card">
+          <p class="caption" style="color: var(--c-text-muted); margin-bottom: 9px;">ANCHOR PROGRAM (DEVNET)</p>
+          <p class="mono" style="font-size: 14px; color: var(--c-accent); word-break: break-all; line-height: 1.55;">3Kzq31P89HkR8SEofcmE8AU52pCdAxyFUwwFFscJHxgm</p>
+        </div>
+        <div class="card">
+          <p class="caption" style="color: var(--c-text-muted); margin-bottom: 9px;">VERIFIABLE ON-CHAIN</p>
+          <div class="check-row">
+            <span class="check-icon">✓</span>
+            <span class="check-text" style="font-size: 20px;">txHash per component create &amp; link</span>
+          </div>
+          <div class="check-row">
+            <span class="check-icon">✓</span>
+            <span class="check-text" style="font-size: 20px;">PDA account: lamports, slot, owner confirmed</span>
+          </div>
+          <div class="check-row" style="border-bottom: none;">
+            <span class="check-icon">✓</span>
+            <span class="check-text" style="font-size: 20px;">IPFS metadata URI stored on-chain, SHA-256 pinned</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="notes">
+      <div class="notes-label">Speaking Notes — Slide 06</div>
+      THIS is the pivot. Say "Let me show you" and do the live demo. Walk through the 4 steps. Show the txHash in Solana Explorer. Show the recall graph lighting up. Key line: "Every component creation and link you see in this UI produced a real Solana transaction. Once it's on-chain, nobody — including us — can alter it." Have a pre-recorded backup if network fails. If time allows, show the risk scoring on a high-connectivity component.
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════════════
+       SLIDE 07 — EXECUTION (TRACTION)
+  ══════════════════════════════════════════════ -->
+  <div class="slide bg-alt">
+    <div class="slide-num">07 / 10</div>
+    <span class="caption animate-in">EXECUTION</span>
+
+    <h1 class="h1 animate-in" style="margin-top: 14px; max-width: 820px;">
+      Full-stack MVP. Every feature<br>
+      <span class="text-emphasis">live on devnet.</span>
+    </h1>
+
+    <div class="divider animate-in"></div>
+
+    <div class="grid-3 animate-in" style="margin-top: 14px;">
+      <div>
+        <p class="caption" style="margin-bottom: 13px; color: var(--c-primary);">ON-CHAIN + STORAGE</p>
+        <div class="check-row">
+          <span class="check-icon">✓</span>
+          <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
+            <span class="check-text">Anchor program deployed, Solana devnet</span>
+            <span class="tag tag-built">Built</span>
+          </div>
+        </div>
+        <div class="check-row">
+          <span class="check-icon">✓</span>
+          <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
+            <span class="check-text">create_component + link_components instructions</span>
+            <span class="tag tag-built">Built</span>
+          </div>
+        </div>
+        <div class="check-row">
+          <span class="check-icon">✓</span>
+          <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
+            <span class="check-text">IPFS metadata via Pinata — SHA-256 hashed, permanent</span>
+            <span class="tag tag-built">Built</span>
+          </div>
+        </div>
+        <div class="check-row">
+          <span class="check-icon">✓</span>
+          <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
+            <span class="check-text">RPC account verification: slot, lamports, owner</span>
+            <span class="tag tag-built">Built</span>
+          </div>
+        </div>
+        <div class="check-row" style="border-bottom: none;">
+          <span class="check-icon">✓</span>
+          <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
+            <span class="check-text">Batch · lot · quantity · expiry tracking per component</span>
+            <span class="tag tag-built">Built</span>
+          </div>
+        </div>
+      </div>
+      <div>
+        <p class="caption" style="margin-bottom: 13px; color: var(--c-primary);">SUPPLY CHAIN INTELLIGENCE</p>
+        <div class="check-row">
+          <span class="check-icon">✓</span>
+          <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
+            <span class="check-text">Recall blast radius — BFS traversal, real time, CSV export</span>
+            <span class="tag tag-built">Built</span>
+          </div>
+        </div>
+        <div class="check-row">
+          <span class="check-icon">✓</span>
+          <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
+            <span class="check-text">Trace lineage — depth-limited DFS, interactive graph, JSON export</span>
+            <span class="tag tag-built">Built</span>
+          </div>
+        </div>
+        <div class="check-row">
+          <span class="check-icon">✓</span>
+          <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
+            <span class="check-text">Risk scoring per component (graph connectivity model)</span>
+            <span class="tag tag-built">Built</span>
+          </div>
+        </div>
+        <div class="check-row">
+          <span class="check-icon">✓</span>
+          <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
+            <span class="check-text">Component lifecycle — 6 status states with full audit event log</span>
+            <span class="tag tag-built">Built</span>
+          </div>
+        </div>
+        <div class="check-row" style="border-bottom: none;">
+          <span class="check-icon">✓</span>
+          <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
+            <span class="check-text">Analytics — weekly timeseries, most-reused, recall impact</span>
+            <span class="tag tag-built">Built</span>
+          </div>
+        </div>
+      </div>
+      <div>
+        <p class="caption" style="margin-bottom: 13px; color: var(--c-primary);">PLATFORM + INTEGRATIONS</p>
+        <div class="check-row">
+          <span class="check-icon">✓</span>
+          <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
+            <span class="check-text">Multi-tenant org isolation · JWT auth · role-based access</span>
+            <span class="tag tag-built">Built</span>
+          </div>
+        </div>
+        <div class="check-row">
+          <span class="check-icon">✓</span>
+          <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
+            <span class="check-text">Suppliers · Shipments · Documents modules</span>
+            <span class="tag tag-built">Built</span>
+          </div>
+        </div>
+        <div class="check-row">
+          <span class="check-icon">✓</span>
+          <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
+            <span class="check-text">Webhooks — event dispatch for external system integration</span>
+            <span class="tag tag-built">Built</span>
+          </div>
+        </div>
+        <div class="check-row">
+          <span class="check-icon">✓</span>
+          <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
+            <span class="check-text">Email notifications</span>
+            <span class="tag tag-built">Built</span>
+          </div>
+        </div>
+        <div class="check-row" style="border-bottom: none;">
+          <span class="check-icon">✓</span>
+          <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
+            <span class="check-text">4-tier billing (Sandbox → Enterprise) · Dodo Payments</span>
+            <span class="tag tag-built">Built</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="notes">
+      <div class="notes-label">Speaking Notes — Slide 07</div>
+      Lead with: "Everything on this slide is live, not planned." For hackathon judges, completeness is a scoring dimension. Most teams demo one flow. Sol Sutara has billing, multi-tenancy, risk scoring, IPFS provenance, and a full recall simulation — all running. The 4-tier billing especially signals this is a product, not a prototype. If asked about mainnet: "Devnet for the hackathon. Mainnet-ready architecture — the only delta is the program address."
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════════════
+       SLIDE 08 — COMPETITION
+  ══════════════════════════════════════════════ -->
+  <div class="slide">
+    <div class="slide-num">08 / 10</div>
+    <span class="caption animate-in">LANDSCAPE</span>
+
+    <h1 class="h1 animate-in" style="margin-top: 14px; max-width: 860px;">
+      Enterprise traceability exists.<br>
+      <span class="text-emphasis">None of it is neutral.</span>
+    </h1>
+
+    <div class="divider animate-in"></div>
+
+    <table class="comparison-table animate-in" style="margin-top: 18px;">
+      <thead>
+        <tr>
+          <th style="width: 230px;">Capability</th>
+          <th>OriginTrail</th>
+          <th>VeChain</th>
+          <th>FarmTrack</th>
+          <th style="color: var(--c-accent);">Sol Sutara</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>Solana-native</td>
+          <td class="cross">✗</td>
+          <td class="cross">✗</td>
+          <td class="check" style="color: var(--c-warning);">✓</td>
+          <td class="check">✓</td>
+        </tr>
+        <tr>
+          <td>Multi-org component graph</td>
+          <td class="partial">~</td>
+          <td class="cross">✗</td>
+          <td class="cross">✗</td>
+          <td class="check">✓</td>
+        </tr>
+        <tr>
+          <td>Recall simulation layer</td>
+          <td class="cross">✗</td>
+          <td class="cross">✗</td>
+          <td class="cross">✗</td>
+          <td class="check">✓</td>
+        </tr>
+        <tr>
+          <td>India / APAC market</td>
+          <td class="cross">✗</td>
+          <td class="cross">✗</td>
+          <td class="cross">✗</td>
+          <td class="check">✓</td>
+        </tr>
+        <tr class="highlight">
+          <td>Neutral ledger (no admin key)</td>
+          <td class="cross">✗</td>
+          <td class="cross">✗</td>
+          <td class="cross">✗</td>
+          <td class="check">✓</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <p class="small animate-in" style="margin-top: 14px; color: var(--c-text-muted); font-size: 17px;">
+      OriginTrail is the strongest rival — 6 years of enterprise sales, Microsoft &amp; Oracle integrations. But Polkadot-based, zero India presence, no recall simulation, no neutral ledger architecture.
+    </p>
+
+    <div class="notes">
+      <div class="notes-label">Speaking Notes — Slide 08</div>
+      Acknowledge OriginTrail's strength — credibility matters. "OriginTrail has real enterprise customers and Microsoft integrations. We respect them. But they're Polkadot-based — not Solana — and have zero India market presence. VeChain focuses on product anti-counterfeiting, not multi-org component graphs. FarmTrack is Solana-native but single-org, agri-only. None of them have a recall simulation layer." The highlighted row — neutral ledger — is the specific insight TradeLens failed to execute. The ~ for OriginTrail on multi-org is honest: they have some capability but with a governance layer that isn't truly neutral.
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════════════
+       SLIDE 09 — ASK + ROADMAP
+  ══════════════════════════════════════════════ -->
+  <div class="slide bg-alt">
+    <div class="slide-num">09 / 10</div>
+    <span class="caption animate-in" style="text-align: center; display: block;">WHAT'S NEXT</span>
+
+    <h1 class="h1 animate-in" style="margin-top: 14px; text-align: center;">
+      Infrastructure for<br>
+      <span class="text-emphasis">supply chain trust on Solana.</span>
+    </h1>
+
+    <div class="divider animate-in" style="margin: 18px auto;"></div>
+
+    <div class="grid-3 animate-in" style="margin-top: 14px;">
+      <div class="card" style="text-align: center;">
+        <p class="caption" style="color: var(--c-text-muted); margin-bottom: 12px;">NOW → Q2 2026</p>
+        <p class="h3" style="color: var(--c-text); margin-bottom: 11px;">First Pilot</p>
+        <p class="small" style="font-size: 18px;">First paying customer — India mid-market auto or export-compliance supplier. 3 orgs, 1,000+ components, real procurement data.</p>
+      </div>
+      <div class="card" style="text-align: center; border-color: rgba(124,58,237,0.3); box-shadow: 0 0 22px rgba(124,58,237,0.07);">
+        <p class="caption" style="color: var(--c-primary); margin-bottom: 12px;">Q3 2026</p>
+        <p class="h3" style="color: var(--c-text); margin-bottom: 11px;">Mainnet</p>
+        <p class="small" style="font-size: 18px;">Program on mainnet. ZK compression for component storage at scale. Compressed NFT component identity. Protocol API open.</p>
+      </div>
+      <div class="card" style="text-align: center;">
+        <p class="caption" style="color: var(--c-text-muted); margin-bottom: 12px;">Q4 2026</p>
+        <p class="h3" style="color: var(--c-text); margin-bottom: 11px;">Protocol Layer</p>
+        <p class="small" style="font-size: 18px;">Supplier reputation PDAs as DeFi credit signals. Maple Finance integration for verified supplier credit. Open developer SDK.</p>
+      </div>
+    </div>
+
+    <div class="animate-in" style="margin-top: 20px; text-align: center;">
+      <p class="small" style="color: var(--c-text-muted); font-size: 17px;">
+        Revenue: Starter · Growth · Enterprise — 4 tiers live with Dodo Payments ·
+        <span style="color: var(--c-primary);">Colosseum Eternal grant application post-hackathon</span>
+      </p>
+    </div>
+
+    <div class="notes">
+      <div class="notes-label">Speaking Notes — Slide 09</div>
+      For hackathon context, the ask has three parts: "First, we want ecosystem introductions — specifically 2-3 warm intros to India Tier-2 auto supplier compliance managers. Second, advisors who've worked on enterprise blockchain onboarding. Third, we're entering Colosseum Eternal the week after this hackathon — a mentor referral from a judge matters." Keep it concrete. The 2026 roadmap item — supplier reputation PDAs as DeFi credit signals — is the long-term protocol vision that connects supply chain infrastructure to DeFi's $8.67B+ RWA TVL on Solana.
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════════════
+       SLIDE 10 — CONTACT
+  ══════════════════════════════════════════════ -->
+  <div class="slide" style="justify-content: center; align-items: center; text-align: center;">
+    <div class="slide-num">10 / 10</div>
+
+    <h1 class="hero text-emphasis animate-in">Sol Sutara</h1>
+
+    <p class="h3 animate-in" style="color: var(--c-text-secondary); margin-top: 20px; max-width: 640px; line-height: 1.4;">
+      The infrastructure layer for supply chain trust on Solana.
+    </p>
+
+    <div class="animate-in" style="margin-top: 44px; display: flex; flex-direction: column; gap: 13px; align-items: center;">
+      <p class="body">Ishav — ishavlega@gmail.com</p>
+      <p class="body">Mridul — mridulyadav3173@gmail.com</p>
+      <p class="body" style="color: var(--c-primary);">solsutara.com</p>
+      <p class="small" style="color: var(--c-text-muted); font-family: var(--font-mono); font-size: 15px; margin-top: 4px;">
+        Program: 3Kzq31P89HkR8SEofcmE8AU52pCdAxyFUwwFFscJHxgm
+      </p>
+    </div>
+
+    <div class="animate-in" style="margin-top: 36px; display: flex; gap: 11px; justify-content: center;">
+      <span class="badge badge-primary">Supply Chain Infrastructure</span>
+      <span class="badge badge-outline">Solana Devnet · Live Demo</span>
+    </div>
+
+    <div class="notes">
+      <div class="notes-label">Speaking Notes — Slide 10</div>
+      End clean. "Sol Sutara — supply chain trust infrastructure on Solana. The program is live at the address on screen. If you want to run a recall simulation right now, the demo link is [URL]." Stop. Don't summarize. Don't say "any questions?" — let it breathe. The last thing judges remember is what you said last. Make it the product name and the one-liner.
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════════════
+       NAVIGATION
+  ══════════════════════════════════════════════ -->
+  <div class="nav-bar">
+    <button class="nav-btn" onclick="prev()">← Prev</button>
+    <span class="nav-counter"><span id="current">1</span> / <span id="total"></span></span>
+    <div class="nav-progress"><div class="nav-progress-fill" id="progress"></div></div>
+    <button class="nav-btn" onclick="next()">Next →</button>
+  </div>
+
+</div>
+
+<script>
+  let current = 0;
+  const slides = document.querySelectorAll('.slide');
+  const total = slides.length;
+  let notesVisible = false;
+
+  document.getElementById('total').textContent = total;
+
+  function show(i) {
+    slides.forEach(s => s.classList.remove('active'));
+    current = Math.max(0, Math.min(i, total - 1));
+    slides[current].classList.add('active');
+    document.getElementById('current').textContent = current + 1;
+    document.getElementById('progress').style.width = ((current + 1) / total * 100) + '%';
+    document.querySelectorAll('.notes').forEach(n => n.classList.remove('visible'));
+    const note = slides[current].querySelector('.notes');
+    if (note && notesVisible) note.classList.add('visible');
+  }
+
+  function next() { show(current + 1); }
+  function prev() { show(current - 1); }
+
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'ArrowRight' || e.key === ' ') { e.preventDefault(); next(); }
+    if (e.key === 'ArrowLeft') { e.preventDefault(); prev(); }
+    if (e.key === 'n' || e.key === 'N') {
+      notesVisible = !notesVisible;
+      document.querySelectorAll('.notes').forEach(n => {
+        n.classList.toggle('visible', notesVisible && n.closest('.slide').classList.contains('active'));
+      });
+    }
+  });
+
+  document.getElementById('deck').addEventListener('click', (e) => {
+    if (e.target.closest('.nav-bar') || e.target.closest('.nav-btn')) return;
+    if (e.clientX > window.innerWidth / 2) next(); else prev();
+  });
+
+  show(0);
+</script>
+</body>
+</html>
