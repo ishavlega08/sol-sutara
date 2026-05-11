@@ -20,4 +20,5 @@ export interface LoginResult {
     };
     hasOrg: boolean;
     org:    { id: string; name: string } | null;
+    role:   string | null;
 }

@@ -40,9 +40,9 @@ export async function loginHandler(req: Request, res: Response) {
     }
 
     try {
-        const { accessToken, rawRefreshToken, user, hasOrg, org } = await loginWithPrivy(privyToken);
+        const { accessToken, rawRefreshToken, user, hasOrg, org, role } = await loginWithPrivy(privyToken);
         setAuthCookies(res, accessToken, rawRefreshToken);
-        return res.status(200).json({ success: true, user, hasOrg, org });
+        return res.status(200).json({ success: true, user, hasOrg, org, role });
     } catch (err: unknown) {
         console.error(err);
         const msg = err instanceof Error ? err.message : "";
@@ -65,9 +65,9 @@ export async function refreshHandler(req: Request, res: Response) {
     }
 
     try {
-        const { accessToken, rawRefreshToken, user, hasOrg, org } = await refreshSession(token);
+        const { accessToken, rawRefreshToken, user, hasOrg, org, role } = await refreshSession(token);
         setAuthCookies(res, accessToken, rawRefreshToken);
-        return res.status(200).json({ success: true, user, hasOrg, org });
+        return res.status(200).json({ success: true, user, hasOrg, org, role });
     } catch (err: unknown) {
         console.error(err);
         clearAuthCookies(res);

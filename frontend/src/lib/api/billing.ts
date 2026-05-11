@@ -2,7 +2,8 @@ import client from "./client";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
-export type OrgPlan = "SANDBOX" | "STARTER" | "GROWTH" | "ENTERPRISE";
+export type OrgPlan        = "SANDBOX" | "STARTER" | "GROWTH" | "ENTERPRISE";
+export type BillingInterval = "monthly" | "annual";
 
 export interface PlanLimits {
     components:       number | null;
@@ -32,9 +33,30 @@ export interface OrgUsage {
     period_end:         string;
 }
 
+export interface Subscription {
+    id:                   string;
+    org_id:               string;
+    dodo_subscription_id: string;
+    plan:                 OrgPlan;
+    billing:              BillingInterval;
+    status:               string;
+    current_period_start: string | null;
+    current_period_end:   string | null;
+}
+
+export interface Invoice {
+    payment_id:  string;
+    amount:      number;
+    currency:    string;
+    status:      string;
+    created_at:  string;
+    description: string | null;
+    payment_link: string | null;
+}
+
 // ─── API calls ────────────────────────────────────────────────────────────────
 
-export async function getOrgPlan(): Promise<{ plan: OrgPlan; limits: PlanLimits }> {
+export async function getOrgPlan(): Promise<{ plan: OrgPlan; limits: PlanLimits; subscription: Subscription | null }> {
     const res = await client.get("/billing/plan");
     return res.data;
 }
@@ -51,5 +73,23 @@ export async function getPlanCatalogue(): Promise<{ plans: PlanCatalogue[] }> {
 
 export async function updateOrgPlan(plan: OrgPlan): Promise<{ plan: OrgPlan }> {
     const res = await client.patch("/billing/plan", { plan });
+    return res.data;
+}
+
+export async function createCheckout(
+    plan:    OrgPlan,
+    billing: BillingInterval,
+): Promise<{ payment_link: string; subscription_id: string }> {
+    const res = await client.post("/billing/checkout", { plan, billing });
+    return res.data;
+}
+
+export async function getSubscription(): Promise<{ subscription: Subscription | null }> {
+    const res = await client.get("/billing/subscription");
+    return res.data;
+}
+
+export async function getInvoices(): Promise<{ invoices: Invoice[] }> {
+    const res = await client.get("/billing/invoices");
     return res.data;
 }

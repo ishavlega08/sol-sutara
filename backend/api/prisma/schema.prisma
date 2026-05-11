@@ -144,6 +144,27 @@ model Organization {
   documents     Document[]
   webhooks      Webhook[]
   notifications Notification[]
+
+  // Billing
+  subscription Subscription?
+}
+
+// ─── Subscription ─────────────────────────────────────────────────────────────
+
+model Subscription {
+  id                   String    @id @default(uuid())
+  org_id               String    @unique
+  dodo_subscription_id String    @unique
+  dodo_customer_id     String?
+  plan                 OrgPlan
+  billing              String    @default("monthly") // monthly | annual
+  status               String    @default("pending") // pending | active | cancelled | past_due | failed
+  current_period_start DateTime?
+  current_period_end   DateTime?
+  created_at           DateTime  @default(now())
+  updated_at           DateTime  @updatedAt
+
+  organization Organization @relation(fields: [org_id], references: [id], onDelete: Cascade)
 }
 
 // ─── OrganizationMember ───────────────────────────────────────────────────────

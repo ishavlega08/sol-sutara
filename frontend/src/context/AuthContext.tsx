@@ -37,7 +37,7 @@ interface AuthState {
     login:             () => void;
     logout:            () => Promise<void>;
     retryAuth:         () => Promise<void>;
-    setSession:        (user: AuthUser, hasOrg: boolean, org: AuthOrg | null) => void;
+    setSession:        (user: AuthUser, hasOrg: boolean, org: AuthOrg | null, role?: string | null) => void;
 }
 
 // ─── Context ──────────────────────────────────────────────────────────────────
@@ -85,8 +85,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             const privyToken = await getAccessToken();
             if (!privyToken) throw new Error("No Privy access token");
 
-            const { user: u, org: o, hasOrg: h } = await apiLogin(privyToken);
-            applySession(u, h, o);
+            const { user: u, org: o, hasOrg: h, role: r } = await apiLogin(privyToken);
+            applySession(u, h, o, r);
         } catch (err) {
             console.error("Auth error:", err);
             setBackendAuthFailed(true);
@@ -100,8 +100,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     useEffect(() => {
         async function restoreSession() {
             try {
-                const { user: u, org: o, hasOrg: h } = await apiRefresh();
-                applySession(u, h, o);
+                const { user: u, org: o, hasOrg: h, role: r } = await apiRefresh();
+                applySession(u, h, o, r);
             } catch {
                 // No valid session — stay logged out
             } finally {
@@ -134,16 +134,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     // ── Helpers ───────────────────────────────────────────────────────────────
 
-    function applySession(u: AuthUser, h: boolean, o: AuthOrg | null) {
+    function applySession(u: AuthUser, h: boolean, o: AuthOrg | null, r?: string | null) {
         setUser(u);
         setHasOrg(h);
         setOrg(o);
+        if (r !== undefined) setRole(r);
     }
 
     const setSession = useCallback(
-        (u: AuthUser, h: boolean, o: AuthOrg | null) => {
-            applySession(u, h, o);
+        (u: AuthUser, h: boolean, o: AuthOrg | null, r?: string | null) => {
+            applySession(u, h, o, r);
         },
+        // eslint-disable-next-line react-hooks/exhaustive-deps
         []
     );
 

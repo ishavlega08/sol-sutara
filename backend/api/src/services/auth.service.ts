@@ -62,6 +62,7 @@ export async function loginWithPrivy(privyToken: string): Promise<LoginResult & 
         },
         hasOrg: !!membership,
         org:    membership ? { id: membership.org_id, name: membership.org.name } : null,
+        role:   membership?.role ?? null,
     };
 }
 
@@ -118,6 +119,7 @@ export async function refreshSession(rawRefreshToken: string): Promise<LoginResu
         },
         hasOrg: !!membership,
         org:    membership ? { id: membership.org_id, name: membership.org.name } : null,
+        role:   membership?.role ?? null,
     };
 }
 

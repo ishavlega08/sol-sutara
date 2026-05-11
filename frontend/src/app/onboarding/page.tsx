@@ -47,11 +47,12 @@ export default function OnboardingPage() {
     // that require an org would fail or leak data.
     async function refreshAndNavigate(orgId: string, orgName: string) {
         try {
-            const { user: u, org: o, hasOrg: h } = await apiRefresh();
-            setSession(u, h, o);
+            const { user: u, org: o, hasOrg: h, role: r } = await apiRefresh();
+            setSession(u, h, o, r);
         } catch {
             // Fallback: use the data we already have from createOrg/joinOrg
-            setSession(user as AuthUser, true, { id: orgId, name: orgName } as AuthOrg);
+            // Creator is always OWNER
+            setSession(user as AuthUser, true, { id: orgId, name: orgName } as AuthOrg, "OWNER");
         }
         router.replace("/components");
     }
