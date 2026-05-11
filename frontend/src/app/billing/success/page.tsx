@@ -5,6 +5,7 @@ import { useSearchParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import { CheckCircle2, Loader2 } from "lucide-react";
 import Logo from "@/components/Logo";
+import { syncPlanFromSubscription } from "@/lib/api/billing";
 
 const PLAN_LABELS: Record<string, string> = {
     STARTER:    "Starter",
@@ -14,12 +15,22 @@ const PLAN_LABELS: Record<string, string> = {
 
 // useSearchParams must live inside a Suspense boundary in Next.js 14+
 function SuccessContent() {
-    const params  = useSearchParams();
-    const router  = useRouter();
-    const plan    = params.get("plan")    ?? "STARTER";
-    const billing = params.get("billing") ?? "monthly";
+    const params         = useSearchParams();
+    const router         = useRouter();
+    const plan           = params.get("plan")            ?? "STARTER";
+    const billing        = params.get("billing")         ?? "monthly";
+    const subscriptionId = params.get("subscription_id") ?? "";
+    const status         = params.get("status")          ?? "";
 
     const [countdown, setCountdown] = useState(5);
+
+    // Sync the plan immediately from Dodo so the DB reflects the purchase
+    // without waiting for the webhook (useful in test mode or webhook delay).
+    useEffect(() => {
+        if (subscriptionId && status === "active") {
+            syncPlanFromSubscription(subscriptionId).catch(() => {/* silent — webhook will cover it */});
+        }
+    }, [subscriptionId, status]);
 
     useEffect(() => {
         if (countdown <= 0) {
@@ -60,7 +71,7 @@ function SuccessContent() {
                     className="flex items-center justify-center gap-2 rounded-xl py-2.5 text-sm font-semibold text-white transition hover:opacity-90"
                     style={{ background: "linear-gradient(135deg, #7c3aed, #6d28d9)" }}
                 >
-                    View billing dashboard
+                    Go to Plans &amp; Usage
                 </Link>
                 <Link
                     href="/components"
@@ -72,7 +83,7 @@ function SuccessContent() {
 
             <p className="mt-5 flex items-center justify-center gap-1.5 text-xs text-gray-400">
                 <Loader2 className="h-3 w-3 animate-spin" />
-                Redirecting to billing in {countdown}s…
+                Redirecting to plans &amp; usage in {countdown}s…
             </p>
         </div>
     );

@@ -16,8 +16,13 @@ export interface PlanLimits {
 }
 
 export interface PlanCatalogue {
-    id:     OrgPlan;
-    limits: PlanLimits;
+    id:            OrgPlan;
+    limits:        PlanLimits;
+    price_monthly: number | null;
+    price_annual:  number | null;
+    badge:         string | null;
+    description:   string;
+    features:      string[];
 }
 
 export interface OrgUsage {
@@ -91,5 +96,10 @@ export async function getSubscription(): Promise<{ subscription: Subscription | 
 
 export async function getInvoices(): Promise<{ invoices: Invoice[] }> {
     const res = await client.get("/billing/invoices");
+    return res.data;
+}
+
+export async function syncPlanFromSubscription(subscriptionId: string): Promise<{ plan: OrgPlan }> {
+    const res = await client.post("/billing/sync", { subscription_id: subscriptionId });
     return res.data;
 }

@@ -52,6 +52,85 @@ export const PLAN_LIMITS: Record<OrgPlan, {
     },
 };
 
+// ─── Plan catalogue — marketing copy + pricing ────────────────────────────────
+// Single source of truth for all plan metadata shown in the UI.
+
+export const PLAN_CATALOGUE: Record<OrgPlan, {
+    price_monthly: number | null;
+    price_annual:  number | null;
+    badge:         string | null;
+    description:   string;
+    features:      string[];
+}> = {
+    SANDBOX: {
+        price_monthly: 0,
+        price_annual:  0,
+        badge:         null,
+        description:   "Explore the graph and test on devnet — no card required.",
+        features: [
+            "Up to 500 components",
+            "3 org members",
+            "2 webhooks",
+            "Devnet only",
+            "Upstream + downstream trace",
+            "Recall simulation",
+            "Shipment & supplier tracking",
+            "Community support",
+        ],
+    },
+    STARTER: {
+        price_monthly: 100,
+        price_annual:  82,
+        badge:         "Recommended",
+        description:   "For small teams ready to go live with real supply chain data on mainnet.",
+        features: [
+            "Up to 5,000 components",
+            "25k writes / mo",
+            "50k traces / mo",
+            "10 org members",
+            "5 webhooks",
+            "Mainnet + Devnet",
+            "Document uploads",
+            "Email notifications",
+            "Email support · 48h SLA",
+        ],
+    },
+    GROWTH: {
+        price_monthly: 250,
+        price_annual:  205,
+        badge:         "Most popular",
+        description:   "For teams scaling operations with high-volume writes and real-time integrations.",
+        features: [
+            "Unlimited components",
+            "500k writes / mo",
+            "250k traces / mo",
+            "25 org members",
+            "20 webhooks",
+            "Mainnet + Devnet",
+            "Document uploads (IPFS)",
+            "Email notifications",
+            "Priority support · 24h SLA",
+        ],
+    },
+    ENTERPRISE: {
+        price_monthly: null,
+        price_annual:  null,
+        badge:         null,
+        description:   "Dedicated infrastructure, SAML SSO, and a named implementation engineer.",
+        features: [
+            "Unlimited writes & traces",
+            "Unlimited members",
+            "Dedicated indexer",
+            "SAML / SSO",
+            "Custom SLA (99.9%+)",
+            "ERP connectors (SAP, NetSuite)",
+            "EU DPP + FSMA 204 exports",
+            "Named implementation engineer",
+            "Slack-based support",
+        ],
+    },
+};
+
 // ─── Get org plan ─────────────────────────────────────────────────────────────
 
 export async function getOrgPlan(orgId: string) {
@@ -102,6 +181,66 @@ export async function getOrgUsage(orgId: string) {
         period_start:       startOfMonth.toISOString(),
         period_end:         now.toISOString(),
     };
+}
+
+// ─── Sync plan from Dodo subscription ────────────────────────────────────────
+// Called from the billing/success return URL after checkout completes.
+// Verifies with Dodo that the subscription is active and belongs to this org,
+// then writes the plan to the DB without waiting for the webhook.
+
+export async function syncPlanFromSubscription(orgId: string, subscriptionId: string) {
+    const sub = await getDodoClient().subscriptions.retrieve(subscriptionId);
+
+    // Verify the subscription belongs to this org
+    const meta = (sub as unknown as { metadata?: Record<string, string> }).metadata ?? {};
+    if (meta.org_id && meta.org_id !== orgId) {
+        throw new Error("Subscription does not belong to this organization");
+    }
+
+    const plan = (meta.plan ?? "") as OrgPlan;
+    if (!plan || !["STARTER", "GROWTH"].includes(plan)) {
+        throw new Error("Invalid or missing plan in subscription metadata");
+    }
+
+    const status     = (sub as unknown as { status: string }).status;
+    const periodStart = (sub as unknown as { current_period_start?: string }).current_period_start;
+    const periodEnd   = (sub as unknown as { current_period_end?: string }).current_period_end;
+    const customerId  = (sub as unknown as { customer_id?: string }).customer_id;
+
+    if (status !== "active") {
+        throw new Error(`Subscription is not active (status: ${status})`);
+    }
+
+    await Promise.all([
+        prisma.organization.update({
+            where: { id: orgId },
+            data:  { plan },
+        }),
+        prisma.subscription.upsert({
+            where:  { org_id: orgId },
+            create: {
+                org_id:               orgId,
+                dodo_subscription_id: subscriptionId,
+                dodo_customer_id:     customerId ?? null,
+                plan,
+                billing:              meta.billing ?? "monthly",
+                status:               "active",
+                current_period_start: periodStart ? new Date(periodStart) : new Date(),
+                current_period_end:   periodEnd   ? new Date(periodEnd)   : new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
+            },
+            update: {
+                dodo_subscription_id: subscriptionId,
+                dodo_customer_id:     customerId ?? undefined,
+                plan,
+                billing:              meta.billing ?? undefined,
+                status:               "active",
+                current_period_start: periodStart ? new Date(periodStart) : undefined,
+                current_period_end:   periodEnd   ? new Date(periodEnd)   : undefined,
+            },
+        }),
+    ]);
+
+    return { plan };
 }
 
 // ─── Update plan (manual — admin bypass, no payment) ──────────────────────────

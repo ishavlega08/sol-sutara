@@ -8,6 +8,7 @@ import {
     createCheckoutHandler,
     getSubscriptionHandler,
     getInvoicesHandler,
+    syncPlanHandler,
     webhookHandler,
 } from "./billing.controller";
 
@@ -35,5 +36,6 @@ router.get  ("/subscription", getSubscriptionHandler);
 router.get  ("/invoices",     getInvoicesHandler);
 router.patch("/plan",         requireRole("OWNER"), updatePlanHandler);
 router.post ("/checkout",     requireRole("OWNER"), createCheckoutHandler);
+router.post ("/sync",         requireRole("OWNER"), syncPlanHandler);
 
 export default router;

@@ -8,7 +8,9 @@ import {
     getInvoices,
     verifyAndParseWebhook,
     handleWebhookEvent,
+    syncPlanFromSubscription,
     PLAN_LIMITS,
+    PLAN_CATALOGUE,
 } from "./billing.service";
 import { OrgPlan } from "@prisma/client";
 import type { BillingInterval } from "../../lib/dodo";
@@ -45,8 +47,13 @@ export async function getUsageHandler(req: Request, res: Response) {
 
 export async function getPlansHandler(_req: Request, res: Response) {
     const plans = VALID_PLANS.map((plan) => ({
-        id:     plan,
-        limits: PLAN_LIMITS[plan],
+        id:            plan,
+        limits:        PLAN_LIMITS[plan],
+        price_monthly: PLAN_CATALOGUE[plan].price_monthly,
+        price_annual:  PLAN_CATALOGUE[plan].price_annual,
+        badge:         PLAN_CATALOGUE[plan].badge,
+        description:   PLAN_CATALOGUE[plan].description,
+        features:      PLAN_CATALOGUE[plan].features,
     }));
     res.json({ success: true, plans });
 }
@@ -142,6 +149,29 @@ export async function getInvoicesHandler(req: Request, res: Response) {
     } catch (err: unknown) {
         const msg = err instanceof Error ? err.message : "Failed to fetch invoices";
         res.status(500).json({ success: false, error: msg });
+    }
+}
+
+// ─── POST /api/billing/sync — sync plan after checkout return URL ────────────
+// Called by the success page with the subscription_id Dodo appends to the URL.
+// Verifies the subscription with Dodo and updates the org plan immediately,
+// so the UI reflects the new plan without waiting for the webhook.
+
+export async function syncPlanHandler(req: Request, res: Response) {
+    try {
+        const orgId          = req.user!.orgId!;
+        const { subscription_id } = req.body as { subscription_id?: string };
+
+        if (!subscription_id) {
+            res.status(400).json({ success: false, error: "subscription_id is required" });
+            return;
+        }
+
+        const { plan } = await syncPlanFromSubscription(orgId, subscription_id);
+        res.json({ success: true, plan });
+    } catch (err: unknown) {
+        const msg = err instanceof Error ? err.message : "Failed to sync plan";
+        res.status(400).json({ success: false, error: msg });
     }
 }
 

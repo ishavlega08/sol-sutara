@@ -40,8 +40,8 @@ const BILLING: NavItem[] = [
 const SETTINGS: NavItem[] = [
     { label: "Organization", href: "/settings/organization", icon: Building2, match: (p) => p.startsWith("/settings/organization") },
     { label: "Members",      href: "/settings/members",      icon: Users,     match: (p) => p.startsWith("/settings/members") },
-    { label: "API keys",     href: "/settings/api-keys",     icon: Key,       match: (p) => p.startsWith("/settings/api-keys"), paidOnly: true },
-    { label: "Webhooks",    href: "/settings/webhooks",     icon: Webhook,   match: (p) => p.startsWith("/settings/webhooks"), paidOnly: true },
+    { label: "API keys",  href: "/settings/api-keys", icon: Key,     match: (p) => p.startsWith("/settings/api-keys"), comingSoon: true },
+    { label: "Webhooks",  href: "/settings/webhooks", icon: Webhook, match: (p) => p.startsWith("/settings/webhooks"), comingSoon: true },
 ];
 
 function NavLink({ item, active, onClick }: { item: NavItem; active: boolean; onClick?: () => void }) {

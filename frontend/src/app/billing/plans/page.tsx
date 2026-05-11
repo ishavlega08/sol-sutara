@@ -13,102 +13,19 @@ import {
     type OrgPlan, type BillingInterval, type PlanLimits, type OrgUsage, type PlanCatalogue,
 } from "@/lib/api/billing";
 
-// ─── Plan metadata ─────────────────────────────────────────────────────────────
+// ─── UI-only metadata (colors, icons — not business logic) ───────────────────
 
-const PLAN_META: Record<OrgPlan, {
+const PLAN_UI: Record<OrgPlan, {
     label:    string;
-    desc:     string;
-    badge:    string | null;
     icon:     React.ElementType;
     color:    string;
     gradient: string;
     ctaLabel: string;
-    features: string[];
-    price:    { monthly: number | null; annual: number | null };
 }> = {
-    SANDBOX: {
-        label:    "Free",
-        badge:    null,
-        desc:     "Explore the graph and test on devnet — no card required.",
-        icon:     Zap,
-        color:    "#6b7280",
-        gradient: "from-gray-500 to-gray-600",
-        ctaLabel: "Get started free",
-        price:    { monthly: 0, annual: 0 },
-        features: [
-            "Up to 500 components",
-            "3 org members",
-            "2 webhooks",
-            "Devnet only",
-            "Upstream + downstream trace",
-            "Recall simulation",
-            "Shipment & supplier tracking",
-            "Community support",
-        ],
-    },
-    STARTER: {
-        label:    "Starter",
-        badge:    "Recommended",
-        desc:     "For small teams ready to go live with real supply chain data on mainnet.",
-        icon:     Rocket,
-        color:    "#3b82f6",
-        gradient: "from-blue-500 to-blue-600",
-        ctaLabel: "Upgrade to Starter",
-        price:    { monthly: 100, annual: 82 },
-        features: [
-            "Up to 5,000 components",
-            "25k writes / mo",
-            "50k traces / mo",
-            "10 org members",
-            "5 webhooks",
-            "Mainnet + Devnet",
-            "Document uploads",
-            "Email notifications",
-            "Email support · 48h SLA",
-        ],
-    },
-    GROWTH: {
-        label:    "Growth",
-        badge:    "Most popular",
-        desc:     "For teams scaling operations with high-volume writes and real-time integrations.",
-        icon:     Sparkles,
-        color:    "#7c3aed",
-        gradient: "from-violet-500 to-violet-700",
-        ctaLabel: "Upgrade to Growth",
-        price:    { monthly: 250, annual: 205 },
-        features: [
-            "Unlimited components",
-            "500k writes / mo",
-            "250k traces / mo",
-            "25 org members",
-            "20 webhooks",
-            "Mainnet + Devnet",
-            "Document uploads (IPFS)",
-            "Email notifications",
-            "Priority support · 24h SLA",
-        ],
-    },
-    ENTERPRISE: {
-        label:    "Enterprise",
-        badge:    null,
-        desc:     "Dedicated infrastructure, SAML SSO, and a named implementation engineer.",
-        icon:     Building2,
-        color:    "#10b981",
-        gradient: "from-emerald-500 to-emerald-700",
-        ctaLabel: "Talk to us",
-        price:    { monthly: null, annual: null },
-        features: [
-            "Unlimited writes & traces",
-            "Unlimited members",
-            "Dedicated indexer",
-            "SAML / SSO",
-            "Custom SLA (99.9%+)",
-            "ERP connectors (SAP, NetSuite)",
-            "EU DPP + FSMA 204 exports",
-            "Named implementation engineer",
-            "Slack-based support",
-        ],
-    },
+    SANDBOX:    { label: "Free",       icon: Zap,       color: "#6b7280", gradient: "from-gray-500 to-gray-600",    ctaLabel: "Get started free"   },
+    STARTER:    { label: "Starter",    icon: Rocket,    color: "#3b82f6", gradient: "from-blue-500 to-blue-600",    ctaLabel: "Upgrade to Starter" },
+    GROWTH:     { label: "Growth",     icon: Sparkles,  color: "#7c3aed", gradient: "from-violet-500 to-violet-700", ctaLabel: "Upgrade to Growth"  },
+    ENTERPRISE: { label: "Enterprise", icon: Building2, color: "#10b981", gradient: "from-emerald-500 to-emerald-700", ctaLabel: "Talk to us"      },
 };
 
 const PLAN_ORDER: OrgPlan[] = ["SANDBOX", "STARTER", "GROWTH", "ENTERPRISE"];
@@ -280,25 +197,26 @@ export default function PlansPage() {
 
                 {/* ── Current plan pill ── */}
                 {!loading && currentPlan && (() => {
-                    const m = PLAN_META[currentPlan];
-                    const Icon = m.icon;
+                    const ui  = PLAN_UI[currentPlan];
+                    const cat = catalogue.find((c) => c.id === currentPlan);
+                    const Icon = ui.icon;
                     return (
                         <div className="mb-6 flex items-center gap-3 rounded-xl border bg-white dark:bg-gray-900 px-4 py-3.5"
-                            style={{ borderColor: `color-mix(in oklab, ${m.color} 25%, transparent)` }}>
+                            style={{ borderColor: `color-mix(in oklab, ${ui.color} 25%, transparent)` }}>
                             <span className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-lg"
-                                style={{ background: `color-mix(in oklab, ${m.color} 12%, transparent)` }}>
-                                <Icon className="h-4 w-4" style={{ color: m.color }} />
+                                style={{ background: `color-mix(in oklab, ${ui.color} 12%, transparent)` }}>
+                                <Icon className="h-4 w-4" style={{ color: ui.color }} />
                             </span>
                             <div className="flex-1 min-w-0">
                                 <div className="flex items-center gap-2 flex-wrap">
-                                    <span className="text-sm font-semibold text-gray-900 dark:text-gray-100">{m.label}</span>
+                                    <span className="text-sm font-semibold text-gray-900 dark:text-gray-100">{ui.label}</span>
                                     <span className="rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide"
-                                        style={{ color: m.color, background: `color-mix(in oklab, ${m.color} 10%, transparent)` }}>
+                                        style={{ color: ui.color, background: `color-mix(in oklab, ${ui.color} 10%, transparent)` }}>
                                         Active
                                     </span>
                                     <span className="text-xs text-gray-400">{limits?.network ?? "—"}</span>
                                 </div>
-                                <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">{m.desc}</p>
+                                <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">{cat?.description}</p>
                             </div>
                             {currentPlan === "SANDBOX" && (
                                 <span className="flex-shrink-0 text-xs text-gray-400">Free forever</span>
@@ -360,12 +278,14 @@ export default function PlansPage() {
                 {/* ── Plan cards ── */}
                 <div className="mb-10 grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
                     {PLAN_ORDER.map((planId) => {
-                        const m          = PLAN_META[planId];
-                        const Icon       = m.icon;
+                        const ui         = PLAN_UI[planId];
+                        const cat        = catalogue.find((c) => c.id === planId);
+                        const Icon       = ui.icon;
                         const isCurrent  = planId === currentPlan;
                         const isFeatured = planId === featuredPlan;
                         const isUpgrade  = currentPlan && PLAN_ORDER.indexOf(planId) > PLAN_ORDER.indexOf(currentPlan);
-                        const price      = m.price.monthly === null ? null : annual ? m.price.annual : m.price.monthly;
+                        const priceVal   = cat?.price_monthly === null ? null : annual ? cat?.price_annual : cat?.price_monthly;
+                        const price      = priceVal ?? null;
 
                         return (
                             <div key={planId}
@@ -376,10 +296,10 @@ export default function PlansPage() {
                                 }`}>
 
                                 {/* Top gradient bar */}
-                                <div className={`h-1 w-full bg-gradient-to-r ${m.gradient}`} />
+                                <div className={`h-1 w-full bg-gradient-to-r ${ui.gradient}`} />
 
                                 {/* Badge */}
-                                {(m.badge || isCurrent) && (
+                                {(cat?.badge || isCurrent) && (
                                     <div className="absolute right-3 top-4 flex flex-col items-end gap-1">
                                         {isCurrent && (
                                             <span className="flex items-center gap-1 rounded-full bg-violet-600 px-2.5 py-0.5 text-[10px] font-bold text-white">
@@ -387,10 +307,10 @@ export default function PlansPage() {
                                                 Current
                                             </span>
                                         )}
-                                        {m.badge && !isCurrent && (
+                                        {cat?.badge && !isCurrent && (
                                             <span className="rounded-full px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wide"
-                                                style={{ color: m.color, background: `color-mix(in oklab, ${m.color} 10%, transparent)` }}>
-                                                {m.badge}
+                                                style={{ color: ui.color, background: `color-mix(in oklab, ${ui.color} 10%, transparent)` }}>
+                                                {cat.badge}
                                             </span>
                                         )}
                                     </div>
@@ -400,15 +320,17 @@ export default function PlansPage() {
                                     {/* Icon + Label */}
                                     <div className="mb-4 flex items-center gap-2.5">
                                         <span className="flex h-9 w-9 items-center justify-center rounded-xl"
-                                            style={{ background: `color-mix(in oklab, ${m.color} 12%, transparent)` }}>
-                                            <Icon className="h-4 w-4" style={{ color: m.color }} />
+                                            style={{ background: `color-mix(in oklab, ${ui.color} 12%, transparent)` }}>
+                                            <Icon className="h-4 w-4" style={{ color: ui.color }} />
                                         </span>
-                                        <span className="text-base font-bold text-gray-900 dark:text-gray-100">{m.label}</span>
+                                        <span className="text-base font-bold text-gray-900 dark:text-gray-100">{ui.label}</span>
                                     </div>
 
                                     {/* Price */}
                                     <div className="mb-4">
-                                        {price === null ? (
+                                        {loading ? (
+                                            <div className="h-9 w-24 animate-pulse rounded bg-gray-100 dark:bg-gray-800" />
+                                        ) : price === null ? (
                                             <>
                                                 <span className="text-3xl font-bold text-gray-900 dark:text-gray-100">Custom</span>
                                                 <p className="mt-1 text-xs text-gray-400">Contact us for a quote</p>
@@ -426,28 +348,33 @@ export default function PlansPage() {
                                                 </div>
                                                 {annual
                                                     ? <p className="mt-1 text-xs text-emerald-600 dark:text-emerald-400 font-medium">Billed ${(price * 12).toLocaleString()}/year</p>
-                                                    : <p className="mt-1 text-xs text-gray-400">or ${m.price.annual}/mo billed annually</p>
+                                                    : <p className="mt-1 text-xs text-gray-400">or ${cat?.price_annual}/mo billed annually</p>
                                                 }
                                             </>
                                         )}
                                     </div>
 
-                                    <p className="mb-5 text-xs leading-relaxed text-gray-500 dark:text-gray-400">{m.desc}</p>
+                                    <p className="mb-5 text-xs leading-relaxed text-gray-500 dark:text-gray-400">{cat?.description}</p>
 
                                     {/* Divider */}
                                     <div className="mb-4 h-px bg-gray-100 dark:bg-gray-800" />
 
                                     {/* Features */}
                                     <ul className="mb-6 flex-1 space-y-2">
-                                        {m.features.map((f) => (
-                                            <li key={f} className="flex items-start gap-2 text-xs text-gray-600 dark:text-gray-400">
-                                                <span className="mt-0.5 flex h-4 w-4 flex-shrink-0 items-center justify-center rounded-full"
-                                                    style={{ background: `color-mix(in oklab, ${m.color} 10%, transparent)` }}>
-                                                    <Check className="h-2.5 w-2.5" style={{ color: m.color }} />
-                                                </span>
-                                                {f}
-                                            </li>
-                                        ))}
+                                        {loading
+                                            ? Array.from({ length: 4 }).map((_, i) => (
+                                                <li key={i} className="h-3 w-full animate-pulse rounded bg-gray-100 dark:bg-gray-800" />
+                                            ))
+                                            : (cat?.features ?? []).map((f: string) => (
+                                                <li key={f} className="flex items-start gap-2 text-xs text-gray-600 dark:text-gray-400">
+                                                    <span className="mt-0.5 flex h-4 w-4 flex-shrink-0 items-center justify-center rounded-full"
+                                                        style={{ background: `color-mix(in oklab, ${ui.color} 10%, transparent)` }}>
+                                                        <Check className="h-2.5 w-2.5" style={{ color: ui.color }} />
+                                                    </span>
+                                                    {f}
+                                                </li>
+                                            ))
+                                        }
                                     </ul>
 
                                     {/* CTA */}
@@ -471,10 +398,10 @@ export default function PlansPage() {
                                                     ? "bg-gradient-to-r from-violet-600 to-violet-700 shadow-md shadow-violet-200 dark:shadow-violet-950"
                                                     : ""
                                             }`}
-                                            style={!isFeatured ? { background: `linear-gradient(135deg, ${m.color}, color-mix(in oklab, ${m.color} 80%, #000))` } : undefined}>
+                                            style={!isFeatured ? { background: `linear-gradient(135deg, ${ui.color}, color-mix(in oklab, ${ui.color} 80%, #000))` } : undefined}>
                                             {upgrading === planId
                                                 ? <><Loader2 className="h-3.5 w-3.5 animate-spin" /> Upgrading…</>
-                                                : <>{isUpgrade ? m.ctaLabel : "Downgrade"} <ArrowRight className="h-3.5 w-3.5" /></>
+                                                : <>{isUpgrade ? ui.ctaLabel : "Downgrade"} <ArrowRight className="h-3.5 w-3.5" /></>
                                             }
                                         </button>
                                     )}
@@ -497,11 +424,11 @@ export default function PlansPage() {
                                     {PLAN_ORDER.map((planId) => (
                                         <th key={planId}
                                             className="px-3 py-3 text-center text-[11px] font-semibold uppercase tracking-wide"
-                                            style={{ color: planId === currentPlan ? PLAN_META[planId].color : undefined }}>
-                                            <span>{PLAN_META[planId].label}</span>
+                                            style={{ color: planId === currentPlan ? PLAN_UI[planId].color : undefined }}>
+                                            <span>{PLAN_UI[planId].label}</span>
                                             {planId === currentPlan && (
                                                 <span className="ml-1 inline-block rounded-full w-1.5 h-1.5 align-middle"
-                                                    style={{ background: PLAN_META[planId].color }} />
+                                                    style={{ background: PLAN_UI[planId].color }} />
                                             )}
                                         </th>
                                     ))}
@@ -526,7 +453,7 @@ export default function PlansPage() {
                                             return (
                                                 <td key={planId}
                                                     className="px-3 py-3 text-center text-xs text-gray-500 dark:text-gray-400"
-                                                    style={{ color: planId === currentPlan ? PLAN_META[planId].color : undefined, fontWeight: planId === currentPlan ? 600 : undefined }}>
+                                                    style={{ color: planId === currentPlan ? PLAN_UI[planId].color : undefined, fontWeight: planId === currentPlan ? 600 : undefined }}>
                                                     {loading
                                                         ? <span className="inline-block h-3 w-10 animate-pulse rounded bg-gray-100 dark:bg-gray-800" />
                                                         : String(display)
