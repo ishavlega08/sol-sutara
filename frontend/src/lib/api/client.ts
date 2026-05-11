@@ -41,11 +41,11 @@ client.interceptors.response.use(
                 refreshQueue = [];
                 return client(originalRequest);
             } catch {
-                // Refresh failed — redirect to login
+                // Refresh failed — let the error propagate so AuthContext can
+                // clear state and redirect via router.replace (no hard reload).
+                // A hard window.location.href here causes an infinite reload loop:
+                // apiMe 401 → refresh 401 → hard reload → apiMe 401 → ...
                 refreshQueue = [];
-                if (typeof window !== "undefined") {
-                    window.location.href = "/login";
-                }
                 return Promise.reject(error);
             } finally {
                 isRefreshing = false;

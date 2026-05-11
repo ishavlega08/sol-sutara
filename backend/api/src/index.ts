@@ -18,13 +18,21 @@ app.set("trust proxy", 1);
 // Gzip compression — shrinks JSON responses by ~70%, zero risk for API usage
 app.use(compression());
 
+// CORS must be registered BEFORE the rate limiter so that 429 responses still
+// carry the correct Access-Control-Allow-Origin header.  Without this, browsers
+// report a CORS error instead of a rate-limit error, making the issue invisible.
+const corsOptions: cors.CorsOptions = {
+    origin:         ORIGINS,
+    credentials:    true,
+    methods:        ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+    allowedHeaders: ["Content-Type", "Authorization", "Cookie"],
+};
+app.options("*", cors(corsOptions));   // handle preflight before rate limiter
+app.use(cors(corsOptions));
+
 // Global rate limit — 500 req / 15 min per IP across all endpoints
 app.use(globalLimiter);
 
-app.use(cors({
-    origin:      ORIGINS,
-    credentials: true,
-}));
 app.use(express.json());
 app.use(cookieParser());
 
