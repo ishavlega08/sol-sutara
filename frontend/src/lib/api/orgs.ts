@@ -56,3 +56,16 @@ export async function getInviteDetails(token: string) {
     const res = await client.get<{ success: boolean; invite: InviteDetails }>(`/orgs/invite/${token}`);
     return res.data;
 }
+
+export interface OrgDetails {
+    id:        string;
+    name:      string;
+    slug:      string;
+    createdAt: string;
+    plan?:     string;
+}
+
+export async function getOrgById(orgId: string) {
+    const res = await client.get<{ success: boolean; org: OrgDetails }>(`/orgs/${orgId}`);
+    return res.data;
+}

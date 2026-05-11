@@ -155,20 +155,6 @@ interface DisplayRow {
   txHash?: string;
 }
 
-const MOCK_ROWS: DisplayRow[] = [
-  { id: "SP-01", name: "Lithium · Chile salar",    type: "Raw Material",  org: "org:aster",    risk: "LOW",    created: "2025-01-12" },
-  { id: "SP-02", name: "Cobalt · DRC b-881",       type: "Raw Material",  org: "org:aster",    risk: "HIGH",   created: "2025-01-14" },
-  { id: "SP-03", name: "Nickel · Philippines",     type: "Raw Material",  org: "org:aster",    risk: "MEDIUM", created: "2025-01-18" },
-  { id: "SP-04", name: "Manganese · South Africa", type: "Raw Material",  org: "org:aster",    risk: "LOW",    created: "2025-01-20" },
-  { id: "CM-18", name: "Cathode B-18",             type: "Component",     org: "org:meridian", risk: "MEDIUM", created: "2025-02-03" },
-  { id: "CM-24", name: "Anode block A-24",         type: "Component",     org: "org:meridian", risk: "LOW",    created: "2025-02-07" },
-  { id: "CM-31", name: "NMC-811 · cell precursor", type: "Component",     org: "org:kaldera",  risk: "HIGH",   created: "2025-02-11" },
-  { id: "CM-44", name: "Electrolyte solution",     type: "Component",     org: "org:kaldera",  risk: "LOW",    created: "2025-02-19" },
-  { id: "AS-07", name: "Battery module 48V",       type: "Assembly",      org: "org:meridian", risk: "MEDIUM", created: "2025-03-01" },
-  { id: "AS-09", name: "Battery pack 96V",         type: "Assembly",      org: "org:meridian", risk: "LOW",    created: "2025-03-08" },
-  { id: "PR-A",  name: "EV drivetrain unit",       type: "Finished Good", org: "org:meridian", risk: "LOW",    created: "2025-04-01" },
-  { id: "PR-B",  name: "Stationary storage rack",  type: "Finished Good", org: "org:meridian", risk: "MEDIUM", created: "2025-04-10" },
-];
 
 function SkeletonRow() {
   return (
@@ -303,7 +289,7 @@ export default function ComponentsPage() {
         created: c.created_at.slice(0, 10),
         txHash:  c.tx_hash ?? undefined,
       }))
-    : MOCK_ROWS;
+    : [];
 
   const filtered = rows.filter((r) => {
     const q = search.toLowerCase();
